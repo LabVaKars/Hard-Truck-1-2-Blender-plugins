@@ -27,49 +27,60 @@ from .class_descr import (
     BoolBlock
 )
 from . import (
-    import_b3d, export_b3d
+    import_b3d, export_b3d, import_res, export_res
 )
 from .common import (
-    resModulesCallback,
-    modulesCallback,
-    getColPropertyByName
+    res_modules_callback,
+    modules_callback,
+    get_col_property_by_name
+)
+from .ui_utils import (
+    draw_multi_select_list
+)
+from ..common import (
+    menus_logger,
+    updateLoggers
+)
+from ..compatibility import (
+    make_annotations,
+    get_ui_menu,
+    get_user_preferences,
+    is_before_2_80
 )
 
+log = menus_logger
 
-
+@make_annotations
 class HTImportPreferences(AddonPreferences):
     bl_idname = "b3d_tools"
 
-    COMMON_RES_Path: StringProperty(
+    COMMON_RES_Path = StringProperty(
         name="Common.res path",
         default="",
         subtype='FILE_PATH')
+
+    logger_level = EnumProperty(
+        name = "Logger level",
+        default = "40", # "ERROR"
+        items = [
+            ( "10", "DEBUG", "DEBUG"),
+            ( "20", "INFO", "INFO"),
+            ( "30", "WARNING", "WARNING"),
+            ( "40", "ERROR", "ERROR")
+        ],
+        update=updateLoggers
+    )
 
     def draw(self, context):
         layout = self.layout
         row = layout.row()
         row.prop(self, 'COMMON_RES_Path', expand=True)
-
-def drawMultiSelectList(self, layout, listName, perRow):
-
-    i = 0
-    listObj = getattr(self, listName)
-    rowcnt = math.floor(len(listObj)/perRow)
-
-    if len(listObj) > 0:
-
-        for j in range(rowcnt):
-            row = layout.row()
-            for block in listObj[i:i+perRow]:
-                row.prop(block, 'state', text=block['name'], toggle=True)
-            i+=perRow
         row = layout.row()
-        for block in listObj[i:]:
-            row.prop(block, 'state', text=block['name'], toggle=True)
-    else:
-        layout.label(text='No items')
+        row.prop(self, 'logger_level', expand=False)
 
 
+
+@make_annotations
 class ImportRES(Operator, ImportHelper):
     '''Import from RES file format (.res)'''
     bl_idname = 'kotr_b3d.import_res'
@@ -77,28 +88,28 @@ class ImportRES(Operator, ImportHelper):
 
     filename_ext = ['.res', '.rmp']
 
-    files: CollectionProperty(
+    files = CollectionProperty(
         type=OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
 
-    directory: StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='*.res;*.rmp', options={'HIDDEN'})
+    filter_glob = StringProperty(default='*.res;*.rmp', options={'HIDDEN'})
 
-    to_import_textures : BoolProperty(name='Import textures',
+    to_import_textures = BoolProperty(name='Import textures',
                     description='Import textures', default=True, options={'HIDDEN'})
 
-    to_unpack_res : BoolProperty(name='Unpack .res archive',
+    to_unpack_res = BoolProperty(name='Unpack .res archive',
                     description='Unpack seleted .res archive.', default=True)
 
-    to_convert_txr : BoolProperty(name='Convert .txr to .tga',
+    to_convert_txr = BoolProperty(name='Convert .txr to .tga',
                     description='Convert .txr|.msk from unpacked .res to .tga', default=True)
 
-    to_reload_common_res : BoolProperty(name='Reload common.res(HT2)',
+    to_reload_common_res = BoolProperty(name='Reload common.res(HT2)',
                     description='Imports/Reloads resources from common.res', default=False)
 
-    res_extension : EnumProperty(
+    res_extension = EnumProperty(
         name="Extension",
         items=[
             ('res', '.RES', '.RES'),
@@ -107,7 +118,7 @@ class ImportRES(Operator, ImportHelper):
         default='res'
     )
 
-    textures_format : StringProperty(
+    textures_format = StringProperty(
         name="Images format",
         description="Loaded images format",
         default="tga",
@@ -117,31 +128,34 @@ class ImportRES(Operator, ImportHelper):
 
         # importing Res
         mytool = bpy.context.scene.my_tool
-        resModules = mytool.resModules
+        res_modules = mytool.res_modules
 
         #importing COMMON.RES(Hard Truck 2)
-        commonResPath = bpy.context.preferences.addons['b3d_tools'].preferences.COMMON_RES_Path
-        commonResModule = getColPropertyByName(resModules, 'COMMON')
+        user_prefs = get_user_preferences()
+        common_res_path = user_prefs.addons['b3d_tools'].preferences.COMMON_RES_Path
+        common_res_module = get_col_property_by_name(res_modules, 'COMMON')
 
-        if (commonResModule is None or self.to_reload_common_res) and os.path.exists(commonResPath):
-            import_b3d.import_common_dot_res(self, context, commonResPath)
-            t0 = Thread(target=import_b3d.import_multiple_res, args=(self, self.files, context))
+        tt1 = time.mktime(datetime.datetime.now().timetuple())
+        if (common_res_module is None or self.to_reload_common_res) and os.path.exists(common_res_path):
+            import_res.import_common_dot_res(self, context, common_res_path)
+        else:
+            self.report({'ERROR'}, "Common.res path is wrong or is not set. Textures weren't imported! Please, set path to Common.res in addon preferences.")
 
-            tt = time.mktime(datetime.datetime.now().timetuple())
+        if self.to_import_textures:
+            if is_before_2_80:
+                bpy.context.scene.render.engine = 'CYCLES' #Blender render doesnt render in Material and Texture View
+
+            t0 = Thread(target=import_res.import_multiple_res, args=(self, self.files, context))
 
             t0.start()
             t0.join()
 
-            tt = time.mktime(datetime.datetime.now().timetuple()) - tt
-
-        else:
-            self.report({'ERROR'}, "Common.res path is wrong or is not set. Textures weren't imported! Please, set path to Common.res in addon preferences.")
-
-        print('All RES imported in', tt, 'seconds')
+        tt1 = time.mktime(datetime.datetime.now().timetuple()) - tt1
+        log.info('All RES imported in {} seconds'.format(tt1))
 
         return {'FINISHED'}
 
-
+@make_annotations
 class ExportRES(Operator, ExportHelper):
     '''Export into RES file format (.res)'''
     bl_idname = 'kotr_b3d.export_res'
@@ -150,25 +164,25 @@ class ExportRES(Operator, ExportHelper):
     filename_ext = '.res'
     use_filter_folder = True
 
-    directory: StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='', options={'HIDDEN'})
+    filter_glob = StringProperty(default='', options={'HIDDEN'})
 
-    to_merge : BoolProperty(name='Merge into existing .res ',
+    to_merge = BoolProperty(name='Merge into existing .res ',
                     description='Merge selected sections into existing .res file', default=False)
 
-    export_images : BoolProperty(name='Export images',
+    export_images = BoolProperty(name='Export images',
                     description='To export images from Blender', default=True)
 
-    tmp_folder : StringProperty(
+    tmp_folder = StringProperty(
         name="Temp folder",
         description=".tga images will be exported to this folder",
         default="res_export"
     )
 
-    res_sections : CollectionProperty(type=BoolBlock)
+    res_sections = CollectionProperty(type=BoolBlock)
 
-    res_modules : CollectionProperty(type=BoolBlock)
+    res_modules = CollectionProperty(type=BoolBlock)
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -189,7 +203,7 @@ class ExportRES(Operator, ExportHelper):
 
         # RES modules
         self.res_modules.clear()
-        for module in resModulesCallback(self, None):
+        for module in res_modules_callback(self, None):
             item = self.res_modules.add()
             item.name = str(module[0])
             item.state = False
@@ -200,11 +214,11 @@ class ExportRES(Operator, ExportHelper):
 
     def execute(self, context):
 
-        print('Importing to folder', self.directory)
+        log.info('Importing to folder {}'.format(self.directory))
         t = time.mktime(datetime.datetime.now().timetuple())
-        export_b3d.exportRes(context, self, self.directory)
+        export_res.export_res(context, self, self.directory)
         t = time.mktime(datetime.datetime.now().timetuple()) - t
-        print('Finished importing in', t, 'seconds')
+        log.info('Finished importing in {} seconds'.format(t))
 
         return {'FINISHED'}
 
@@ -216,28 +230,28 @@ class ExportRES(Operator, ExportHelper):
         layout.label(text="Modules to export:")
         box1 = layout.box()
         # RES modules
-        drawMultiSelectList(self, box1, 'res_modules', 1)
+        draw_multi_select_list(self, box1, 'res_modules', 1)
 
         layout.label(text="RES Settings:")
         box2 = layout.box()
 
         box2.prop(self, "export_images")
         box2.prop(self, "to_merge")
-        box2.prop(self, 'res_extension')
+        # box2.prop(self, 'res_extension')
 
         box2.label(text="Sections to merge:")
         box3 = box2.box()
         col = box3.column()
 
         # RES sections
-        drawMultiSelectList(self, col, 'res_sections', 1)
+        draw_multi_select_list(self, col, 'res_sections', 1)
 
         if self.to_merge:
             col.enabled = True
         else:
-            col.enabled  = False
+            col.enabled = False
 
-
+@make_annotations
 class ImportB3D(Operator, ImportHelper):
     '''Import from B3D file format (.b3d)'''
     bl_idname = 'kotr_b3d.import_b3d'
@@ -245,30 +259,30 @@ class ImportB3D(Operator, ImportHelper):
 
     filename_ext = '.b3d'
 
-    files: CollectionProperty(
+    files = CollectionProperty(
         type=OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
 
-    directory: StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='*.b3d', options={'HIDDEN'})
+    filter_glob = StringProperty(default='*.b3d', options={'HIDDEN'})
 
-    to_unpack_res : BoolProperty(name='Unpack .res archive',
+    to_unpack_res = BoolProperty(name='Unpack .res archive',
                     description='Unpack associated with .b3d fie .res archive. \n'\
                                 'NOTE: .res archive must be located in the same folder as .b3d file', default=False)
 
-    to_convert_txr : BoolProperty(name='Convert .txr to .tga',
+    to_convert_txr = BoolProperty(name='Convert .txr to .tga',
                     description='Convert .txr|.msk from unpacked .res to .tga', default=False)
 
-    to_import_textures : BoolProperty(name='Import Textures',
+    to_import_textures = BoolProperty(name='Import Textures',
                     description='Import textures from unpacked .res archive. \n'\
                                 'NOTE: if importing for the first time select previous option too', default=False)
 
-    to_reload_common_res : BoolProperty(name='Reload common.res(HT2)',
+    to_reload_common_res = BoolProperty(name='Reload common.res(HT2)',
                     description='Imports/Reloads resources from common.res', default=False)
 
-    res_extension : EnumProperty(
+    res_extension = EnumProperty(
         name="Extension",
         items=[
             ('res', '.RES', '.RES'),
@@ -277,19 +291,19 @@ class ImportB3D(Operator, ImportHelper):
         default='res'
     )
 
-    textures_format : StringProperty(
+    textures_format = StringProperty(
         name="Images format",
         description="Loaded images format",
         default="tga",
     )
 
-    res_location : StringProperty(
+    res_location = StringProperty(
         name=".res path",
         description="Path to .res file location. Default: .res file with name and location of imported .b3d",
         default=""
     )
 
-    show_all_blocks : EnumProperty(
+    show_all_blocks = EnumProperty(
         name="Block",
         items=[
             ('0', 'Custom select', 'Custom select'),
@@ -299,7 +313,7 @@ class ImportB3D(Operator, ImportHelper):
         default='1'
     )
 
-    blocks_to_import: CollectionProperty(type=BoolBlock)
+    blocks_to_import = CollectionProperty(type=BoolBlock)
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -324,20 +338,25 @@ class ImportB3D(Operator, ImportHelper):
         # importing Res
 
         mytool = bpy.context.scene.my_tool
-        resModules = mytool.resModules
+        res_modules = mytool.res_modules
 
         #importing COMMON.RES(Hard Truck 2)
-        commonResPath = bpy.context.preferences.addons['b3d_tools'].preferences.COMMON_RES_Path
-        commonResModule = getColPropertyByName(resModules, 'COMMON')
+        user_prefs = get_user_preferences()
+        common_res_path = user_prefs.addons['b3d_tools'].preferences.COMMON_RES_Path
+        common_res_module = get_col_property_by_name(res_modules, 'COMMON')
 
-        if (commonResModule is None or self.to_reload_common_res) and self.to_import_textures and os.path.exists(commonResPath):
-            import_b3d.import_common_dot_res(self, context, commonResPath)
+        if (common_res_module is None or self.to_reload_common_res) and self.to_import_textures and os.path.exists(common_res_path):
+            import_res.import_common_dot_res(self, context, common_res_path)
         else:
             self.report({'ERROR'}, "Common.res path is wrong or is not set. There might be problems with imported textures! Please, set path to Common.res in addon preferences.")
 
         # importing other RES modules
         if self.to_import_textures:
-            t0 = Thread(target=import_b3d.import_multiple_res, args=(self, self.files, context))
+
+            if is_before_2_80:
+                bpy.context.scene.render.engine = 'CYCLES' #Blender render doesnt render in Material and Texture View
+
+            t0 = Thread(target=import_res.import_multiple_res, args=(self, self.files, context))
 
             tt = time.mktime(datetime.datetime.now().timetuple())
 
@@ -345,7 +364,7 @@ class ImportB3D(Operator, ImportHelper):
             t0.join()
 
             tt = time.mktime(datetime.datetime.now().timetuple()) - tt
-            print('All RES imported in', tt, 'seconds')
+            log.info('All RES imported in {} seconds'.format(tt))
 
         # importing B3d
         evens = [cn for i,cn in enumerate(self.files) if i%2==0]
@@ -364,7 +383,7 @@ class ImportB3D(Operator, ImportHelper):
         t2.join()
 
         tt = time.mktime(datetime.datetime.now().timetuple()) - tt
-        print('All B3D imported in', tt, 'seconds')
+        log.info('All B3D imported in {} seconds'.format(tt))
         self.report({'INFO'}, 'B3D imported')
 
         return {'FINISHED'}
@@ -409,9 +428,9 @@ class ImportB3D(Operator, ImportHelper):
             for block in self.blocks_to_import:
                 block.state = False
 
-        drawMultiSelectList(self, box1, 'blocks_to_import', 8)
+        draw_multi_select_list(self, box1, 'blocks_to_import', 8)
 
-
+@make_annotations
 class ExportB3D(Operator, ExportHelper):
     '''Export to B3D file format (.b3d)'''
     bl_idname = 'kotr_b3d.export_b3d'
@@ -420,34 +439,34 @@ class ExportB3D(Operator, ExportHelper):
     filename_ext = '.b3d'
     use_filter_folder = True
 
-    directory: StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='', options={'HIDDEN'})
+    filter_glob = StringProperty(default='', options={'HIDDEN'})
 
-    res_modules : CollectionProperty(type=BoolBlock)
+    res_modules = CollectionProperty(type=BoolBlock)
 
     # B3D settings
-    partial_export: BoolProperty(name='Partial export',
+    partial_export = BoolProperty(name='Partial export',
                     description='Exports node, that is currently selected in outliner', default=False)
 
-    to_export_res: BoolProperty(name='Export associated .res',
+    to_export_res = BoolProperty(name='Export associated .res',
                     description='Exports associated .res in the same folder', default=True)
 
 
     # RES settings
-    to_merge : BoolProperty(name='Merge into existing .res ',
+    to_merge = BoolProperty(name='Merge into existing .res ',
                     description='Merge selected sections into existing .res file', default=False)
 
-    export_images : BoolProperty(name='Export images',
+    export_images = BoolProperty(name='Export images',
                     description='To export images from Blender', default=True)
 
-    tmp_folder : StringProperty(
+    tmp_folder = StringProperty(
         name="Temp folder",
         description=".tga images will be exported to this folder",
         default="res_export"
     )
 
-    res_sections : CollectionProperty(type=BoolBlock)
+    res_sections = CollectionProperty(type=BoolBlock)
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -468,7 +487,7 @@ class ExportB3D(Operator, ExportHelper):
 
         # RES modules
         self.res_modules.clear()
-        for module in modulesCallback(self, None):
+        for module in modules_callback(self, None):
             item = self.res_modules.add()
             item.name = str(module[0])
             item.state = False
@@ -477,17 +496,17 @@ class ExportB3D(Operator, ExportHelper):
         return {"RUNNING_MODAL"}
 
     def execute(self, context):
-        print('Exporting to folder', self.filepath)
+        log.info('Exporting to folder {}'.format(self.filepath))
         if self.to_export_res:
             t = time.mktime(datetime.datetime.now().timetuple())
-            export_b3d.exportRes(context, self, self.filepath)
+            export_res.export_res(context, self, self.filepath)
             t = time.mktime(datetime.datetime.now().timetuple()) - t
-            print('Finished exporting RES in', t, 'seconds')
+            log.info('Finished exporting RES in {} seconds'.format(t))
 
         t = time.mktime(datetime.datetime.now().timetuple())
-        export_b3d.exportB3d(context, self, self.filepath)
+        export_b3d.export_b3d(context, self, self.filepath)
         t = time.mktime(datetime.datetime.now().timetuple()) - t
-        print('Finished exporting B3D in', t, 'seconds')
+        log.info('Finished exporting B3D in {} seconds'.format(t))
         self.report({'INFO'}, 'B3D exported')
         return {'FINISHED'}
 
@@ -497,7 +516,7 @@ class ExportB3D(Operator, ExportHelper):
 
         layout.label(text="Modules to export:")
         box1 = layout.box()
-        drawMultiSelectList(self, box1, 'res_modules', 1)
+        draw_multi_select_list(self, box1, 'res_modules', 1)
 
         layout.label(text="B3D Settings:")
 
@@ -517,18 +536,15 @@ class ExportB3D(Operator, ExportHelper):
         col = box4.column()
 
         # RES sections
-        drawMultiSelectList(self, col, 'res_sections', 1)
+        draw_multi_select_list(self, col, 'res_sections', 1)
 
         if self.to_merge:
             col.enabled = True
         else:
-            col.enabled  = False
+            col.enabled = False
 
 
-
-
-
-
+@make_annotations
 class ImportRAW(Operator, ImportHelper):
     '''Import from RAW file format (.raw)'''
     bl_idname = 'kotr_b3d.import_raw'
@@ -536,29 +552,29 @@ class ImportRAW(Operator, ImportHelper):
 
     filename_ext = '.raw'
 
-    files: CollectionProperty(
+    files = CollectionProperty(
         type=OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
 
-    directory: StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='*.raw', options={'HIDDEN'})
+    filter_glob = StringProperty(default='*.raw', options={'HIDDEN'})
 
     def execute(self, context):
         for rawfile in self.files:
             filepath = os.path.join(self.directory, rawfile.name)
 
-            print('Importing file', filepath)
+            log.info('Importing file {}'.format(filepath))
             t = time.mktime(datetime.datetime.now().timetuple())
             with open(filepath, 'rb') as file:
-                import_b3d.importRaw(file, context, self, filepath)
+                import_b3d.import_raw(file, context, self, filepath)
             t = time.mktime(datetime.datetime.now().timetuple()) - t
-            print('Finished importing in', t, 'seconds')
+            log.info('Finished importing in {} seconds'.format(t))
 
         return {'FINISHED'}
 
-
+@make_annotations
 class ImportWAY(Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "kotr_b3d.import_way"
@@ -566,26 +582,34 @@ class ImportWAY(Operator, ImportHelper):
 
     filename_ext = '.way'
 
-    files: CollectionProperty(
+    files = CollectionProperty(
         type=OperatorFileListElement,
         options={'HIDDEN', 'SKIP_SAVE'},
     )
 
-    directory: StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='*.way',options={'HIDDEN'})
+    filter_glob = StringProperty(default='*.way',options={'HIDDEN'})
 
     def execute(self, context):
         from . import import_way
 
+        tt = time.mktime(datetime.datetime.now().timetuple())
         for wayfile in self.files:
             filepath = os.path.join(self.directory, wayfile.name)
+            log.info('Importing file {}'.format(filepath))
+            t = time.mktime(datetime.datetime.now().timetuple())
             with open(filepath, 'rb') as file:
-                import_way.importWay(file, context, filepath)
+                import_way.import_way(file, context, filepath)
+            t = time.mktime(datetime.datetime.now().timetuple()) - t
+            log.info('Finished importing in {} seconds'.format(t))
+
+        tt = time.mktime(datetime.datetime.now().timetuple()) - tt
+        log.info('Finished all importing in {} seconds'.format(t))
 
         return {'FINISHED'}
 
-
+@make_annotations
 class ExportWAY(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "kotr_b3d.export_way"
@@ -594,17 +618,17 @@ class ExportWAY(Operator, ExportHelper):
     filename_ext = '.way'
     use_filter_folder = True
 
-    directory: StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
+    directory = StringProperty(maxlen=1024, subtype='DIR_PATH', options={'HIDDEN', 'SKIP_SAVE'})
 
-    filter_glob : StringProperty(default='', options={'HIDDEN'})
+    filter_glob = StringProperty(default='', options={'HIDDEN'})
 
-    res_modules : CollectionProperty(type=BoolBlock)
+    res_modules = CollectionProperty(type=BoolBlock)
 
     def invoke(self, context, event):
         wm = context.window_manager
 
         self.res_modules.clear()
-        for module in modulesCallback(self, None):
+        for module in modules_callback(self, None):
             item = self.res_modules.add()
             item.name = str(module[0])
             item.state = False
@@ -616,11 +640,11 @@ class ExportWAY(Operator, ExportHelper):
     def execute(self, context):
         from . import export_way
 
-        print('Exporting to folder', self.filepath)
+        log.info('Exporting to folder {}'.format(self.filepath))
         t = time.mktime(datetime.datetime.now().timetuple())
-        export_way.exportWay(context, self, self.filepath)
+        export_way.export_way(context, self, self.filepath)
         t = time.mktime(datetime.datetime.now().timetuple()) - t
-        print('Finished exporting in', t, 'seconds')
+        log.info('Finished exporting in {} seconds'.format(t))
         self.report({'INFO'}, 'WAY exported')
         return {'FINISHED'}
 
@@ -632,7 +656,7 @@ class ExportWAY(Operator, ExportHelper):
         layout.label(text="Modules to export:")
         box1 = layout.box()
 
-        drawMultiSelectList(self, box1, 'res_modules', 1)
+        draw_multi_select_list(self, box1, 'res_modules', 1)
 
 
 def menu_func_import(self, context):
@@ -661,16 +685,16 @@ _classes = [
 
 
 def register():
-    print("registering addon")
     for cls in _classes:
         bpy.utils.register_class(cls)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    menu_prefix = get_ui_menu()
+    getattr(bpy.types, "{}_file_import".format(menu_prefix)).append(menu_func_import)
+    getattr(bpy.types, "{}_file_export".format(menu_prefix)).append(menu_func_export)
 
 
 def unregister():
-    print("unregistering addon")
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    menu_prefix = get_ui_menu()
+    getattr(bpy.types, "{}_file_import".format(menu_prefix)).remove(menu_func_import)
+    getattr(bpy.types, "{}_file_export".format(menu_prefix)).remove(menu_func_export)
     for cls in _classes[::-1]: #reversed
         bpy.utils.unregister_class(cls)

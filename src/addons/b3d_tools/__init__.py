@@ -21,22 +21,16 @@
 if "bpy" in locals():
     print("Reimporting modules!!!")
     import importlib
-    # importlib.reload(object_UIList)
-    # importlib.reload(material_UIList)
-    # importlib.reload(custom_UIList)
+    importlib.reload(compatibility)
     importlib.reload(common)
     importlib.reload(consts)
-    importlib.reload(tch)
     importlib.reload(b3d)
 else:
     import bpy
     from . import (
-        # object_UIList,
-        # material_UIList,
-        # custom_UIList,
+        compatibility,
         common,
         consts,
-        tch,
         b3d
     )
 
@@ -45,8 +39,8 @@ bl_info = {
     "name": "King of The Road Tools",
     "description": "",
     "author": "Andrey Prozhoga, LabVaKars",
-    "version": (2, 3, 2),
-    "blender": (2, 93, 0),
+    "version": (2, 3, 3),
+    "blender": (2, 79, 0),
     "location": "3D View > Tools",
     "warning": "",
     "wiki_url": "",
@@ -60,16 +54,11 @@ bl_info = {
 # ------------------------------------------------------------------------
 
 def register():
-    # custom_UIList.register()
-    # way.register()
     b3d.register()
-    # tch_register()
+    common.updateLoggers(None, None)
 
 def unregister():
     b3d.unregister()
-    # way.unregister()
-    # custom_UIList.unregister()
-    # tch_unregister()
 
 if __name__ == "__main__":
     register()
