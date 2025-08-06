@@ -142,7 +142,7 @@ class ImportRES(Operator, ImportHelper):
             self.report({'ERROR'}, "Common.res path is wrong or is not set. Textures weren't imported! Please, set path to Common.res in addon preferences.")
 
         if self.to_import_textures:
-            if is_before_2_80:
+            if is_before_2_80():
                 bpy.context.scene.render.engine = 'CYCLES' #Blender render doesnt render in Material and Texture View
 
             t0 = Thread(target=import_res.import_multiple_res, args=(self, self.files, context))
@@ -353,7 +353,7 @@ class ImportB3D(Operator, ImportHelper):
         # importing other RES modules
         if self.to_import_textures:
 
-            if is_before_2_80:
+            if is_before_2_80():
                 bpy.context.scene.render.engine = 'CYCLES' #Blender render doesnt render in Material and Texture View
 
             t0 = Thread(target=import_res.import_multiple_res, args=(self, self.files, context))
@@ -659,21 +659,40 @@ class ExportWAY(Operator, ExportHelper):
         draw_multi_select_list(self, box1, 'res_modules', 1)
 
 
+class KOTRImportMenu(bpy.types.Menu):
+    bl_label = 'KOTR formats'
+    bl_idname = 'kotr_b3d.import_menu'
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(ImportRES.bl_idname, text='KOTR RES (.res)')
+        layout.operator(ImportRAW.bl_idname, text='KOTR RAW (.raw)')
+        layout.operator(ImportWAY.bl_idname, text='KOTR WAY (.way)')
+        layout.operator(ImportB3D.bl_idname, text='KOTR B3D (.b3d)')
+
+
+class KOTRExportMenu(bpy.types.Menu):
+    bl_label = 'KOTR formats'
+    bl_idname = 'kotr_b3d.export_menu'
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator(ExportRES.bl_idname, text='KOTR RES (.res)')
+        layout.operator(ExportWAY.bl_idname, text='KOTR WAY (.way)')
+        layout.operator(ExportB3D.bl_idname, text='KOTR B3D (.b3d)')
+        
 def menu_func_import(self, context):
-    self.layout.operator(ImportRES.bl_idname, text='KOTR RES (.res)')
-    self.layout.operator(ImportRAW.bl_idname, text='KOTR RAW (.raw)')
-    self.layout.operator(ImportWAY.bl_idname, text="KOTR WAY (.way)")
-    self.layout.operator(ImportB3D.bl_idname, text='KOTR B3D (.b3d)')
+    self.layout.menu(KOTRImportMenu.bl_idname)
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportRES.bl_idname, text="KOTR RES (.res)")
-    self.layout.operator(ExportWAY.bl_idname, text="KOTR WAY (.way)")
-    self.layout.operator(ExportB3D.bl_idname, text='KOTR B3D (.b3d)')
+    self.layout.menu(KOTRExportMenu.bl_idname)
 
 
 _classes = [
     HTImportPreferences,
+    KOTRImportMenu,
+    KOTRExportMenu,
     ImportRES,
     ExportRES,
     ImportB3D,

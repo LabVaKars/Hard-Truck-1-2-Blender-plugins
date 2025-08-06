@@ -12,7 +12,8 @@ from ..common import (
 from .. import consts
 
 from .common import (
-    is_root_obj
+    is_root_obj,
+    get_class_attributes
 )
 from .ui_utils import (
     draw_common,
@@ -35,17 +36,20 @@ from .scripts import (
     show_hide_sphere,
     get_obj_by_prop,
     set_obj_by_prop,
-    create_custom_attribute
+    create_custom_attribute,
+    select_similar_objects_by_type,
+    select_similar_faces_by_type
 )
 
 from .classes import (
-    BlockClassHandler
+    BlockClassHandler,
+    FieldType
 )
 
 from .class_descr import (
     Blk020,Blk021,Blk023,
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
-    Blk050,
+    Blk050, Blk051, Blk052,
     ResBlock
 )
 
@@ -144,7 +148,9 @@ class PanelSettings(bpy.types.PropertyGroup):
             ('mesh', "Mesh", "Cast selected meshes to vertices(6,7,36,37) polygons blocks(8,35)"),
             ('colis3D', "3D collision", "Creates copy of selected mesh for 3D collision(23)"),
             ('colis2D', "2D collision", "Cast selected curve to 2D collision(20)"),
-            ('way', "Transport path", "Cast selected curve to transport path(50)"),
+            ('way50', "Transport path segment", "Cast selected curve to transport path segment(50)"),
+            ('way51', "Transport path point", "Cast selected curve to transport path point(51)"),
+            ('way52', "Transport path directed point", "Cast selected curve to transport path directed point(52)"),
         ]
     )
 
@@ -274,7 +280,7 @@ class SingleAddOperator(bpy.types.Operator):
 
         cursor_pos = get_cursor_location()
 
-        parent_obj = bpy.context.object
+        parent_obj = get_active_object()
 
         object_name = mytool.block_name_string
 
@@ -306,10 +312,10 @@ class SingleAddOperator(bpy.types.Operator):
                 set_objs_by_type(b3d_obj, zclass)
             get_context_collection_objects(context).link(b3d_obj)
 
-            if block_type in [9,10,22,21]: #objects with subgroups
+            if block_type in [9,10,21,22]: #objects with subgroups
 
                 group_cnt = 0
-                if block_type in [9,10,21]:
+                if block_type in [9, 10]:
                     group_cnt = 2
                 elif block_type == 21:
                     group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
@@ -500,7 +506,7 @@ class CastAddOperator(bpy.types.Operator):
                         log.info("Cast existing B3D object: {}.".format(poly_obj.name))
 
                 else:
-                    log.info("Selected object {} is not Mesh. Changes not applied.".format(poly_obj.name))
+                    log.info("Selected object {} is not 'Mesh'. Changes not applied.".format(poly_obj.name))
 
         elif cast_type == 'colis3D':
 
@@ -521,7 +527,7 @@ class CastAddOperator(bpy.types.Operator):
                         set_objs_by_type(poly_obj, Blk023)
                         log.info("Cast existing object to B3D 3d collision: {}.".format(poly_obj.name))
                 else:
-                    log.info("Selected object {} is not Mesh. Changes not applied.".format(poly_obj.name))
+                    log.info("Selected object {} is not 'Mesh'. Changes not applied.".format(poly_obj.name))
 
         elif cast_type == 'colis2D':
 
@@ -547,78 +553,125 @@ class CastAddOperator(bpy.types.Operator):
                         log.info("Cast exiting object to B3D 2d colision: {}.".format(poly_obj.name))
 
                 else:
-                    log.info("Selected object {} is not Curve. Changes not applied.".format(poly_obj.name))
+                    log.info("Selected object {} is not 'Curve'. Changes not applied.".format(poly_obj.name))
 
-        elif cast_type == 'way':
+        elif cast_type == 'way50':
 
             for poly_obj in context.selected_objects:
+
+                if parent_obj is None or parent_obj == '':
+                    parent_obj = poly_obj.parent
+
+                block_type = int(cast_type[3:])
+                zclass = None
+                if block_type == 50:
+                    zclass = Blk050
+
                 if poly_obj.type == 'CURVE':
 
                     if to_copy:
                         new_obj = poly_obj.copy()
                         new_obj.data = poly_obj.data.copy()
-                        new_obj[consts.BLOCK_TYPE] = 50
+                        new_obj[consts.BLOCK_TYPE] = block_type
                         new_obj.data.bevel_depth = 0.3
                         new_obj.data.bevel_mode = 'ROUND'
                         new_obj.parent = parent_obj
-                        set_objs_by_type(new_obj, Blk050)
+                        set_objs_by_type(new_obj, zclass)
                         get_context_collection_objects(context).link(new_obj)
                         log.info("Created new WAY Path: {}.".format(new_obj.name))
                     else:
-                        poly_obj[consts.BLOCK_TYPE] = 50
+                        poly_obj[consts.BLOCK_TYPE] = block_type
                         poly_obj.data.bevel_depth = 0.3
                         poly_obj.data.bevel_mode = 'ROUND'
                         poly_obj.parent = parent_obj
-                        set_objs_by_type(poly_obj, Blk050)
+                        set_objs_by_type(poly_obj, zclass)
                         log.info("Cast existing object to WAY Path: {}.".format(poly_obj.name))
 
                 else:
-                    log.info("Selected object {} is not Curve. Changes not applied.".format(poly_obj.name))
+                    log.info("Selected object {} is not 'Curve'. Changes not applied.".format(poly_obj.name))
+
+        elif  cast_type in ['way51', 'way52']:
+            
+            for poly_obj in context.selected_objects:
+
+                if parent_obj is None or parent_obj == '':
+                    parent_obj = poly_obj.parent
+
+                block_type = int(cast_type[3:])
+                zclass = None
+                empty_type = 'PLAIN_AXES'
+                
+                if block_type == 51:
+                    zclass = Blk051
+                    empty_type = 'PLAIN_AXES'
+                if block_type == 52:
+                    zclass = Blk052
+                    empty_type = 'ARROWS'
+
+                if poly_obj.type == 'EMPTY':
+
+                    if to_copy:
+                        new_obj = poly_obj.copy()
+                        new_obj[consts.BLOCK_TYPE] = block_type
+                        set_empty_type(new_obj, empty_type)
+                        new_obj.parent = parent_obj
+                        set_objs_by_type(new_obj, zclass)
+                        get_context_collection_objects(context).link(new_obj)
+                        log.info("Created new WAY Path: {}.".format(new_obj.name))
+                    else:
+                        poly_obj[consts.BLOCK_TYPE] = block_type
+                        set_empty_type(poly_obj, empty_type)
+                        poly_obj.parent = parent_obj
+                        set_objs_by_type(poly_obj, zclass)
+                        log.info("Cast existing object to WAY Path: {}.".format(poly_obj.name))
+
+                else:
+                    log.info("Selected object {} is not 'Empty'. Changes not applied.".format(poly_obj.name))
 
 
         return {'FINISHED'}
 
 class GetVertexValuesOperator(bpy.types.Operator):
     bl_idname = "wm.get_vertex_values_operator"
-    bl_label = "Get block values"
+    bl_label = "Get vertex params"
 
     def execute(self, context):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
         if block_type == 8:
-            get_per_vertex_by_type(b3d_obj, Pvb008)
+            get_per_vertex_by_type(b3d_obj.data, Pvb008)
         elif block_type == 35:
-            get_per_vertex_by_type(b3d_obj, Pvb035)
+            get_per_vertex_by_type(b3d_obj.data, Pvb035)
 
         return {'FINISHED'}
 
 class GetFaceValuesOperator(bpy.types.Operator):
     bl_idname = "wm.get_face_values_operator"
-    bl_label = "Get block values"
+    bl_label = "Get face params"
 
     def execute(self, context):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
         if block_type == 8:
-            get_per_face_by_type(b3d_obj, Pfb008)
+            get_per_face_by_type(b3d_obj.data, Pfb008)
         elif block_type == 28:
-            get_per_face_by_type(b3d_obj, Pfb028)
+            get_per_face_by_type(b3d_obj.data, Pfb028)
         elif block_type == 35:
-            get_per_face_by_type(b3d_obj, Pfb035)
+            get_per_face_by_type(b3d_obj.data, Pfb035)
 
         return {'FINISHED'}
 
 class GetValuesOperator(bpy.types.Operator):
     bl_idname = "wm.get_block_values_operator"
-    bl_label = "Get block values"
+    bl_label = "Get object params"
 
     def execute(self, context):
         scene = context.scene
         mytool = scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
         zclass = BlockClassHandler.get_class_def_by_type(block_type)
@@ -639,7 +692,7 @@ class GetPropValueOperator(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
         zclass = BlockClassHandler.get_class_def_by_type(block_type)
@@ -651,10 +704,10 @@ class GetPropValueOperator(bpy.types.Operator):
 
 class SetFaceValuesOperator(bpy.types.Operator):
     bl_idname = "wm.set_face_values_operator"
-    bl_label = "Save block values"
+    bl_label = "Save face params"
 
     def execute(self, context):
-        curtype = bpy.context.object[consts.BLOCK_TYPE]
+        curtype = get_active_object()[consts.BLOCK_TYPE]
         objects = [cn for cn in bpy.context.selected_objects if cn[consts.BLOCK_TYPE] is not None and cn[consts.BLOCK_TYPE] == curtype]
 
         for i in range(len(objects)):
@@ -663,20 +716,20 @@ class SetFaceValuesOperator(bpy.types.Operator):
             block_type = b3d_obj[consts.BLOCK_TYPE]
 
             if block_type == 8:
-                set_per_face_by_type(b3d_obj, Pfb008)
+                set_per_face_by_type(b3d_obj.data, Pfb008)
             elif block_type == 28:
-                set_per_face_by_type(b3d_obj, Pfb028)
+                set_per_face_by_type(b3d_obj.data, Pfb028)
             elif block_type == 35:
-                set_per_face_by_type(b3d_obj, Pfb035)
+                set_per_face_by_type(b3d_obj.data, Pfb035)
 
         return {'FINISHED'}
 
 class SetVertexValuesOperator(bpy.types.Operator):
     bl_idname = "wm.set_vertex_values_operator"
-    bl_label = "Save block values"
+    bl_label = "Save vertex params"
 
     def execute(self, context):
-        curtype = bpy.context.object[consts.BLOCK_TYPE]
+        curtype = get_active_object()[consts.BLOCK_TYPE]
         objects = [cn for cn in bpy.context.selected_objects if cn[consts.BLOCK_TYPE] is not None and cn[consts.BLOCK_TYPE] == curtype]
 
         for i in range(len(objects)):
@@ -685,15 +738,15 @@ class SetVertexValuesOperator(bpy.types.Operator):
             block_type = b3d_obj[consts.BLOCK_TYPE]
 
             if block_type == 8:
-                set_per_vertex_by_type(b3d_obj, Pvb008)
+                set_per_vertex_by_type(b3d_obj.data, Pvb008)
             elif block_type == 35:
-                set_per_vertex_by_type(b3d_obj, Pvb035)
+                set_per_vertex_by_type(b3d_obj.data, Pvb035)
 
         return {'FINISHED'}
 
 class SetValuesOperator(bpy.types.Operator):
     bl_idname = "wm.set_block_values_operator"
-    bl_label = "Save block values"
+    bl_label = "Save object params"
 
     def execute(self, context):
         scene = context.scene
@@ -701,12 +754,12 @@ class SetValuesOperator(bpy.types.Operator):
 
         block_type = ''
 
-        active_obj = bpy.context.object
+        active_obj = get_active_object()
 
         curtype = active_obj[consts.BLOCK_TYPE]
 
         objects = [cn for cn in bpy.context.selected_objects if cn[consts.BLOCK_TYPE] is not None and cn[consts.BLOCK_TYPE] == curtype]
-
+        
         for i in range(len(objects)):
 
             b3d_obj = objects[i]
@@ -736,7 +789,7 @@ class SetPropValueOperator(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
         zclass = BlockClassHandler.get_class_def_by_type(block_type)
@@ -1047,6 +1100,50 @@ class ShowHideSphereOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+@make_annotations
+class SelectSimilarObjectsOperator(bpy.types.Operator):
+    bl_idname = "wm.select_similar_objects_operator"
+    bl_label = "Select similar objects"
+    bl_description = "Select objects with same parameters"
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        b3d_obj = get_active_object()
+        block_type = b3d_obj[consts.BLOCK_TYPE]
+
+        zclass = BlockClassHandler.get_class_def_by_type(block_type)
+
+        if zclass is not None:
+            select_similar_objects_by_type(b3d_obj, zclass)
+
+            self.report({'INFO'}, "Similar object selected")
+
+        return {'FINISHED'}
+
+@make_annotations
+class SelectSimilarFacesOperator(bpy.types.Operator):
+    bl_idname = "wm.select_similar_faces_operator"
+    bl_label = "Select similar faces"
+    bl_description = "Select faces with same parameters"
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        b3d_obj = get_active_object()
+        block_type = b3d_obj[consts.BLOCK_TYPE]
+
+        zclass = BlockClassHandler.get_pfb_class_def_by_type(block_type)
+
+        if zclass is not None:
+            select_similar_faces_by_type(b3d_obj, zclass)
+
+            self.report({'INFO'}, "Similar faces selected")
+
+        return {'FINISHED'}
+
 # ------------------------------------------------------------------------
 # panels
 # ------------------------------------------------------------------------
@@ -1067,7 +1164,7 @@ class OBJECT_PT_b3d_add_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
 
         object_name = '' if b3d_obj is None else b3d_obj.name
 
@@ -1200,7 +1297,7 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
 
     @classmethod
     def poll(self,context):
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         if b3d_obj is not None: 
             if consts.BLOCK_TYPE in b3d_obj:
                 block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -1213,7 +1310,7 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
 
         if b3d_obj is not None:
 
@@ -1222,6 +1319,11 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
             else:
                 block_type = None
 
+            if block_type in [8, 28, 35]:
+                layout.operator("wm.get_face_values_operator")
+                layout.operator("wm.set_face_values_operator")
+                layout.operator("wm.select_similar_faces_operator")
+
             if block_type == 8:
                 draw_fields_by_type(self, Pfb008)
             if block_type == 28:
@@ -1229,9 +1331,6 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
             if block_type == 35:
                 draw_fields_by_type(self, Pfb035)
 
-            if block_type in [8, 28, 35]:
-                layout.operator("wm.get_face_values_operator")
-                layout.operator("wm.set_face_values_operator")
 
 class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pvb_edit_panel"
@@ -1247,7 +1346,7 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
         #Disabled for now. More analyze needed.
         return False
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         if consts.BLOCK_TYPE in b3d_obj:
             block_type = b3d_obj[consts.BLOCK_TYPE]
         else:
@@ -1259,7 +1358,7 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
 
         if b3d_obj is not None:
 
@@ -1293,7 +1392,7 @@ class OBJECT_PT_b3d_edit_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
         if b3d_obj is not None:
             draw_common(self, b3d_obj)
 
@@ -1317,7 +1416,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
         block_type = ''
         #for i in range(len(bpy.context.selected_objects)):
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
 
         # if len(bpy.context.selected_objects):
         #     for i in range(1):
@@ -1334,6 +1433,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
 
                 layout.operator("wm.get_block_values_operator")
                 layout.operator("wm.set_block_values_operator")
+                layout.operator("wm.select_similar_objects_operator")
 
                 if zclass is not None:
                     draw_fields_by_type(self, zclass)
@@ -1365,7 +1465,7 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
 
         #for i in range(len(bpy.context.selected_objects)):
 
-        b3d_obj = bpy.context.object
+        b3d_obj = get_active_object()
 
         # if len(bpy.context.selected_objects):
         #     for i in range(1):
@@ -1793,7 +1893,9 @@ _classes = [
     ShowConditionalsOperator,
     HideConditionalsOperator,
     ShowHideSphereOperator,
-
+    SelectSimilarObjectsOperator,
+    SelectSimilarFacesOperator,
+    # panels
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,
     # OBJECT_PT_b3d_template_add_panel,
