@@ -39,7 +39,7 @@ bl_info = {
     "name": "King of The Road Tools",
     "description": "",
     "author": "Andrey Prozhoga, LabVaKars",
-    "version": (2, 3, 3),
+    "version": (2, 3, 4),
     "blender": (2, 93, 0),
     "location": "3D View > Tools",
     "warning": "",
