@@ -1628,7 +1628,7 @@ class OBJECT_PT_b3d_maskfiles_panel(bpy.types.Panel):
                 cur_maskfile = cur_res_module.maskfiles[maskfiles_index]
 
                 box.prop(cur_maskfile, "subpath", text="Subpath")
-                box.prop(cur_maskfile, "name", text="Path")
+                box.prop(cur_maskfile, "msk_name", text="Name")
 
                 box.prop(cur_maskfile, "is_noload", text="Noload")
 
@@ -1673,7 +1673,7 @@ class OBJECT_PT_b3d_textures_panel(bpy.types.Panel):
                 cur_texture = cur_res_module.textures[texture_index]
 
                 box.prop(cur_texture, "subpath", text="Subpath")
-                box.prop(cur_texture, "name", text="Path")
+                box.prop(cur_texture, "tex_name", text="Name")
 
                 box.prop(cur_texture, "img_type", text="Image type")
                 box.prop(cur_texture, "has_mipmap", text="Has mipmap")
@@ -1725,6 +1725,8 @@ class OBJECT_PT_b3d_materials_panel(bpy.types.Panel):
             texture_index = scene.materials_index
             if (len(cur_res_module.materials)):
                 cur_material = cur_res_module.materials[texture_index]
+                
+                box.prop(cur_material, "mat_name", text="Name")
 
                 split = layout_split(box, 0.3)
                 split.prop(cur_material, "is_reflect", text="Reflect")

@@ -188,6 +188,11 @@ class PaletteColorBlock(bpy.types.PropertyGroup):
         update = update_palette_index
     )
 
+def on_msk_changed(self, context):
+    if self.id_msk:
+        self.msk_name = self.id_msk.name
+    else:
+        self.msk_name = ""
 
 @make_annotations
 class MaskfileBlock(bpy.types.PropertyGroup):
@@ -195,13 +200,19 @@ class MaskfileBlock(bpy.types.PropertyGroup):
     msk_name = StringProperty(default = "")
     id_msk = PointerProperty(
         name='Image',
-        type=bpy.types.Image
+        type=bpy.types.Image,
+        update=on_msk_changed
     )
 
     is_noload = BoolProperty(default=False)
     is_someint = BoolProperty(default=False)
     someint = IntProperty(default=0)
 
+def on_tex_changed(self, context):
+    if self.id_tex:
+        self.tex_name = self.id_tex.name
+    else:
+        self.tex_name = ""
 
 @make_annotations
 class TextureBlock(bpy.types.PropertyGroup):
@@ -209,7 +220,8 @@ class TextureBlock(bpy.types.PropertyGroup):
     tex_name = StringProperty(default = "")
     id_tex = PointerProperty(
         name='Image',
-        type=bpy.types.Image
+        type=bpy.types.Image,
+        update=on_tex_changed
     )
 
     has_mipmap = BoolProperty(default=False)
@@ -236,13 +248,19 @@ class TextureBlock(bpy.types.PropertyGroup):
     is_someint = BoolProperty(default=False)
     someint = IntProperty()
 
+def on_mat_changed(self, context):
+    if self.id_mat:
+        self.mat_name = self.id_mat.name
+    else:
+        self.mat_name = ""
 
 @make_annotations
 class MaterialBlock(bpy.types.PropertyGroup):
     mat_name = StringProperty(default = "")
     id_mat = PointerProperty(
         name='Material',
-        type=bpy.types.Material
+        type=bpy.types.Material,
+        update=on_mat_changed
     )
 
     is_reflect = BoolProperty(default=False)
@@ -650,6 +668,7 @@ class Blk004():
         name = 'Place'
         subtype = FieldType.STRING
         callback = FieldType.SPACE_NAME
+        default_value = ''
 
     class Name2(StringParam):
         name = 'Name 2'
@@ -825,12 +844,14 @@ class Blk018():
         description = 'Name of location block(24)'
         subtype = FieldType.STRING
         callback = FieldType.SPACE_NAME
+        default_value = ''
 
     class Add_Name(EnumDynParam):
         name = 'Transfer block name'
         description = 'Name of block to be relocated'
         subtype = FieldType.STRING
         callback = FieldType.REFERENCEABLE
+        default_value = ''
 
 
 class Blk020():
@@ -1053,10 +1074,10 @@ class Blk035():
         name = 'Unk. 1'
 
     class TexNum(EnumDynParam):
-        name = 'Texture'
+        name = 'Material'
         subtype = FieldType.INT
         callback = FieldType.MATERIAL_IND
-
+        default_value = -1
 
 class Blk036():
     class Name1(StringParam):
