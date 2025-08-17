@@ -181,7 +181,7 @@ def fill_bounding_sphere_lists():
     for obj in objs:
         cur_mesh_name = obj.name
         cur_obj = obj.parent
-        while not is_root_obj(cur_obj):
+        while cur_obj is not None and not is_root_obj(cur_obj):
             if cur_obj.get(BLOCK_TYPE) != 444:
                 if meshes_in_empty.get(cur_obj.name) is None:
                     meshes_in_empty[cur_obj.name] = []
@@ -1259,7 +1259,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 36:
 
             # isSecondUvs = False
-            format_raw = block[Blk036.VType.get_prop()]
+            format_raw = int(block[Blk036.VType.get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block)
             write_name(block[Blk036.Name1.get_prop()], file)
@@ -1323,12 +1323,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 37:
 
             # isSecondUvs = False
-            format_raw = block[Blk037.VType.get_prop()]
+            format_raw = int(block[Blk037.VType.get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block)
             write_name(block[Blk037.Name1.get_prop()], file)
-            # file.write(struct.pack("<i", block[Blk037.VType.get_prop()]))
-
 
             offset = 0
             all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]

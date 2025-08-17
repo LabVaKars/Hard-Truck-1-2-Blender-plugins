@@ -881,7 +881,6 @@ def import_b3d(file, context, self, filepath):
                             mat_name = imp_material_list[int(texnum)]
                             id_in_res = get_material_index_in_res(mat_name, res_basename)
                             mat = res_module.materials[id_in_res].id_mat
-                            # mat = bpy.data.materials.get(res_module.materials[int(texnum)].mat_name)
                             b3d_mesh.materials.append(mat)
                             last_index = len(b3d_mesh.materials)-1
 
@@ -895,7 +894,6 @@ def import_b3d(file, context, self, filepath):
                             mat_name = imp_material_list[int(texnum)]
                             id_in_res = get_material_index_in_res(mat_name, res_basename)
                             mat = res_module.materials[id_in_res].id_mat
-                            # mat = bpy.data.materials.get(res_module.materials[int(texnum)].mat_name)
                             b3d_mesh.materials.append(mat)
 
 
@@ -1618,7 +1616,6 @@ def import_b3d(file, context, self, filepath):
                             mat_name = imp_material_list[int(texnum)]
                             id_in_res = get_material_index_in_res(mat_name, res_basename)
                             mat = res_module.materials[id_in_res].id_mat
-                            # mat = bpy.data.materials.get(res_module.materials[int(texnum)].mat_name)
                             b3d_mesh.materials.append(mat)
                             last_index = len(b3d_mesh.materials)-1
 
@@ -1631,7 +1628,6 @@ def import_b3d(file, context, self, filepath):
                             mat_name = imp_material_list[int(texnum)]
                             id_in_res = get_material_index_in_res(mat_name, res_basename)
                             mat = res_module.materials[id_in_res].id_mat
-                            # mat = bpy.data.materials.get(res_module.materials[int(texnum)].mat_name)
                             b3d_mesh.materials.append(mat)
 
                 create_custom_attribute(b3d_mesh, formats, Pfb028, Pfb028.Format_Flags)
@@ -2005,7 +2001,6 @@ def import_b3d(file, context, self, filepath):
                     mat_name = imp_material_list[int(texnum)]
                     id_in_res = get_material_index_in_res(mat_name, res_basename)
                     mat = res_module.materials[id_in_res].id_mat
-                    # mat = bpy.data.materials.get(res_module.materials[int(texnum)].mat_name)
                     b3d_mesh.materials.append(mat)
 
 

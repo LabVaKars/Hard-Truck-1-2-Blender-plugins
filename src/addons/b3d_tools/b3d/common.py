@@ -47,7 +47,9 @@ def get_non_copy_name(name):
     return result
 
 def is_root_obj(obj):
-    return obj.parent is None and obj.name[-4:] == '.b3d'
+    if obj is not None:
+        return obj.parent is None and obj.name[-4:] == '.b3d'
+    return False
 
 def get_root_obj(obj):
     result = obj
@@ -601,7 +603,8 @@ def referenceables_callback(self, context):
 
     referenceables = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) != 24]
 
-    enum_properties = [(cn.name, cn.name, "") for i, cn in enumerate(referenceables)]
+    enum_properties = [("", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(referenceables)])
 
     return enum_properties
 
@@ -612,7 +615,8 @@ def spaces_callback(self, context):
 
     spaces = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 24 and get_root_obj(cn) == root_obj]
 
-    enum_properties = [(cn.name, cn.name, "") for i, cn in enumerate(spaces)]
+    enum_properties = [("", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(spaces)])
 
     return enum_properties
 
@@ -625,7 +629,8 @@ def res_materials_callback(self, context):
     res_modules = mytool.res_modules
     cur_module = get_col_property_by_name(res_modules, module_name)
 
-    enum_properties = [(str(i), cn.mat_name, "") for i, cn in enumerate(cur_module.materials)]
+    enum_properties = [("-1", "None", "")]
+    enum_properties.extend([(str(i), cn.mat_name, "") for i, cn in enumerate(cur_module.materials)])
 
     return enum_properties
 
@@ -641,7 +646,8 @@ def rooms_callback(bname, pname):
         if root_obj:
             rooms = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) == 19]
 
-            enum_properties = [(cn.name, cn.name, "") for i, cn in enumerate(rooms)]
+            enum_properties = [("", "None", "")]
+            enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(rooms)])
 
         return enum_properties
     return callback_func
