@@ -400,6 +400,10 @@ def import_b3d(file, context, self, filepath):
     borders = {}
     current_room_name = ""
 
+    begin_counter = 0
+
+    skip_end_at = []    # index of begin_counter to skip end at
+    skip_group_at = []  # same for skipping group
 
     uv = []
 
@@ -413,10 +417,19 @@ def import_b3d(file, context, self, filepath):
 
     obj_string = [b3d_obj.name]
 
+    parent_obj = context.scene.objects.get(obj_string[-1])
+    block_type = None
+
     while ex!=ChunkType.END_CHUNKS:
 
         ex = openclose(file)
         if ex == ChunkType.END_CHUNK:
+            
+            if len(skip_end_at) > 0 and begin_counter == skip_end_at[-1]:
+                del skip_end_at[-1]
+                begin_counter -= 1
+                continue
+            begin_counter -= 1
 
             parent_obj = context.scene.objects.get(obj_string[-2])
             if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 21, 29]: #blocks with subtypes
@@ -431,6 +444,11 @@ def import_b3d(file, context, self, filepath):
             break
 
         elif ex == ChunkType.GROUP_CHUNK:
+
+            if len(skip_group_at) > 0 and begin_counter == skip_group_at[-1]:
+                del skip_group_at[-1]
+                continue
+ 
             if len(level_groups) <= lvl:
                 for i in range(lvl+1-len(level_groups)):
                     level_groups.append(0)
@@ -454,7 +472,6 @@ def import_b3d(file, context, self, filepath):
 
                         b3d_obj.parent = parent_obj
                         get_context_collection_objects(context).link(b3d_obj)
-                        # obj_string.append(b3d_obj.name)
 
                 group_obj_name = 'GROUP_{}'.format(level_groups[lvl])
 
@@ -466,45 +483,49 @@ def import_b3d(file, context, self, filepath):
 
                 obj_string.append(b3d_obj.name)
 
-            continue
         elif ex == ChunkType.BEGIN_CHUNK:
-            lvl+=1
-            if len(level_groups) <= lvl:
-                for i in range(lvl+1-len(level_groups)):
-                    level_groups.append(0)
-
-            t1 = time.perf_counter()
-
-            parent_obj = context.scene.objects.get(obj_string[-1])
-
-            if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 21, 29]: #blocks with subtypes
-
-                group_obj_name = 'GROUP_0'
-
-                b3d_obj = bpy.data.objects.new(group_obj_name, None)
-                b3d_obj[BLOCK_TYPE] = 444
-
-                b3d_obj.parent = parent_obj
-                get_context_collection_objects(context).link(b3d_obj)
-
-                obj_string.append(b3d_obj.name)
-
-            obj_string.append("")
-
             only_name = read_name(file)
             block_type = struct.unpack("<i",file.read(4))[0]
-            # obj_name = "{}_{}".format(str(block_type).zfill(2), only_name)
+            
+            begin_counter += 1
+            
             obj_name = only_name
             real_name = only_name
 
-            parent_obj = context.scene.objects.get(obj_string[-2])
+            t1 = time.perf_counter()
+
+            
+            if used_blocks[str(block_type)]:
+                
+                parent_obj = context.scene.objects.get(obj_string[-1])
+
+                lvl+=1
+                if len(level_groups) <= lvl:
+                    for i in range(lvl+1-len(level_groups)):
+                        level_groups.append(0)
+
+                if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 21, 29]: #blocks with subtypes
+
+                    group_obj_name = 'GROUP_0'
+
+                    b3d_obj = bpy.data.objects.new(group_obj_name, None)
+                    b3d_obj[BLOCK_TYPE] = 444
+
+                    b3d_obj.parent = parent_obj
+                    get_context_collection_objects(context).link(b3d_obj)
+
+                    obj_string.append(b3d_obj.name)
+
+                obj_string.append("")
 
 
+                parent_obj = context.scene.objects.get(obj_string[-2])
 
-            # log.debug("{}_{}".format(block_type, obj_name))
-            # log.debug("{}_{}".format(lvl - 1, level_groups))
-            # log.info("Importing block #{}: {}".format(block_type, obj_name))
-            # log.info("block_type: {}, active: {}".format(block_type, used_blocks[str(block_type)]))
+            else:
+                skip_end_at.append(begin_counter)
+                if block_type in [2, 9, 10, 21, 29]:
+                    skip_group_at.append(begin_counter)
+
             if (block_type == 0): # Empty Block
 
                 # bounding_sphere = struct.unpack("<4f",file.read(16))
