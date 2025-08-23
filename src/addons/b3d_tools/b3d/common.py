@@ -603,7 +603,7 @@ def referenceables_callback(self, context):
 
     referenceables = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) != 24]
 
-    enum_properties = [("", "None", "")]
+    enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(referenceables)])
 
     return enum_properties
@@ -615,7 +615,7 @@ def spaces_callback(self, context):
 
     spaces = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 24 and get_root_obj(cn) == root_obj]
 
-    enum_properties = [("", "None", "")]
+    enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(spaces)])
 
     return enum_properties
@@ -630,7 +630,8 @@ def res_materials_callback(self, context):
     cur_module = get_col_property_by_name(res_modules, module_name)
 
     enum_properties = [("-1", "None", "")]
-    enum_properties.extend([(str(i), cn.mat_name, "") for i, cn in enumerate(cur_module.materials)])
+    if(cur_module is not None):
+        enum_properties.extend([(str(i), cn.mat_name, "") for i, cn in enumerate(cur_module.materials)])
 
     return enum_properties
 
@@ -646,7 +647,7 @@ def rooms_callback(bname, pname):
         if root_obj:
             rooms = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) == 19]
 
-            enum_properties = [("", "None", "")]
+            enum_properties = [("?", "None", "")]
             enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(rooms)])
 
         return enum_properties
@@ -656,7 +657,8 @@ def rooms_callback(bname, pname):
 def modules_callback(self, context):
 
     modules = [cn for cn in bpy.data.objects if is_root_obj(cn)]
-    enum_properties = [(cn.name[:-4], cn.name[:-4], "") for i, cn in enumerate(modules)]
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.name[:-4], cn.name[:-4], "") for i, cn in enumerate(modules)])
     return enum_properties
 
 
@@ -664,5 +666,6 @@ def res_modules_callback(self, context):
 
     mytool = bpy.context.scene.my_tool
     modules = [cn for cn in mytool.res_modules if cn.value != "-1"]
-    enum_properties = [(cn.value, cn.value, "") for i, cn in enumerate(modules)]
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.value, cn.value, "") for i, cn in enumerate(modules)])
     return enum_properties
