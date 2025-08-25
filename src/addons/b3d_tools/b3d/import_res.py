@@ -226,7 +226,7 @@ def load_texturefiles(basedir, res_module, image_format, convert_txr):
         if used_in_mat.tex_type == 'ttx' and used_in_mat.is_col:
             transp_color = srgb_to_rgb(*(palette[used_in_mat.col-1].value[:3]))
 
-        no_ext_path = os.path.splitext(os.path.join(basedir, "TEXTUREFILES", texture.subpath, texture.tex_name))[0]
+        no_ext_path = os.path.splitext(os.path.join(basedir, "TEXTUREFILES", (texture.subpath).replace(chr(92), chr(47)), texture.tex_name))[0]
         result = None
         img_path = "{}.txr".format(no_ext_path)
         if convert_txr:
@@ -262,7 +262,7 @@ def load_texturefiles(basedir, res_module, image_format, convert_txr):
 
 def load_maskfiles(basedir, res_module, image_format, convert_txr):
     for maskfile in res_module.maskfiles:
-        no_ext_path = os.path.splitext(os.path.join(basedir, "MASKFILES", maskfile.subpath, maskfile.msk_name))[0]
+        no_ext_path = os.path.splitext(os.path.join(basedir, "MASKFILES", (maskfile.subpath).replace(chr(92), chr(47)), maskfile.msk_name))[0]
         if convert_txr:
             msk_to_tga32("{}.msk".format(no_ext_path))
         filename_no_ext = os.path.basename(no_ext_path)
@@ -279,7 +279,7 @@ def load_maskfiles(basedir, res_module, image_format, convert_txr):
 
 def load_palette_files(basedir, res_module):
     if len(res_module.palette_name) > 0:
-        palette_path = os.path.join(basedir, "PALETTEFILES", res_module.palette_subpath, res_module.palette_name)
+        palette_path = os.path.join(basedir, "PALETTEFILES", (res_module.palette_subpath).replace(chr(92), chr(47)), res_module.palette_name)
         parse_plm(res_module, palette_path)
         for i, pal_color in enumerate(res_module.palette_colors):
             update_color_preview(res_module, i)
@@ -400,13 +400,13 @@ def unpack_res(res_module, filepath, save_on_disk = True):
             else:
                 for data in section['data']:
                     name_split = data['row'].split(" ")
-                    fullname = name_split[0]
+                    fullname = (name_split[0]).replace(chr(92), chr(47))
                     params = name_split[1:]
-                    path_split = fullname.split("\\")
+                    path_split = fullname.split(chr(47))
                     name = path_split[-1]
                     subpath = ""
                     if len(path_split) > 1:
-                        subpath = "\\".join(path_split[:-1])
+                        subpath = chr(47).join(path_split[:-1])
                     binfile_path = os.path.join(curfolder, "{}".format(fullname))
                     if save_on_disk:
                         binfile_base = os.path.dirname(binfile_path)

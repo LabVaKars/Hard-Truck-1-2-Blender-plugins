@@ -309,6 +309,7 @@ class ImportB3D(Operator, ImportHelper):
             ('0', 'Custom select', 'Custom select'),
             ('1', 'Select all', 'Select all'),
             ('2', 'Select none', 'Select none'),
+            ('3', 'Debug(Minimal)', 'Debug(Minimal)'),
         ],
         default='1'
     )
@@ -427,6 +428,13 @@ class ImportB3D(Operator, ImportHelper):
         elif self.show_all_blocks == '2':
             for block in self.blocks_to_import:
                 block.state = False
+        elif self.show_all_blocks == '3':
+            exclude_blocks = [0, 1, 8, 13, 14, 15, 16, 17, 18, 20, 23, 25, 26, 27, 28, 30, 34, 35, 40]
+            for block in self.blocks_to_import:
+                if int(block.name) in exclude_blocks:
+                    block.state = False
+                else:
+                    block.state = True
 
         draw_multi_select_list(self, box1, 'blocks_to_import', 8)
 

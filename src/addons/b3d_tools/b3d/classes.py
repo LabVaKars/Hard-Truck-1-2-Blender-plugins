@@ -313,6 +313,7 @@ class BlockClassHandler():
                         name = attr_class.get_name(),
                         description = attr_class.get_description(),
                         items = enum_callback,
+                        default = 0, # index, not value
                         update = set_cust_obj_value(subtype, bname, pname)
                     )
 

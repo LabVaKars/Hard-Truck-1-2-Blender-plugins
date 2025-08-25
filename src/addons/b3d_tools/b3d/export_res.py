@@ -164,7 +164,7 @@ def write_texturefiles(res_module, file, filepath, save_images = True):
             image_name = "{}.tga".format(basepath_no_ext)
             txr_name = "{}.txr".format(basepath_no_ext)
             image_path = os.path.join(export_folder, image_name)
-            texture_subpath = texture.subpath.rstrip("\\")
+            texture_subpath = texture.subpath.rstrip(chr(92))
             texture_name = '{}{}{}'.format(texture_subpath, chr(92), txr_name)
 
             tex_params = []

@@ -668,7 +668,7 @@ class Blk004():
         name = 'Place'
         subtype = FieldType.STRING
         callback = FieldType.SPACE_NAME
-        default_value = ''
+        default_value = '?'
 
     class Name2(StringParam):
         name = 'Name 2'
@@ -844,14 +844,14 @@ class Blk018():
         description = 'Name of location block(24)'
         subtype = FieldType.STRING
         callback = FieldType.SPACE_NAME
-        default_value = ''
+        default_value = '?'
 
     class Add_Name(EnumDynParam):
         name = 'Transfer block name'
         description = 'Name of block to be relocated'
         subtype = FieldType.STRING
         callback = FieldType.REFERENCEABLE
-        default_value = ''
+        default_value = '?'
 
 
 class Blk020():
@@ -887,10 +887,10 @@ class Blk023():
 
     class Surface(EnumParam):
         name = 'Surface type'
-        subtype = FieldType.STRING
+        subtype = FieldType.INT
         items = collisionTypeList
         description = 'Value from surface classificator'
-        default_value = '0'
+        default_value = 0
 
     class Unk_List(ListParam):
         name = 'Unk. params'
@@ -899,10 +899,10 @@ class Blk023():
 class Blk024():
     class Flag(EnumParam):
         name = 'Show flag'
-        subtype = FieldType.STRING
+        subtype = FieldType.INT
         items = b24FlagList
         description = 'Value from block24 classificator'
-        default_value = '0'
+        default_value = 0
 
 
 class Blk025():
@@ -982,28 +982,28 @@ class Blk030():
         name = '1. module'
         subtype = FieldType.STRING
         callback = FieldType.RES_MODULE
-        default_value = ''
+        default_value = '?'
         group = 'resModule1'
 
     class RoomName1(EnumDynParam):
         name = '1. room'
         subtype = FieldType.STRING
         callback = FieldType.ROOM
-        default_value = ''
+        default_value = '?'
         group = 'resModule1'
 
     class ResModule2(EnumDynParam):
         name = '2. module'
         subtype = FieldType.STRING
         callback = FieldType.RES_MODULE
-        default_value = ''
+        default_value = '?'
         group = 'resModule2'
 
     class RoomName2(EnumDynParam):
         name = '2. room'
         subtype = FieldType.STRING
         callback = FieldType.ROOM
-        default_value = ''
+        default_value = '?'
         group = 'resModule2'
 
 
@@ -1088,9 +1088,9 @@ class Blk036():
 
     class VType(EnumParam):
         name = 'Vertex type'
-        subtype = FieldType.STRING
+        subtype = FieldType.INT
         items = vTypeList
-        default_value = '2'
+        default_value = 2
 
 
 class Blk037():
@@ -1099,9 +1099,9 @@ class Blk037():
 
     class VType(EnumParam):
         name = 'Vertex type'
-        subtype = FieldType.STRING
+        subtype = FieldType.INT
         items = vTypeList
-        default_value = '2'
+        default_value = 2
 
 
 class Blk039():
