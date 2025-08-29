@@ -175,7 +175,7 @@ def fill_bounding_sphere_lists():
     global unique_arrays
     global created_bounders
 
-    # Getting 'empty' objects
+    # Getting 'mesh' objects
     objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) in [8, 28, 35]]
 
     for obj in objs:

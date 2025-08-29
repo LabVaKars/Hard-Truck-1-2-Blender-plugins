@@ -473,9 +473,13 @@ def get_mult_obj_bounding_sphere(objn_transfs, mode='BBOX'):
     if mode == 'BBOX':
         # BBOX - by object bounding boxes - less precis, quick
         for objn_transf in objn_transfs:
-            obj = bpy.data.objects[objn_transf['obj']]
-            transf = bpy.data.objects[objn_transf['transf']]
-            points_co_global.extend([matrix_multiply(transf.matrix_world, Vector(bbox)) for bbox in obj.bound_box])
+            try:
+                obj = bpy.data.objects[objn_transf['obj']]
+                transf = bpy.data.objects[objn_transf['transf']]
+                points_co_global.extend([matrix_multiply(transf.matrix_world, Vector(bbox)) for bbox in obj.bound_box])
+            except KeyError: #avoid object calls in 18 like "$$world" in ch.b3d and others
+                return [Vector([0.0, 0.0, 0.0]), 0.0]
+
 
     def get_center(l):
         return (max(l) + min(l)) / 2 if l else 0.0

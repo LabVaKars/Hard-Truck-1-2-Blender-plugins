@@ -1775,17 +1775,17 @@ def import_b3d(file, context, self, filepath):
                 bounding_sphere = struct.unpack("<4f",file.read(16))
 
                 use_lights = struct.unpack("<i",file.read(4))[0]
+                light_var = struct.unpack("<i",file.read(4))[0]
                 light_type = struct.unpack("<i",file.read(4))[0]
-                flag1 = struct.unpack("<i",file.read(4))[0]
 
-                unknown_vector1 = struct.unpack("<3f",file.read(12))
-                unknown_vector2 = struct.unpack("<3f",file.read(12))
-                unknown1 = struct.unpack("<f",file.read(4))[0]#global_light_state
-                unknown2 = struct.unpack("<f",file.read(4))[0]
-                light_radius = struct.unpack("<f",file.read(4))[0]
-                intensity = struct.unpack("<f",file.read(4))[0]
-                unknown3 = struct.unpack("<f",file.read(4))[0]
-                unknown4 = struct.unpack("<f",file.read(4))[0]
+                light_location = struct.unpack("<3f",file.read(12))
+                light_direction = struct.unpack("<3f",file.read(12))
+                light_falloff = struct.unpack("<f",file.read(4))[0]#global_light_state
+                light_attenuation0 = struct.unpack("<f",file.read(4))[0]
+                light_attenuation1 = struct.unpack("<f",file.read(4))[0]
+                light_attenuation2 = struct.unpack("<f",file.read(4))[0]
+                light_phi = struct.unpack("<f",file.read(4))[0]
+                light_theta = struct.unpack("<f",file.read(4))[0]
                 rgb = struct.unpack("<3f",file.read(12))
 
                 child_cnt = struct.unpack("<i",file.read(4))[0]
@@ -1798,16 +1798,16 @@ def import_b3d(file, context, self, filepath):
                 # b3d_obj[Blk033.XYZ.get_prop()] = bounding_sphere[0:3]
                 # b3d_obj[Blk033.r.get_prop()] = bounding_sphere[3]
                 b3d_obj[Blk033.Use_Lights.get_prop()] = use_lights
-                b3d_obj[Blk033.Light_Type.get_prop()] = light_type
-                b3d_obj[Blk033.Flag.get_prop()] = flag1
-                b3d_obj[Blk033.Unk_XYZ1.get_prop()] = unknown_vector1
-                b3d_obj[Blk033.Unk_XYZ2.get_prop()] = unknown_vector2
-                b3d_obj[Blk033.Unk_Float1.get_prop()] = unknown1
-                b3d_obj[Blk033.Unk_Float2.get_prop()] = unknown2
-                b3d_obj[Blk033.Light_R.get_prop()] = light_radius
-                b3d_obj[Blk033.Intens.get_prop()] = intensity
-                b3d_obj[Blk033.Unk_Float3.get_prop()] = unknown3
-                b3d_obj[Blk033.Unk_Float4.get_prop()] = unknown4
+                b3d_obj[Blk033.Light_Type.get_prop()] = light_var
+                b3d_obj[Blk033.Flag.get_prop()] = light_type
+                b3d_obj[Blk033.Unk_XYZ1.get_prop()] = light_location
+                b3d_obj[Blk033.Unk_XYZ2.get_prop()] = light_direction
+                b3d_obj[Blk033.Unk_Float1.get_prop()] = light_falloff
+                b3d_obj[Blk033.Unk_Float2.get_prop()] = light_attenuation0
+                b3d_obj[Blk033.Light_R.get_prop()] = light_attenuation1
+                b3d_obj[Blk033.Intens.get_prop()] = light_attenuation2
+                b3d_obj[Blk033.Unk_Float3.get_prop()] = light_phi
+                b3d_obj[Blk033.Unk_Float4.get_prop()] = light_theta
                 b3d_obj[Blk033.RGB.get_prop()] = rgb
 
 

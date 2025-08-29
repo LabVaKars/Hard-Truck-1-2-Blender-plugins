@@ -112,6 +112,12 @@ b24FlagList = [
     ('1', "1", "Attached object will be shown")
 ]
 
+b33LightTypes = [
+    ('1', "Directional light", "Directional light"),
+    ('2', "Point light", "Point light"),
+    ('3', "Spot light", "Spot light")
+]
+
 b14Enum = [
     ('car', "For car", ""),
     ('trl', "For trailer", ""),
