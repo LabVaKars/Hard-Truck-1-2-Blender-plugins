@@ -252,9 +252,9 @@ def show_hide_obj_tree_by_type(block_type):
             set_object_hidden(obj, True)
 
 def get_hierarchy_roots(root):
-    global_root = root
-    while global_root.parent is not None:
-        global_root = global_root.parent
+    global_root = get_root_obj(root)
+    # while global_root.parent is not None:
+    #     global_root = global_root.parent
 
     blocks18 = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) is not None and cn.get(BLOCK_TYPE) == 18 and get_root_obj(cn) == global_root]
     ref_set = set()
@@ -272,6 +272,7 @@ def get_hierarchy_roots(root):
     referenceables = list(ref_set)
     referenceables.sort()
 
+    # get roots not referenced in blocks18
     other = [cn.name for cn in global_root.children if cn[BLOCK_TYPE] is not None \
         and (cn.get(BLOCK_TYPE) in [4, 5, 19]) \
         and cn.name not in referenceables ]

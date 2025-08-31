@@ -18,6 +18,20 @@ from .common import (
     get_class_attributes
 )
 
+def draw_enum(box, pname):
+    mytool = bpy.context.scene.my_tool
+
+    switch_attr = getattr(mytool, '{}_switch'.format(pname))
+    if switch_attr is not None:
+        box.prop(mytool, '{}_switch'.format(pname))
+        
+        if switch_attr:
+            box.prop(mytool, '{}_enum'.format(pname))
+
+        else:
+            if hasattr(mytool, pname):
+                box.prop(mytool, pname)
+
 
 def draw_multi_select_list(self, layout, list_name, per_row):
 
@@ -54,6 +68,10 @@ def draw_common(l_self, obj):
     box.label(text="Children block count: " + len_str)
     box.label(text="Block group: " + str(level_group))
 
+    draw_enum(box, 'active_module')
+    draw_enum(box, 'active_room')
+
+    box.operator("wm.set_room_and_module_operator")
 
 def draw_fields_by_type(l_self, zclass, multiple_edit = True):
 

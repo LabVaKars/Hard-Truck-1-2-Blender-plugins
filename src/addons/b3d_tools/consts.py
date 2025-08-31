@@ -1,3 +1,4 @@
+CACHE_TIME = 1.0
 
 EMPTY_NAME = '~'
 

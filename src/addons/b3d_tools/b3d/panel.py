@@ -2,7 +2,8 @@ import bpy
 
 from ..compatibility import(
     get_ui_region,
-    get_active_object
+    get_active_object,
+    set_active_object
 )
 
 from ..common import (
@@ -13,11 +14,19 @@ from .. import consts
 
 from .common import (
     is_root_obj,
-    get_class_attributes
+    get_root_obj,
+    get_room_obj,
+    get_class_attributes,
+    rooms_callback_mytool,
+    modules_callback,
+    render_tree_callback,
+    LOD_callback,
+    event_callback
 )
 from .ui_utils import (
     draw_common,
     draw_fields_by_type,
+    draw_enum
 )
 
 from .scripts import (
@@ -43,7 +52,8 @@ from .scripts import (
 
 from .classes import (
     BlockClassHandler,
-    FieldType
+    FieldType,
+    set_cust_mytool_value
 )
 
 from .class_descr import (
@@ -83,6 +93,17 @@ from ..compatibility import (
     set_empty_size,
     get_cursor_location
 )
+    
+def select_object_on_update(pname):
+    def callback_func(self, context):
+
+        obj_name = getattr(self, pname)
+        obj = bpy.data.objects.get(obj_name)
+        if obj is not None:
+            set_active_object(obj)
+
+    return callback_func
+
 
 #Setup module logger
 log = panel_logger
@@ -101,6 +122,10 @@ def res_module_callback(scene, context):
     enum_properties.extend([(str(i), cn.value, "") for i, cn in enumerate(res_modules)])
 
     return enum_properties
+
+# def get_render_tree(self):
+#     print('Get')
+#     return self
 
 @make_annotations
 class PanelSettings(bpy.types.PropertyGroup):
@@ -134,7 +159,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     add_block_type_enum = bpy.props.EnumProperty(
         name="Block type",
         items= consts.blockTypeList
-        )
+    )
 
     radius = bpy.props.FloatProperty(
         name = "Block rad",
@@ -178,25 +203,112 @@ class PanelSettings(bpy.types.PropertyGroup):
     add_blocks_enum = bpy.props.EnumProperty(
         name="Assembly type",
         items=[
-                ('LOD_9', "Trigger(9)", "Trigger(9)"),
-                ('LOD_10', "LOD(10)", "LOD(10)"),
-                ('LOD_21', "Event(21)", "Event(21)"),
-                #('07', "07", "Mesh (HT1)"),
-                #('10', "10", "LOD"),
-                #('12', "12", "Unk"),
-                #('14', "14", "Car trigger"),
-                #('18', "18", "Connector"),
-                #('19', "19", "Room container"),
-                #('20', "20", "2D collision"),
-                #('21', "21", "Event container"),
-                #('23', "23", "3D collision"),
-                #('24', "24", "Locator"),
-                #('28', "28", "2D-sprite"),
-                #('33', "33", "Light source"),
-                #('37', "37", "Mesh"),
-                #('40', "40", "Object generator"),
-               ]
-        )
+            ('LOD_9', "Render tree(9)", "Render tree(9)"),
+            ('LOD_10', "LOD(10)", "LOD(10)"),
+            ('LOD_21', "Event(21)", "Event(21)"),
+            #('07', "07", "Mesh (HT1)"),
+            #('10', "10", "LOD"),
+            #('12', "12", "Unk"),
+            #('14', "14", "Car trigger"),
+            #('18', "18", "Connector"),
+            #('19', "19", "Room container"),
+            #('20', "20", "2D collision"),
+            #('21', "21", "Event container"),
+            #('23', "23", "3D collision"),
+            #('24', "24", "Locator"),
+            #('28', "28", "2D-sprite"),
+            #('33', "33", "Light source"),
+            #('37', "37", "Mesh"),
+            #('40', "40", "Object generator"),
+        ]
+    )
+    
+    current_hierarchy_enum = bpy.props.EnumProperty(
+        name="Hierarchy type",
+        items=[
+            ('LOD_9', "Render tree(9)", "Render tree(9)"),
+            ('LOD_10', "LOD(10)", "LOD(10)"),
+            ('LOD_21', "Event(21)", "Event(21)")
+        ]
+    )
+
+    active_module_enum = EnumProperty(
+        name = 'Active module',
+        description = 'Active module',
+        items = modules_callback,
+        default = 0, # index, not value
+        update = set_cust_mytool_value(FieldType.STRING, 'active_module')
+    )
+    
+    #Active module start
+    active_module_switch = BoolProperty(
+        name = 'Use dropdown',
+        description = 'Dropdown selection',
+        default = False
+    )
+
+    active_module_enum = EnumProperty(
+        name = 'Active module',
+        description = 'Active module',
+        items = modules_callback,
+        default = 0, # index, not value
+        update = set_cust_mytool_value(FieldType.STRING, 'active_module')
+    )
+    
+    active_module = StringProperty(
+        name = 'Active module',
+        description = 'Active module',
+        maxlen = 32
+    )
+    #Active module end
+    
+    #Active room start
+    active_room_switch = BoolProperty(
+        name = 'Use dropdown',
+        description = 'Dropdown selection',
+        default = False
+    )
+
+    active_room_enum = EnumProperty(
+        name = 'Active room',
+        description = 'Active room',
+        items = rooms_callback_mytool,
+        default = 0, # index, not value
+        update = set_cust_mytool_value(FieldType.STRING, 'active_room')
+    )
+    
+    active_room = StringProperty(
+        name = 'Active room',
+        description = 'Active room',
+        maxlen = 32
+    )
+    #Active room end
+
+    #Render tree start
+    render_tree_enum = EnumProperty(
+        name = 'Render tree root',
+        description = 'Render tree root',
+        items = render_tree_callback,
+        default = 0, # index, not value
+        update = select_object_on_update('render_tree_enum')
+    )
+    #Render tree end
+    LOD_enum = EnumProperty(
+        name = 'LOD root',
+        description = 'LOD root',
+        items = LOD_callback,
+        default = 0, # index, not value
+        update = select_object_on_update('LOD_enum')
+    )
+    #LOD end
+    event_enum = EnumProperty(
+        name = 'Event root',
+        description = 'Event root',
+        items = event_callback,
+        default = 0, # index, not value
+        update = select_object_on_update('event_enum')
+    )
+    #event end
 
     lod_level_int = bpy.props.IntProperty(
         name='LOD level',
@@ -741,6 +853,30 @@ class SetVertexValuesOperator(bpy.types.Operator):
                 set_per_vertex_by_type(b3d_obj.data, Pvb008)
             elif block_type == 35:
                 set_per_vertex_by_type(b3d_obj.data, Pvb035)
+
+        return {'FINISHED'}
+
+class SetRoomAndModuleOperator(bpy.types.Operator):
+    bl_idname = "wm.set_room_and_module_operator"
+    bl_label = "Get current module/room"
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        active_obj = get_active_object()
+
+        if active_obj is not None:
+            current_module = get_root_obj(active_obj)
+            if current_module is not None:
+                setattr(mytool, 'active_module', current_module.name[:-4])
+            else:
+                setattr(mytool, 'active_module', '')
+            current_room = get_room_obj(active_obj)
+            if current_room is not None:
+                setattr(mytool, 'active_room', current_room.name)
+            else:
+                setattr(mytool, 'active_room', '')
 
         return {'FINISHED'}
 
@@ -1331,7 +1467,6 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
             if block_type == 35:
                 draw_fields_by_type(self, Pfb035)
 
-
 class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pvb_edit_panel"
     bl_label = "Multiple vertexes edit"
@@ -1491,7 +1626,37 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
             # layout.operator("wm.fix_uv_operator")
             # layout.operator("wm.fix_verts_operator")
 
+class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_b3d_hier_edit_panel"
+    bl_parent_id = "OBJECT_PT_b3d_edit_panel"
+    bl_label = "Hierarchy edit"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = get_ui_region()
+    bl_category = "b3d Tools"
+    #bl_context = "objectmode"
 
+    @classmethod
+    def poll(self,context):
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        mytool = context.scene.my_tool
+
+        layout.prop(mytool, "current_hierarchy_enum")
+
+        current_hier = getattr(mytool, "current_hierarchy_enum")
+        
+        box = layout.box()
+        if current_hier == "LOD_9":
+            # draw_enum(box, 'render_tree')
+            box.prop(mytool, 'render_tree_enum')
+        elif current_hier == "LOD_10":
+            # draw_enum(box, 'LOD')
+            box.prop(mytool, 'LOD_enum')
+        elif current_hier == "LOD_21":
+            # draw_enum(box, 'event')
+            box.prop(mytool, 'event_enum')
 
 class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_func_panel"
@@ -1549,7 +1714,6 @@ class OBJECT_PT_b3d_res_module_panel(bpy.types.Panel):
 
         layout.prop(mytool, "selected_res_module")
 
-
 class OBJECT_PT_b3d_palette_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_palette_panel"
     bl_label = "Palette"
@@ -1592,7 +1756,6 @@ class OBJECT_PT_b3d_palette_panel(bpy.types.Panel):
             col1.template_list("CUSTOM_UL_colors_grid", "indexes_row", row_indexes, "prop_list", scene, "palette_col_index", type='GRID', columns = 1, rows=rows)
             col2 = row2.column()
             col2.template_list("CUSTOM_UL_colors", "palette_list", cur_res_module, "palette_colors", scene, "palette_index", type='GRID', columns = cols, rows=rows)
-
 
 class OBJECT_PT_b3d_maskfiles_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_maskfiles_panel"
@@ -1876,6 +2039,7 @@ _classes = [
     GetFaceValuesOperator,
     GetVertexValuesOperator,
     # setters
+    SetRoomAndModuleOperator,
     SetValuesOperator,
     SetPropValueOperator,
     SetFaceValuesOperator,
@@ -1885,13 +2049,14 @@ _classes = [
     FixUVOperator,
     FixVertsOperator,
     MirrorAndFlipObjectsOperator,
+    # additional options
     ApplyTransformsOperator,
     ShowHide2DCollisionsOperator,
     ShowHideCollisionsOperator,
     ShowHideRoomBordersOperator,
+    ShowHideGeneratorsOperator,
     ShowLODOperator,
     HideLODOperator,
-    ShowHideGeneratorsOperator,
     ShowConditionalsOperator,
     HideConditionalsOperator,
     ShowHideSphereOperator,
@@ -1907,6 +2072,7 @@ _classes = [
     OBJECT_PT_b3d_pob_edit_panel,
     OBJECT_PT_b3d_pfb_edit_panel,
     OBJECT_PT_b3d_pvb_edit_panel,
+    OBJECT_PT_b3d_hier_edit_panel,
     OBJECT_PT_b3d_res_module_panel,
     OBJECT_PT_b3d_palette_panel,
     OBJECT_PT_b3d_maskfiles_panel,

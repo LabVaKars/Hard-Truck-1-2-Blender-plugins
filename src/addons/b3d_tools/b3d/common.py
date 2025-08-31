@@ -3,11 +3,14 @@ import bpy
 import re
 from mathutils import Vector
 import math
+import time
+from collections import deque
 
 from ..common import common_logger
 from ..consts import (
     BLOCK_TYPE,
-    EMPTY_NAME
+    EMPTY_NAME,
+    CACHE_TIME
 )
 
 from ..compatibility import (
@@ -46,6 +49,19 @@ def get_non_copy_name(name):
         result = name[:match_ind.span()[0]]
     return result
 
+def is_room_obj(obj):
+    if obj is not None:
+        return obj.get(BLOCK_TYPE) == 19
+    return False
+
+def get_room_obj(obj):
+    result = obj
+    while not is_room_obj(result):
+        if result is None:
+            break
+        result = result.parent
+    return result
+
 def is_root_obj(obj):
     if obj is not None:
         return obj.parent is None and obj.name[-4:] == '.b3d'
@@ -54,6 +70,8 @@ def is_root_obj(obj):
 def get_root_obj(obj):
     result = obj
     while not is_root_obj(result):
+        if result is None:
+            break
         result = result.parent
     return result
 
@@ -442,18 +460,44 @@ def get_children(obj):
     return [ch for ch in obj.children if is_valid_block(ch)]
 
 def get_all_children(obj):
-    all_children = []
-    current_objs = [obj]
-    while(1):
-        next_children = []
-        if len(current_objs) > 0:
-            for obj in current_objs:
-                next_children.extend(get_children(obj))
-            current_objs = next_children
-            all_children.extend(current_objs)
-        else:
-            break
-    return all_children
+    stack = deque(obj.children)
+    while stack:
+        child = stack.pop()
+        yield child
+        stack.extend(child.children)
+
+# def get_all_children(obj):
+#     all_children = []
+#     queue = deque([obj])  # start with the parent
+    
+#     while queue:
+#         current = queue.popleft()
+#         children = get_children(current)
+#         all_children.extend(children)
+#         queue.extend(children)  # push children to process later
+    
+#     return all_children
+
+# def get_all_children(obj):
+#     all_children = []
+#     current_objs = [obj]
+#     while(1):
+#         next_children = []
+#         if len(current_objs) > 0:
+#             for obj in current_objs:
+#                 next_children.extend(get_children(obj))
+#             current_objs = next_children
+#             all_children.extend(current_objs)
+#         else:
+#             break
+#     return all_children
+
+def get_parent(obj):
+    par = obj.parent
+    if par is not None:
+        while par.get(BLOCK_TYPE) == 444:
+            par = par.parent
+    return par
 
 # class MyToolBlockHandler():
 
@@ -600,8 +644,33 @@ def ftoi(_float):
 def itof(_int):
     return struct.unpack('<f', struct.pack('<i', _int))[0]
 
-def referenceables_callback(self, context):
+callback_cache = {}
+callback_cache_last_used = {}
 
+def get_cached(cache_key):
+    global callback_cache
+    global callback_cache_last_used
+    if callback_cache_last_used.get(cache_key) is not None \
+        and time.perf_counter() - callback_cache_last_used.get(cache_key) < CACHE_TIME:
+        return callback_cache.get(cache_key)
+    return None
+    
+def save_cache(cache_key, values):
+    global callback_cache
+    global callback_cache_last_used
+    
+    callback_cache[cache_key] = values
+    callback_cache_last_used[cache_key] = time.perf_counter()
+
+
+def referenceables_callback(self, context):
+    
+    cache_key = 'referenceables'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+    
     mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
 
@@ -610,9 +679,17 @@ def referenceables_callback(self, context):
     enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(referenceables)])
 
+    save_cache(cache_key, enum_properties)
+
     return enum_properties
 
 def spaces_callback(self, context):
+    
+    cache_key = 'spaces'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
 
     mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
@@ -622,9 +699,17 @@ def spaces_callback(self, context):
     enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(spaces)])
 
+    save_cache(cache_key, enum_properties)
+
     return enum_properties
 
 def res_materials_callback(self, context):
+    
+    cache_key = 'res_materials'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
 
     mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
@@ -637,11 +722,19 @@ def res_materials_callback(self, context):
     if(cur_module is not None):
         enum_properties.extend([(str(i), cn.mat_name, "") for i, cn in enumerate(cur_module.materials)])
 
+    save_cache(cache_key, enum_properties)
+
     return enum_properties
 
 def rooms_callback(bname, pname):
     def callback_func(self, context):
+        
+        cache_key = 'rooms'
 
+        enum_properties = get_cached(cache_key)
+        if enum_properties:
+            return enum_properties
+    
         enum_properties = []
 
         mytool = context.scene.my_tool
@@ -654,22 +747,160 @@ def rooms_callback(bname, pname):
             enum_properties = [("?", "None", "")]
             enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(rooms)])
 
+            save_cache(cache_key, enum_properties)
+
         return enum_properties
     return callback_func
 
 
 def modules_callback(self, context):
+    
+    cache_key = 'modules'
 
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+    
     modules = [cn for cn in bpy.data.objects if is_root_obj(cn)]
     enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.name[:-4], cn.name[:-4], "") for i, cn in enumerate(modules)])
+
+    save_cache(cache_key, enum_properties)
+
+    return enum_properties
+
+def rooms_callback_mytool(self, context):
+
+    cache_key = 'rooms_mytool'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+
+    enum_properties = []
+
+    mytool = context.scene.my_tool
+
+    selected_module = getattr(mytool, 'active_module')
+    if selected_module not in ['?', '']:
+        root_obj = bpy.data.objects.get('{}.b3d'.format(selected_module))
+        if root_obj:
+            rooms = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) == 19]
+    else:
+        rooms = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 19]
+
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(rooms)])
+
+    save_cache(cache_key, enum_properties)
+
     return enum_properties
 
 
 def res_modules_callback(self, context):
 
+    cache_key = 'res_modules'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+    
     mytool = bpy.context.scene.my_tool
     modules = [cn for cn in mytool.res_modules if cn.value != "-1"]
     enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.value, cn.value, "") for i, cn in enumerate(modules)])
+    
+    save_cache(cache_key, enum_properties)
+
+    return enum_properties
+
+
+def render_tree_callback(self, context):
+
+    cache_key = 'render_tree'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+
+    enum_properties = []
+
+    mytool = context.scene.my_tool
+
+    selected_module = getattr(mytool, 'active_module')
+    selected_room = getattr(mytool, 'active_room')
+    if selected_room not in ['?', '']:
+        room_obj = bpy.data.objects.get(selected_room)
+        if room_obj:
+            block_9 = [cn for cn in bpy.data.objects if get_room_obj(cn) == room_obj and cn.get(BLOCK_TYPE) == 9 and get_parent(cn).get(BLOCK_TYPE) != 9]
+    elif selected_module not in ['?', '']:
+        root_obj = bpy.data.objects.get('{}.b3d'.format(selected_module))
+        if root_obj:
+            block_9 = [cn for cn in bpy.data.objects if get_root_obj(cn) == root_obj and cn.get(BLOCK_TYPE) == 9 and get_parent(cn).get(BLOCK_TYPE) != 9]
+
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(block_9)])
+
+    save_cache(cache_key, enum_properties)
+
+    return enum_properties
+
+def LOD_callback(self, context):
+
+    cache_key = 'LOD'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+
+    enum_properties = []
+
+    mytool = context.scene.my_tool
+
+    selected_module = getattr(mytool, 'active_module')
+    selected_room = getattr(mytool, 'active_room')
+    if selected_room not in ['?', '']:
+        room_obj = bpy.data.objects.get(selected_room)
+        if room_obj:
+            block_10 = [cn for cn in bpy.data.objects if get_room_obj(cn) == room_obj and cn.get(BLOCK_TYPE) == 10 and get_parent(cn).get(BLOCK_TYPE) != 10]
+    elif selected_module not in ['?', '']:
+        root_obj = bpy.data.objects.get('{}.b3d'.format(selected_module))
+        if root_obj:
+            block_10 = [cn for cn in bpy.data.objects if get_root_obj(cn) == root_obj and cn.get(BLOCK_TYPE) == 10 and get_parent(cn).get(BLOCK_TYPE) != 10]
+
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(block_10)])
+
+    save_cache(cache_key, enum_properties)
+
+    return enum_properties
+
+def event_callback(self, context):
+
+    cache_key = 'event'
+
+    enum_properties = get_cached(cache_key)
+    if enum_properties:
+        return enum_properties
+
+    enum_properties = []
+
+    mytool = context.scene.my_tool
+
+    selected_module = getattr(mytool, 'active_module')
+    selected_room = getattr(mytool, 'active_room')
+    if selected_room not in ['?', '']:
+        room_obj = bpy.data.objects.get(selected_room)
+        if room_obj:
+            block_21 = [cn for cn in bpy.data.objects if get_room_obj(cn) == room_obj and cn.get(BLOCK_TYPE) == 21 and get_parent(cn).get(BLOCK_TYPE) != 21]
+    elif selected_module not in ['?', '']:
+        root_obj = bpy.data.objects.get('{}.b3d'.format(selected_module))
+        if root_obj:
+            block_21 = [cn for cn in bpy.data.objects if get_root_obj(cn) == root_obj and cn.get(BLOCK_TYPE) == 21 and get_parent(cn).get(BLOCK_TYPE) != 21]
+
+    enum_properties = [("?", "None", "")]
+    enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(block_21)])
+
+    save_cache(cache_key, enum_properties)
+
     return enum_properties
