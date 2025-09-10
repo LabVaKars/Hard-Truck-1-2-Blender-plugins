@@ -1,3 +1,4 @@
+CACHE_TIME = 1.0
 
 EMPTY_NAME = '~'
 
@@ -110,6 +111,12 @@ mTypeList = [
 b24FlagList = [
     ('0', "0", "Attached object won't be shown"),
     ('1', "1", "Attached object will be shown")
+]
+
+b33LightTypes = [
+    ('1', "Directional light", "Directional light"),
+    ('2', "Point light", "Point light"),
+    ('3', "Spot light", "Spot light")
 ]
 
 b14Enum = [

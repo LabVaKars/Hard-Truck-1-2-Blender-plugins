@@ -16,6 +16,7 @@ from ..consts import (
     collisionTypeList,
     generatorTypeList,
     b24FlagList,
+    b33LightTypes,
     vTypeList,
     BLOCK_TYPE,
     LEVEL_GROUP
@@ -1031,34 +1032,37 @@ class Blk033():
         name = 'Use lights'
 
     class Light_Type(IntParam):
-        name = 'Light type'
+        name = 'Light variable'
 
-    class Flag(IntParam):
-        name = 'Flag'
+    class Flag(EnumParam):
+        name = 'Light type'
+        subtype = FieldType.INT
+        items = b33LightTypes
+        default_value = 1
 
     class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+        name = 'Light location'
 
     class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+        name = 'Light direction'
 
     class Unk_Float1(FloatParam):
-        name = 'Unk. 1'
+        name = 'Light falloff'
 
     class Unk_Float2(FloatParam):
-        name = 'Unk. 2'
+        name = 'Light attenuation 0'
 
     class Light_R(FloatParam):
-        name = 'Light rad'
+        name = 'Light attenuation 1'
 
     class Intens(FloatParam):
-        name = 'Light intensity'
+        name = 'Light attenuation 2'
 
     class Unk_Float3(FloatParam):
-        name = 'Unk. 3'
+        name = 'Light phi'
 
     class Unk_Float4(FloatParam):
-        name = 'Unk. 4'
+        name = 'Light theta'
 
     class RGB(CoordParam):
         name = 'RGB'
