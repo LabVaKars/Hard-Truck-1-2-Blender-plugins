@@ -267,11 +267,11 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                         if hasattr(blk, "{}_is_left_lane".format(pname)):
                             col1.prop(blk, "{}_is_left_lane".format(pname))
 
-                        if hasattr(blk, "{}_is_fillable".format(pname)):
-                            col1.prop(blk, "{}_is_fillable".format(pname))
-
                         if hasattr(blk, "{}_is_hidden".format(pname)):
                             col1.prop(blk, "{}_is_hidden".format(pname))
+
+                        if hasattr(blk, "{}_is_fillable".format(pname)):
+                            col1.prop(blk, "{}_is_fillable".format(pname))
 
                         if hasattr(blk, "{}_no_traffic".format(pname)):
                             col1.prop(blk, "{}_no_traffic".format(pname))

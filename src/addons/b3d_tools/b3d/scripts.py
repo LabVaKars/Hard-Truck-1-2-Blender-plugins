@@ -368,8 +368,8 @@ def select_similar_objects_by_type(b3d_obj, zclass):
                         param = param ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
                         param = param ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
                         param = param ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 4)
-                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 5)
+                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
+                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
                         param = param ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
             
             if param is not None:
@@ -452,8 +452,8 @@ def select_similar_faces_by_type(b3d_obj, zclass):
                         param = param ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
                         param = param ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
                         param = param ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 4)
-                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 5)
+                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
+                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
                         param = param ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
             
             if param is not None:
@@ -798,8 +798,8 @@ def get_objs_by_type(b3d_obj, zclass):
                     setattr(blk, '{}_is_path'.format(pname), (flags & 0b10) >> 1)
                     setattr(blk, '{}_is_right_lane'.format(pname), (flags & 0b100) >> 2)
                     setattr(blk, '{}_is_left_lane'.format(pname), (flags & 0b1000) >> 3)
-                    setattr(blk, '{}_is_fillable'.format(pname), (flags & 0b10000) >> 4)
-                    setattr(blk, '{}_is_hidden'.format(pname), (flags & 0b100000) >> 5)
+                    setattr(blk, '{}_is_hidden'.format(pname), (flags & 0b10000) >> 4)
+                    setattr(blk, '{}_is_fillable'.format(pname), (flags & 0b100000) >> 5)
                     setattr(blk, '{}_no_traffic'.format(pname), (flags & 0b1000000) >> 6)
 
                 else:
@@ -878,8 +878,8 @@ def set_objs_by_type(b3d_obj, zclass):
                         flags = flags ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
                         flags = flags ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
                         flags = flags ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        flags = flags ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 4)
-                        flags = flags ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 5)
+                        flags = flags ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
+                        flags = flags ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
                         flags = flags ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
                     
                     b3d_obj[pname] = int(flags)
