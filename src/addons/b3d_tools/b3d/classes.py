@@ -211,7 +211,6 @@ class BlockClassHandler():
 
             if attr_class.get_block_type() == FieldType.STRING \
             or attr_class.get_block_type() == FieldType.COORD \
-            or attr_class.get_block_type() == FieldType.RAD \
             or attr_class.get_block_type() == FieldType.FLOAT \
             or attr_class.get_block_type() == FieldType.INT \
             or attr_class.get_block_type() == FieldType.LIST:
@@ -234,7 +233,7 @@ class BlockClassHandler():
                         default = attr_class.get_default()
                     )
 
-                elif (attr_class.get_block_type() == FieldType.RAD or attr_class.get_block_type() == FieldType.FLOAT) and multiple_edit:
+                elif attr_class.get_block_type() == FieldType.FLOAT and multiple_edit:
                     prop = FloatProperty(
                         name = attr_class.get_name(),
                         description = attr_class.get_description(),

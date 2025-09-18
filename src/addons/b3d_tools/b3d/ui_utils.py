@@ -102,11 +102,9 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                 col = box.column()
 
                 props = col.operator("wm.show_hide_sphere_operator")
-                props.pname = pname
 
         elif ftype == FieldType.STRING \
         or ftype == FieldType.COORD \
-        or ftype == FieldType.RAD \
         or ftype == FieldType.INT \
         or ftype == FieldType.FLOAT \
         or ftype == FieldType.ENUM \
@@ -128,7 +126,6 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                 if ftype in [
                     FieldType.STRING,
                     FieldType.COORD,
-                    FieldType.RAD,
                     FieldType.INT,
                     FieldType.FLOAT
                 ]:

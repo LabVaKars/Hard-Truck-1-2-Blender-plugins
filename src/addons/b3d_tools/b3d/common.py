@@ -79,6 +79,14 @@ def is_inside_module(module, obj):
     root_obj = bpy.data.objects['{}.b3d'.format(module)]
     return get_root_obj(obj) == root_obj
 
+def is_inside_object(src_obj, trg_obj):
+    obj = src_obj
+    while (obj.name != trg_obj.name):
+        obj = obj.parent
+        if obj is None:
+            return False
+    return True
+
 def is_empty_name(name):
     re_is_empty = re.compile(r'.*{}.*'.format(EMPTY_NAME))
     return re_is_empty.search(name)
@@ -829,6 +837,7 @@ def render_tree_callback(self, context):
 
     selected_module = getattr(mytool, 'active_module')
     selected_room = getattr(mytool, 'active_room')
+    block_9 = []
     if selected_room not in ['?', '']:
         room_obj = bpy.data.objects.get(selected_room)
         if room_obj:

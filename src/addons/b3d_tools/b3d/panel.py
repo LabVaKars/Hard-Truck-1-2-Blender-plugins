@@ -16,6 +16,7 @@ from .common import (
     is_root_obj,
     get_root_obj,
     get_room_obj,
+    is_inside_object,
     get_class_attributes,
     rooms_callback_mytool,
     modules_callback,
@@ -30,6 +31,7 @@ from .ui_utils import (
 )
 
 from .scripts import (
+    show_hide_render_tree_branch,
     apply_remove_transforms,
     hide_lod,
     show_lod,
@@ -50,6 +52,11 @@ from .scripts import (
     select_similar_faces_by_type
 )
 
+from .data_api_utils import (
+    get_render_center_object,
+    create_color_material_node
+)
+
 from .classes import (
     BlockClassHandler,
     FieldType,
@@ -57,6 +64,7 @@ from .classes import (
 )
 
 from .class_descr import (
+    Blk009, Blk010,
     Blk020,Blk021,Blk023,
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
     Blk050, Blk051, Blk052,
@@ -1222,15 +1230,20 @@ class ShowHideSphereOperator(bpy.types.Operator):
     bl_label = "Show/Hide sphere"
     bl_description = "Shows/Hides sphere"
 
-    pname = bpy.props.StringProperty()
-
     def execute(self, context):
         scene = context.scene
         mytool = scene.my_tool
 
         obj = context.object
 
-        show_hide_sphere(context, obj, self.pname)
+        block_type = obj.get(consts.BLOCK_TYPE)
+        if block_type in [10]:
+
+            if block_type == 10:
+                center_prop = Blk010.LOD_XYZ.get_prop()
+                rad_prop = Blk010.LOD_R.get_prop()
+
+            show_hide_sphere(obj, center_prop, rad_prop)
 
         self.report({'INFO'}, "Sphere shown or hidden")
 
@@ -1277,6 +1290,48 @@ class SelectSimilarFacesOperator(bpy.types.Operator):
             select_similar_faces_by_type(b3d_obj, zclass)
 
             self.report({'INFO'}, "Similar faces selected")
+
+        return {'FINISHED'}
+
+@make_annotations
+class VisualiseRenderTreeOperator(bpy.types.Operator):
+    bl_idname = "wm.visualise_render_tree_operator"
+    bl_label = "Show/Hide render tree"
+    bl_description = "Show/Hide render tree"
+
+    node_name = bpy.props.StringProperty()
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        b3d_obj = bpy.data.objects.get(self.node_name)
+
+        #Create needed objects and materials
+        render_center_object = get_render_center_object()
+        material_a = bpy.data.materials.get('RenderBranchMat0')
+        if not material_a:
+            create_color_material_node('RenderBranchMat0', (1.0, 0.0, 0.0, 1.0))
+            material_a = bpy.data.materials.get('RenderBranchMat0')
+
+        material_b = bpy.data.materials.get('RenderBranchMat1')
+        if not material_b:
+            create_color_material_node('RenderBranchMat1', (0.0, 0.0, 1.0, 1.0))
+            material_b = bpy.data.materials.get('RenderBranchMat1')
+        
+        material_text = bpy.data.materials.get('RenderBranchText')
+        if not material_text:
+            create_color_material_node('RenderBranchText', (0.0, 1.0, 0.0, 1.0))
+            material_text = bpy.data.materials.get('RenderBranchText')
+
+        # get list of tree branches
+        branch_list = [o for o in bpy.data.objects if o.get('block_type') == 9 and is_inside_object(o, b3d_obj)]
+
+        for branch_obj in branch_list:
+
+            show_hide_render_tree_branch(branch_obj, render_center_object, material_text, material_a, material_b)
+
+        self.report({'INFO'}, "Render Tree visualiser created!")
 
         return {'FINISHED'}
 
@@ -1651,6 +1706,8 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
         if current_hier == "LOD_9":
             # draw_enum(box, 'render_tree')
             box.prop(mytool, 'render_tree_enum')
+            o = layout.operator('wm.visualise_render_tree_operator')
+            o.node_name = getattr(mytool, 'render_tree_enum')
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
@@ -2062,6 +2119,7 @@ _classes = [
     ShowHideSphereOperator,
     SelectSimilarObjectsOperator,
     SelectSimilarFacesOperator,
+    VisualiseRenderTreeOperator,
     # panels
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,

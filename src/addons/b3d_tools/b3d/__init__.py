@@ -7,6 +7,8 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(common)
+    importlib.reload(geom_nodes)
+    importlib.reload(data_api_utils)
     importlib.reload(custom_ui_list)
     importlib.reload(class_descr)
     importlib.reload(classes)
@@ -25,6 +27,8 @@ else:
     import bpy
     from . import (
         common,
+        geom_nodes,
+        data_api_utils,
         custom_ui_list,
         class_descr,
         classes,
