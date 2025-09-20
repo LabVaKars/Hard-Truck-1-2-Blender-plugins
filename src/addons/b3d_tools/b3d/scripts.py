@@ -4,6 +4,7 @@ import struct
 
 from .class_descr import (
     Blk009,
+    Blk010,
     Blk018,
     Blk021
 )
@@ -26,6 +27,7 @@ from .common import (
 from .data_api_utils import (
     create_circle_center_rad_driver,
     get_render_branch_visualize_node_group,
+    get_lod_branch_visualize_node_group,
     create_center_driver,
     create_rad_driver,
     create_color_material_node
@@ -649,12 +651,15 @@ def create_render_branch_materials(color_cnt):
     
     def gradient(start, end, steps):
         colors = []
-        for i in range(steps):
-            t = i / (steps - 1)          # interpolation factor 0 → 1
-            r = start[0] + (end[0] - start[0]) * t
-            g = start[1] + (end[1] - start[1]) * t
-            b = start[2] + (end[2] - start[2]) * t
-            colors.append((r, g, b))
+        if steps > 1:
+            for i in range(steps):
+                t = i / (steps - 1)          # interpolation factor 0 → 1
+                r = start[0] + (end[0] - start[0]) * t
+                g = start[1] + (end[1] - start[1]) * t
+                b = start[2] + (end[2] - start[2]) * t
+                colors.append((r, g, b))
+        else:
+            colors.append((start[0], start[1], start[2]))
         return colors
 
     steps = color_cnt
@@ -680,6 +685,34 @@ def create_render_branch_materials(color_cnt):
     if not material:
         create_color_material_node(mat_name, (0.0, 0.0, 0.0, 1.0), 0.0)
 
+def create_cube_mesh(name):
+    mesh = bpy.data.meshes.new(name=name)
+
+    # --- Define cube vertices and faces ---
+    verts = [
+        (-1, -1, -1),
+        (-1, -1,  1),
+        (-1,  1, -1),
+        (-1,  1,  1),
+        ( 1, -1, -1),
+        ( 1, -1,  1),
+        ( 1,  1, -1),
+        ( 1,  1,  1),
+    ]
+
+    faces = [
+        (0,1,3,2),  # -X
+        (4,6,7,5),  # +X
+        (0,4,5,1),  # -Y
+        (2,3,7,6),  # +Y
+        (0,2,6,4),  # -Z
+        (1,5,7,3),  # +Z
+    ]
+
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    
+    return mesh
 
 def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, material_text, material_a, material_b):
 
@@ -696,19 +729,10 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         bpy.data.objects.remove(temp_obj, do_unlink=True)
     else:
 
-        curve_data = bpy.data.curves.new(obj_name, type='CURVE')
-
-        curve_data.dimensions = '2D'
-        curve_data.resolution_u = 2
-
-        # map coords to spline
-        polyline = curve_data.splines.new('POLY')
-        polyline.points.add(1)
-
-        polyline.points[0].co = (0.0, 0.0, 0.0, 1)
+        cubemesh = create_cube_mesh(obj_name)
 
         # creating object
-        temp_obj = bpy.data.objects.new(obj_name, curve_data)
+        temp_obj = bpy.data.objects.new(obj_name, cubemesh)
         
         transf_collection.objects.link(temp_obj)
 
@@ -728,6 +752,40 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_text
         gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_a
         gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_b
+
+def show_hide_lod_tree_branch(src_obj, material):
+
+    transf_collection = get_or_create_collection(TEMP_COLLECTION)
+    if not is_before_2_80():
+        if transf_collection.name not in bpy.context.scene.collection.children:
+            bpy.context.scene.collection.children.link(transf_collection)
+
+    obj_name = "{}||temp".format(src_obj.name)
+
+    temp_obj = bpy.data.objects.get(obj_name)
+
+    if temp_obj is not None:
+        bpy.data.objects.remove(temp_obj, do_unlink=True)
+    else:
+
+        cubemesh = create_cube_mesh(obj_name)
+
+        # creating object
+        temp_obj = bpy.data.objects.new(obj_name, cubemesh)
+        
+        transf_collection.objects.link(temp_obj)
+
+        # Adding new modifier
+        temp_obj.modifiers.new('LOD_branch_node', type='NODES')
+        gnode_modifier = temp_obj.modifiers.get('LOD_branch_node')
+    
+        # Setting node group
+        gnode_modifier.node_group = get_lod_branch_visualize_node_group()
+        
+        # Assigning input values
+        gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk010.LOD_XYZ.get_prop()]        
+        gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = src_obj[Blk010.LOD_R.get_prop()]
+        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material
 
 
 def show_hide_sphere(src_obj, center_prop, rad_prop):

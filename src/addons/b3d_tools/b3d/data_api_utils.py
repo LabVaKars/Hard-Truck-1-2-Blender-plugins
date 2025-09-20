@@ -1,7 +1,8 @@
 import bpy
 
 from .geom_nodes import (
-    render_branch_visualize_node_group
+    render_branch_visualize_node_group,
+    lod_branch_visualize_node_group
 )
 
 from ..compatibility import (
@@ -9,6 +10,12 @@ from ..compatibility import (
     set_empty_type,
     set_empty_size
 )
+
+def get_lod_branch_visualize_node_group():
+    result = bpy.data.node_groups.get('LOD_branch_visualize')
+    if not result:
+        result = lod_branch_visualize_node_group()
+    return result
 
 def get_render_branch_visualize_node_group():
     result = bpy.data.node_groups.get('Render_branch_visualize')

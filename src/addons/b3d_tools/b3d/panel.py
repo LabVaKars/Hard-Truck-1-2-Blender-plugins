@@ -32,6 +32,7 @@ from .ui_utils import (
 
 from .scripts import (
     show_hide_render_tree_branch,
+    show_hide_lod_tree_branch,
     apply_remove_transforms,
     hide_lod,
     show_lod,
@@ -1344,6 +1345,48 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
         self.report({'INFO'}, "Render Tree visualiser created!")
 
         return {'FINISHED'}
+    
+@make_annotations
+class VisualiseLODTreeOperator(bpy.types.Operator):
+    bl_idname = "wm.visualise_lod_tree_operator"
+    bl_label = "Show/Hide LOD tree"
+    bl_description = "Show/Hide LOD tree"
+
+    node_name = bpy.props.StringProperty()
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+
+        b3d_obj = bpy.data.objects.get(self.node_name)
+
+        #Create needed objects and materials
+        def get_level(src_obj, dest_obj):
+            obj = src_obj
+            level = 1
+            while obj != dest_obj:
+                if obj.name[:5] == 'GROUP':
+                    level += 1
+                obj = obj.parent
+            return level
+
+        def get_group(src_obj):
+            return src_obj.parent.name[6]
+
+        # get list of tree branches
+        branch_list = [{'obj':o, 'lvl':get_level(o, b3d_obj), 'grp':get_group(o)} for o in bpy.data.objects if o.get('block_type') == 10 and is_inside_object(o, b3d_obj)]
+
+        max_lvl = sorted([o['lvl'] for o in branch_list])[-1]
+        create_render_branch_materials(max_lvl)
+
+        for i, branch_obj in enumerate(branch_list):
+            material = bpy.data.materials.get('RenderBranchMat_{}_{}'.format(branch_obj['lvl'], max_lvl))
+
+            show_hide_lod_tree_branch(branch_obj['obj'], material)
+
+        self.report({'INFO'}, "LOD Tree visualiser created!")
+
+        return {'FINISHED'}
 
 # ------------------------------------------------------------------------
 # panels
@@ -1721,6 +1764,8 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
+            o = layout.operator('wm.visualise_lod_tree_operator')
+            o.node_name = getattr(mytool, 'LOD_enum')
         elif current_hier == "LOD_21":
             # draw_enum(box, 'event')
             box.prop(mytool, 'event_enum')
@@ -2130,6 +2175,7 @@ _classes = [
     SelectSimilarObjectsOperator,
     SelectSimilarFacesOperator,
     VisualiseRenderTreeOperator,
+    VisualiseLODTreeOperator,
     # panels
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,

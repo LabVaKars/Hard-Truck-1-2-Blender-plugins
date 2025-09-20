@@ -1082,3 +1082,203 @@ def render_branch_visualize_node_group():
     #math_2.Value -> group_002.Z
     render_branch_visualize.links.new(math_2.outputs[0], group_002.inputs[2])
     return render_branch_visualize
+
+#initialize lod_branch_visualize node group
+def lod_branch_visualize_node_group():
+    lod_branch_visualize = bpy.data.node_groups.new(type = 'GeometryNodeTree', name = "LOD_branch_visualize")
+
+    
+
+    #initialize lod_branch_visualize nodes
+    #node Curve Circle.001
+    curve_circle_001 = lod_branch_visualize.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    curve_circle_001.name = "Curve Circle.001"
+    curve_circle_001.mode = 'RADIUS'
+
+    #node Curve Circle.003
+    curve_circle_003 = lod_branch_visualize.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    curve_circle_003.name = "Curve Circle.003"
+    curve_circle_003.mode = 'RADIUS'
+
+    #node Curve to Mesh
+    curve_to_mesh = lod_branch_visualize.nodes.new("GeometryNodeCurveToMesh")
+    curve_to_mesh.name = "Curve to Mesh"
+    #Fill Caps
+    curve_to_mesh.inputs[2].default_value = False
+
+    #node Curve Circle.002
+    curve_circle_002 = lod_branch_visualize.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    curve_circle_002.name = "Curve Circle.002"
+    curve_circle_002.mode = 'RADIUS'
+
+    #node Curve to Mesh.002
+    curve_to_mesh_002 = lod_branch_visualize.nodes.new("GeometryNodeCurveToMesh")
+    curve_to_mesh_002.name = "Curve to Mesh.002"
+    #Fill Caps
+    curve_to_mesh_002.inputs[2].default_value = False
+
+    #node Curve to Mesh.001
+    curve_to_mesh_001 = lod_branch_visualize.nodes.new("GeometryNodeCurveToMesh")
+    curve_to_mesh_001.name = "Curve to Mesh.001"
+    #Fill Caps
+    curve_to_mesh_001.inputs[2].default_value = False
+
+    #node Curve Circle
+    curve_circle = lod_branch_visualize.nodes.new("GeometryNodeCurvePrimitiveCircle")
+    curve_circle.name = "Curve Circle"
+    curve_circle.mode = 'RADIUS'
+    #Radius
+    curve_circle.inputs[4].default_value = 0.10000000149011612
+
+    #node Transform Geometry.001
+    transform_geometry_001 = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    transform_geometry_001.name = "Transform Geometry.001"
+    transform_geometry_001.hide = True
+    #Rotation
+    transform_geometry_001.inputs[2].default_value = (0.0, 1.5707963705062866, 0.0)
+    #Scale
+    transform_geometry_001.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+    #node Transform Geometry.002
+    transform_geometry_002 = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    transform_geometry_002.name = "Transform Geometry.002"
+    transform_geometry_002.hide = True
+    #Rotation
+    transform_geometry_002.inputs[2].default_value = (0.0, 0.0, 1.5707963705062866)
+    #Scale
+    transform_geometry_002.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+    #node Join Geometry
+    join_geometry = lod_branch_visualize.nodes.new("GeometryNodeJoinGeometry")
+    join_geometry.name = "Join Geometry"
+
+    #node Transform Geometry
+    transform_geometry = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    transform_geometry.name = "Transform Geometry"
+    transform_geometry.hide = True
+    #Rotation
+    transform_geometry.inputs[2].default_value = (1.5707963705062866, 0.0, 0.0)
+    #Scale
+    transform_geometry.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+    #node Integer.001
+    integer_001 = lod_branch_visualize.nodes.new("FunctionNodeInputInt")
+    integer_001.label = "Tube Resolution"
+    integer_001.name = "Integer.001"
+    integer_001.hide = True
+    integer_001.integer = 3
+
+    #node Integer
+    integer = lod_branch_visualize.nodes.new("FunctionNodeInputInt")
+    integer.label = "Circle Resolution"
+    integer.name = "Integer"
+    integer.hide = True
+    integer.integer = 16
+
+    #node Set Material
+    set_material = lod_branch_visualize.nodes.new("GeometryNodeSetMaterial")
+    set_material.name = "Set Material"
+    #Selection
+    set_material.inputs[1].default_value = True
+
+    #node Group Output.001
+    group_output_001 = lod_branch_visualize.nodes.new("NodeGroupOutput")
+    group_output_001.name = "Group Output.001"
+    group_output_001.is_active_output = True
+    #lod_branch_visualize outputs
+    #output Geometry
+    lod_branch_visualize.outputs.new('NodeSocketGeometry', "Geometry")
+    lod_branch_visualize.outputs[0].attribute_domain = 'POINT'
+
+
+
+    #node Group Input
+    group_input = lod_branch_visualize.nodes.new("NodeGroupInput")
+    group_input.name = "Group Input"
+    #lod_branch_visualize inputs
+    #input Location
+    lod_branch_visualize.inputs.new('NodeSocketVector', "Location")
+    lod_branch_visualize.inputs[0].attribute_domain = 'POINT'
+
+    #input Radius
+    lod_branch_visualize.inputs.new('NodeSocketFloat', "Radius")
+    lod_branch_visualize.inputs[1].attribute_domain = 'POINT'
+
+    #input Material
+    lod_branch_visualize.inputs.new('NodeSocketMaterial', "Material")
+    lod_branch_visualize.inputs[2].attribute_domain = 'POINT'
+
+
+
+
+
+    #Set locations
+    curve_circle_001.location = (-4639.80810546875, 6372.072265625)
+    curve_circle_003.location = (-4632.52001953125, 6662.779296875)
+    curve_to_mesh.location = (-4447.81298828125, 6362.9189453125)
+    curve_circle_002.location = (-4638.56494140625, 6510.2060546875)
+    curve_to_mesh_002.location = (-4448.77587890625, 6646.96484375)
+    curve_to_mesh_001.location = (-4451.70751953125, 6504.47265625)
+    curve_circle.location = (-4638.75439453125, 6803.3203125)
+    transform_geometry_001.location = (-4259.68896484375, 6485.9306640625)
+    transform_geometry_002.location = (-4252.93701171875, 6338.02734375)
+    join_geometry.location = (-4054.37939453125, 6542.4951171875)
+    transform_geometry.location = (-4256.88037109375, 6628.8193359375)
+    integer_001.location = (-4804.38037109375, 6779.18212890625)
+    integer.location = (-4806.86962890625, 6656.40185546875)
+    set_material.location = (-3873.507080078125, 6419.6962890625)
+    group_output_001.location = (-3699.537353515625, 6536.4755859375)
+    group_input.location = (-4922.5146484375, 6550.20166015625)
+
+    #initialize lod_branch_visualize links
+    #set_material.Geometry -> group_output_001.Geometry
+    lod_branch_visualize.links.new(set_material.outputs[0], group_output_001.inputs[0])
+    #transform_geometry.Geometry -> join_geometry.Geometry
+    lod_branch_visualize.links.new(transform_geometry.outputs[0], join_geometry.inputs[0])
+    #transform_geometry_001.Geometry -> join_geometry.Geometry
+    lod_branch_visualize.links.new(transform_geometry_001.outputs[0], join_geometry.inputs[0])
+    #transform_geometry_002.Geometry -> join_geometry.Geometry
+    lod_branch_visualize.links.new(transform_geometry_002.outputs[0], join_geometry.inputs[0])
+    #curve_to_mesh.Mesh -> transform_geometry_002.Geometry
+    lod_branch_visualize.links.new(curve_to_mesh.outputs[0], transform_geometry_002.inputs[0])
+    #curve_circle.Curve -> curve_to_mesh.Profile Curve
+    lod_branch_visualize.links.new(curve_circle.outputs[0], curve_to_mesh.inputs[1])
+    #integer_001.Integer -> curve_circle.Resolution
+    lod_branch_visualize.links.new(integer_001.outputs[0], curve_circle.inputs[0])
+    #integer.Integer -> curve_circle_001.Resolution
+    lod_branch_visualize.links.new(integer.outputs[0], curve_circle_001.inputs[0])
+    #integer.Integer -> curve_circle_003.Resolution
+    lod_branch_visualize.links.new(integer.outputs[0], curve_circle_003.inputs[0])
+    #integer.Integer -> curve_circle_002.Resolution
+    lod_branch_visualize.links.new(integer.outputs[0], curve_circle_002.inputs[0])
+    #curve_circle_003.Curve -> curve_to_mesh_002.Curve
+    lod_branch_visualize.links.new(curve_circle_003.outputs[0], curve_to_mesh_002.inputs[0])
+    #curve_circle_002.Curve -> curve_to_mesh_001.Curve
+    lod_branch_visualize.links.new(curve_circle_002.outputs[0], curve_to_mesh_001.inputs[0])
+    #curve_circle_001.Curve -> curve_to_mesh.Curve
+    lod_branch_visualize.links.new(curve_circle_001.outputs[0], curve_to_mesh.inputs[0])
+    #curve_to_mesh_002.Mesh -> transform_geometry.Geometry
+    lod_branch_visualize.links.new(curve_to_mesh_002.outputs[0], transform_geometry.inputs[0])
+    #curve_to_mesh_001.Mesh -> transform_geometry_001.Geometry
+    lod_branch_visualize.links.new(curve_to_mesh_001.outputs[0], transform_geometry_001.inputs[0])
+    #curve_circle.Curve -> curve_to_mesh_002.Profile Curve
+    lod_branch_visualize.links.new(curve_circle.outputs[0], curve_to_mesh_002.inputs[1])
+    #curve_circle.Curve -> curve_to_mesh_001.Profile Curve
+    lod_branch_visualize.links.new(curve_circle.outputs[0], curve_to_mesh_001.inputs[1])
+    #join_geometry.Geometry -> set_material.Geometry
+    lod_branch_visualize.links.new(join_geometry.outputs[0], set_material.inputs[0])
+    #group_input.Radius -> curve_circle_003.Radius
+    lod_branch_visualize.links.new(group_input.outputs[1], curve_circle_003.inputs[4])
+    #group_input.Radius -> curve_circle_002.Radius
+    lod_branch_visualize.links.new(group_input.outputs[1], curve_circle_002.inputs[4])
+    #group_input.Radius -> curve_circle_001.Radius
+    lod_branch_visualize.links.new(group_input.outputs[1], curve_circle_001.inputs[4])
+    #group_input.Location -> transform_geometry.Translation
+    lod_branch_visualize.links.new(group_input.outputs[0], transform_geometry.inputs[1])
+    #group_input.Location -> transform_geometry_001.Translation
+    lod_branch_visualize.links.new(group_input.outputs[0], transform_geometry_001.inputs[1])
+    #group_input.Location -> transform_geometry_002.Translation
+    lod_branch_visualize.links.new(group_input.outputs[0], transform_geometry_002.inputs[1])
+    #group_input.Material -> set_material.Material
+    lod_branch_visualize.links.new(group_input.outputs[2], set_material.inputs[2])
+    return lod_branch_visualize
