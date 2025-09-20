@@ -49,12 +49,12 @@ from .scripts import (
     set_obj_by_prop,
     create_custom_attribute,
     select_similar_objects_by_type,
-    select_similar_faces_by_type
+    select_similar_faces_by_type,
+    create_render_branch_materials
 )
 
 from .data_api_utils import (
-    get_render_center_object,
-    create_color_material_node
+    get_render_center_object
 )
 
 from .classes import (
@@ -1309,27 +1309,37 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
 
         #Create needed objects and materials
         render_center_object = get_render_center_object()
-        material_a = bpy.data.materials.get('RenderBranchMat0')
-        if not material_a:
-            create_color_material_node('RenderBranchMat0', (1.0, 0.0, 0.0, 1.0))
-            material_a = bpy.data.materials.get('RenderBranchMat0')
 
-        material_b = bpy.data.materials.get('RenderBranchMat1')
-        if not material_b:
-            create_color_material_node('RenderBranchMat1', (0.0, 0.0, 1.0, 1.0))
-            material_b = bpy.data.materials.get('RenderBranchMat1')
-        
-        material_text = bpy.data.materials.get('RenderBranchText')
-        if not material_text:
-            create_color_material_node('RenderBranchText', (0.0, 1.0, 0.0, 1.0))
-            material_text = bpy.data.materials.get('RenderBranchText')
+        def get_level(src_obj, dest_obj):
+            obj = src_obj
+            level = 1
+            while obj != dest_obj:
+                if obj.name[:5] == 'GROUP':
+                    level += 1
+                obj = obj.parent
+            return level
+
+        def get_group(src_obj):
+            return src_obj.parent.name[6]
 
         # get list of tree branches
-        branch_list = [o for o in bpy.data.objects if o.get('block_type') == 9 and is_inside_object(o, b3d_obj)]
+        branch_list = [{'obj':o, 'lvl':get_level(o, b3d_obj), 'grp':get_group(o)} for o in bpy.data.objects if o.get('block_type') == 9 and is_inside_object(o, b3d_obj)]
 
-        for branch_obj in branch_list:
+        max_lvl = sorted([o['lvl'] for o in branch_list])[-1]
+        create_render_branch_materials(max_lvl)
 
-            show_hide_render_tree_branch(branch_obj, render_center_object, material_text, material_a, material_b)
+        level_mult = -5.0
+        for i, branch_obj in enumerate(branch_list):
+            material_a = bpy.data.materials.get('RenderBranchTransp')
+            material_b = bpy.data.materials.get('RenderBranchMat_{}_{}'.format(branch_obj['lvl'], max_lvl))
+            if branch_obj['grp'] == "0":
+                material_text = bpy.data.materials.get('RenderBranchText0')
+            else:
+                material_text = bpy.data.materials.get('RenderBranchText1')
+
+            shift_z = branch_obj['lvl'] * level_mult + (1.0 if branch_obj['grp'] == "0" else -1.0)
+
+            show_hide_render_tree_branch(branch_obj['obj'], render_center_object, shift_z, material_text, material_a, material_b)
 
         self.report({'INFO'}, "Render Tree visualiser created!")
 

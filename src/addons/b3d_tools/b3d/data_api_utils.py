@@ -26,7 +26,7 @@ def get_render_center_object():
     return result
 
 
-def create_color_material_node(mat_name, color):
+def create_color_material_node(mat_name, color, alpha=None):
     new_mat = bpy.data.materials.get(mat_name)
     if new_mat is None:
         new_mat = bpy.data.materials.new(name=mat_name)
@@ -45,8 +45,10 @@ def create_color_material_node(mat_name, color):
     for link in bsdf.inputs['Base Color'].links:
         new_mat.node_tree.nodes.remove(link.from_node)
 
-    # for link in bsdf.inputs['Alpha'].links:
-    #     new_mat.node_tree.nodes.remove(link.from_node)
+    if alpha is not None:
+        bsdf.inputs['Alpha'].default_value = alpha
+        new_mat.blend_method = 'BLEND'
+        new_mat.shadow_method = 'NONE'
 
     tex_color = new_mat.node_tree.nodes.new("ShaderNodeRGB")
     tex_color.outputs['Color'].default_value = color
@@ -71,9 +73,6 @@ def create_image_material_node(mat_name, image_name):
 
     for link in bsdf.inputs['Base Color'].links:
         new_mat.node_tree.nodes.remove(link.from_node)
-
-    # for link in bsdf.inputs['Alpha'].links:
-    #     new_mat.node_tree.nodes.remove(link.from_node)
 
     path = image_name
     tex_image = new_mat.node_tree.nodes.new("ShaderNodeTexImage")

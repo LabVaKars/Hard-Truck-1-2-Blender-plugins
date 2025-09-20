@@ -1,8 +1,5 @@
 import bpy 
-import mathutils
-from ..compatibility import (
-    get_context_collection_objects
-)
+
 
 #initialize get_tangent_point_xy node group
 def get_tangent_point_xy_node_group():
@@ -179,51 +176,30 @@ def get_tangent_point_xy_node_group():
     #get_tangent_point_xy inputs
     #input X
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "X")
-    get_tangent_point_xy.inputs[0].default_value = 0.0
-    get_tangent_point_xy.inputs[0].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[0].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[0].attribute_domain = 'POINT'
 
     #input Y
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "Y")
-    get_tangent_point_xy.inputs[1].default_value = 0.0
-    get_tangent_point_xy.inputs[1].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[1].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[1].attribute_domain = 'POINT'
 
     #input Z
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "Z")
-    get_tangent_point_xy.inputs[2].default_value = 0.0
-    get_tangent_point_xy.inputs[2].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[2].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[2].attribute_domain = 'POINT'
 
     #input R
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "R")
-    get_tangent_point_xy.inputs[3].default_value = 0.0
-    get_tangent_point_xy.inputs[3].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[3].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[3].attribute_domain = 'POINT'
 
     #input px
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "px")
-    get_tangent_point_xy.inputs[4].default_value = 0.0
-    get_tangent_point_xy.inputs[4].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[4].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[4].attribute_domain = 'POINT'
 
     #input py
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "py")
-    get_tangent_point_xy.inputs[5].default_value = 0.0
-    get_tangent_point_xy.inputs[5].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[5].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[5].attribute_domain = 'POINT'
 
     #input eps
     get_tangent_point_xy.inputs.new('NodeSocketFloat', "eps")
-    get_tangent_point_xy.inputs[6].default_value = 0.0
-    get_tangent_point_xy.inputs[6].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.inputs[6].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.inputs[6].attribute_domain = 'POINT'
 
 
@@ -308,16 +284,10 @@ def get_tangent_point_xy_node_group():
     #get_tangent_point_xy outputs
     #output P
     get_tangent_point_xy.outputs.new('NodeSocketVectorXYZ', "P")
-    get_tangent_point_xy.outputs[0].default_value = (0.0, 0.0, 0.0)
-    get_tangent_point_xy.outputs[0].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.outputs[0].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.outputs[0].attribute_domain = 'POINT'
 
     #output Angle_rad
     get_tangent_point_xy.outputs.new('NodeSocketFloat', "Angle_rad")
-    get_tangent_point_xy.outputs[1].default_value = 0.0
-    get_tangent_point_xy.outputs[1].min_value = -3.4028234663852886e+38
-    get_tangent_point_xy.outputs[1].max_value = 3.4028234663852886e+38
     get_tangent_point_xy.outputs[1].attribute_domain = 'POINT'
 
 
@@ -355,38 +325,6 @@ def get_tangent_point_xy_node_group():
     combine_xyz_004.location = (39.724769592285156, 125.01004791259766)
     math_014.location = (-1817.9239501953125, 5.013556480407715)
     group_output.location = (262.1426086425781, 105.40538787841797)
-
-    #Set dimensions
-    math_004.width, math_004.height = 140.0, 100.0
-    math_005.width, math_005.height = 140.0, 100.0
-    math_045.width, math_045.height = 140.0, 100.0
-    math_001.width, math_001.height = 140.0, 100.0
-    math.width, math.height = 140.0, 100.0
-    math_011.width, math_011.height = 140.0, 100.0
-    math_008.width, math_008.height = 140.0, 100.0
-    compare_001.width, compare_001.height = 140.0, 100.0
-    compare_002.width, compare_002.height = 140.0, 100.0
-    math_009.width, math_009.height = 140.0, 100.0
-    math_010.width, math_010.height = 140.0, 100.0
-    math_012.width, math_012.height = 140.0, 100.0
-    math_013.width, math_013.height = 140.0, 100.0
-    math_023.width, math_023.height = 140.0, 100.0
-    switch_002.width, switch_002.height = 140.0, 100.0
-    math_044.width, math_044.height = 140.0, 100.0
-    math_022.width, math_022.height = 140.0, 100.0
-    math_003.width, math_003.height = 140.0, 100.0
-    math_002.width, math_002.height = 140.0, 100.0
-    group_input_001.width, group_input_001.height = 140.0, 100.0
-    compare.width, compare.height = 140.0, 100.0
-    combine_xyz_003.width, combine_xyz_003.height = 140.0, 100.0
-    math_006.width, math_006.height = 140.0, 100.0
-    switch_005.width, switch_005.height = 140.0, 100.0
-    switch_004.width, switch_004.height = 140.0, 100.0
-    math_007.width, math_007.height = 140.0, 100.0
-    vector_math.width, vector_math.height = 140.0, 100.0
-    combine_xyz_004.width, combine_xyz_004.height = 140.0, 100.0
-    math_014.width, math_014.height = 140.0, 100.0
-    group_output.width, group_output.height = 140.0, 100.0
 
     #initialize get_tangent_point_xy links
     #group_input_001.X -> math_002.Value
@@ -549,7 +487,7 @@ def pie_segment_node_group():
     arc.name = "Arc"
     arc.mode = 'RADIUS'
     #Resolution
-    arc.inputs[0].default_value = 6
+    arc.inputs[0].default_value = 12
     #Connect Center
     arc.inputs[8].default_value = True
     #Invert Arc
@@ -645,9 +583,6 @@ def pie_segment_node_group():
     #pie_segment inputs
     #input Start
     pie_segment.inputs.new('NodeSocketFloat', "Start")
-    pie_segment.inputs[0].default_value = 6.2831854820251465
-    pie_segment.inputs[0].min_value = -10000.0
-    pie_segment.inputs[0].max_value = 10000.0
     pie_segment.inputs[0].attribute_domain = 'POINT'
 
     #input String
@@ -656,16 +591,10 @@ def pie_segment_node_group():
 
     #input Position
     pie_segment.inputs.new('NodeSocketVectorXYZ', "Position")
-    pie_segment.inputs[2].default_value = (0.0, 0.0, 0.0)
-    pie_segment.inputs[2].min_value = -3.4028234663852886e+38
-    pie_segment.inputs[2].max_value = 3.4028234663852886e+38
     pie_segment.inputs[2].attribute_domain = 'POINT'
 
     #input Radius
     pie_segment.inputs.new('NodeSocketFloat', "Radius")
-    pie_segment.inputs[3].default_value = 0.0
-    pie_segment.inputs[3].min_value = -3.4028234663852886e+38
-    pie_segment.inputs[3].max_value = 3.4028234663852886e+38
     pie_segment.inputs[3].attribute_domain = 'POINT'
 
     #input Segment Material
@@ -689,9 +618,6 @@ def pie_segment_node_group():
 
     #output End
     pie_segment.outputs.new('NodeSocketFloat', "End")
-    pie_segment.outputs[1].default_value = 0.0
-    pie_segment.outputs[1].min_value = -3.4028234663852886e+38
-    pie_segment.outputs[1].max_value = 3.4028234663852886e+38
     pie_segment.outputs[1].attribute_domain = 'POINT'
 
 
@@ -736,29 +662,6 @@ def pie_segment_node_group():
     group_output_1.location = (2081.9248046875, -126.84184265136719)
     set_position_001.location = (1855.50732421875, 95.57281494140625)
     attribute_statistic.location = (868.60888671875, -132.26499938964844)
-
-    #Set dimensions
-    reroute_002.width, reroute_002.height = 100.0, 100.0
-    set_material.width, set_material.height = 140.0, 100.0
-    set_material_002.width, set_material_002.height = 140.0, 100.0
-    set_material_001.width, set_material_001.height = 140.0, 100.0
-    math_002_1.width, math_002_1.height = 140.0, 100.0
-    math_001_1.width, math_001_1.height = 140.0, 100.0
-    arc.width, arc.height = 140.0, 100.0
-    extrude_mesh.width, extrude_mesh.height = 140.0, 100.0
-    math_004_1.width, math_004_1.height = 140.0, 100.0
-    math_003_1.width, math_003_1.height = 140.0, 100.0
-    string_to_curves.width, string_to_curves.height = 190.0, 100.0
-    fill_curve_001.width, fill_curve_001.height = 140.0, 100.0
-    extrude_mesh_001.width, extrude_mesh_001.height = 140.0, 100.0
-    position.width, position.height = 140.0, 100.0
-    fill_curve.width, fill_curve.height = 140.0, 100.0
-    set_position.width, set_position.height = 140.0, 100.0
-    join_geometry.width, join_geometry.height = 140.0, 100.0
-    group_input.width, group_input.height = 140.0, 100.0
-    group_output_1.width, group_output_1.height = 140.0, 100.0
-    set_position_001.width, set_position_001.height = 140.0, 100.0
-    attribute_statistic.width, attribute_statistic.height = 140.0, 100.0
 
     #initialize pie_segment links
     #math_001_1.Value -> arc.Sweep Angle
@@ -831,6 +734,8 @@ def pie_segment_node_group():
 def circle_visualize_node_group():
     circle_visualize = bpy.data.node_groups.new(type = 'GeometryNodeTree', name = "Circle_visualize")
 
+    
+
     #initialize circle_visualize nodes
     #node Reroute
     reroute = circle_visualize.nodes.new("NodeReroute")
@@ -882,23 +787,14 @@ def circle_visualize_node_group():
     #circle_visualize inputs
     #input Position
     circle_visualize.inputs.new('NodeSocketVectorXYZ', "Position")
-    circle_visualize.inputs[0].default_value = (0.0, 0.0, 0.0)
-    circle_visualize.inputs[0].min_value = -3.4028234663852886e+38
-    circle_visualize.inputs[0].max_value = 3.4028234663852886e+38
     circle_visualize.inputs[0].attribute_domain = 'POINT'
 
     #input Angle
     circle_visualize.inputs.new('NodeSocketFloat', "Angle")
-    circle_visualize.inputs[1].default_value = 0.5
-    circle_visualize.inputs[1].min_value = -10000.0
-    circle_visualize.inputs[1].max_value = 10000.0
     circle_visualize.inputs[1].attribute_domain = 'POINT'
 
     #input Radius
     circle_visualize.inputs.new('NodeSocketFloat', "Radius")
-    circle_visualize.inputs[2].default_value = 1.9999998807907104
-    circle_visualize.inputs[2].min_value = -3.4028234663852886e+38
-    circle_visualize.inputs[2].max_value = 3.4028234663852886e+38
     circle_visualize.inputs[2].attribute_domain = 'POINT'
 
     #input Text Material
@@ -925,15 +821,6 @@ def circle_visualize_node_group():
     group.location = (-118.287109375, 112.02267456054688)
     math_1.location = (-369.956298828125, 162.6209259033203)
     group_input_1.location = (-570.9609375, 0.0)
-
-    #Set dimensions
-    reroute.width, reroute.height = 16.0, 100.0
-    group_output_2.width, group_output_2.height = 140.0, 100.0
-    join_geometry_1.width, join_geometry_1.height = 140.0, 100.0
-    group_001.width, group_001.height = 140.0, 100.0
-    group.width, group.height = 140.0, 100.0
-    math_1.width, math_1.height = 140.0, 100.0
-    group_input_1.width, group_input_1.height = 140.0, 100.0
 
     #initialize circle_visualize links
     #group.Curve -> join_geometry_1.Geometry
@@ -975,49 +862,6 @@ def render_branch_visualize_node_group():
     
 
     #initialize render_branch_visualize nodes
-    #node Group Input
-    group_input_2 = render_branch_visualize.nodes.new("NodeGroupInput")
-    group_input_2.name = "Group Input"
-    #render_branch_visualize inputs
-    #input Tangent Angle
-    render_branch_visualize.inputs.new('NodeSocketVector', "Tangent Angle")
-    render_branch_visualize.inputs[0].default_value = (0.0, 0.0, 0.0)
-    render_branch_visualize.inputs[0].min_value = -10000.0
-    render_branch_visualize.inputs[0].max_value = 10000.0
-    render_branch_visualize.inputs[0].attribute_domain = 'POINT'
-
-    #input Tangent Radius
-    render_branch_visualize.inputs.new('NodeSocketFloat', "Tangent Radius")
-    render_branch_visualize.inputs[1].default_value = 0.5
-    render_branch_visualize.inputs[1].min_value = -10000.0
-    render_branch_visualize.inputs[1].max_value = 10000.0
-    render_branch_visualize.inputs[1].attribute_domain = 'POINT'
-
-    #input Render Center
-    render_branch_visualize.inputs.new('NodeSocketObject', "Render Center")
-    render_branch_visualize.inputs[2].attribute_domain = 'POINT'
-
-    #input Circle Radius
-    render_branch_visualize.inputs.new('NodeSocketFloat', "Circle Radius")
-    render_branch_visualize.inputs[3].default_value = 0.0
-    render_branch_visualize.inputs[3].min_value = -3.4028234663852886e+38
-    render_branch_visualize.inputs[3].max_value = 3.4028234663852886e+38
-    render_branch_visualize.inputs[3].attribute_domain = 'POINT'
-
-    #input Text Material
-    render_branch_visualize.inputs.new('NodeSocketMaterial', "Text Material")
-    render_branch_visualize.inputs[4].attribute_domain = 'POINT'
-
-    #input Material A
-    render_branch_visualize.inputs.new('NodeSocketMaterial', "Material A")
-    render_branch_visualize.inputs[5].attribute_domain = 'POINT'
-
-    #input Material B
-    render_branch_visualize.inputs.new('NodeSocketMaterial', "Material B")
-    render_branch_visualize.inputs[6].attribute_domain = 'POINT'
-
-
-
     #node Math.044
     math_044_1 = render_branch_visualize.nodes.new("ShaderNodeMath")
     math_044_1.label = "-R"
@@ -1054,12 +898,6 @@ def render_branch_visualize_node_group():
     value_002.hide = True
 
     value_002.outputs[0].default_value = 9.999999960041972e-13
-    #node Separate XYZ.001
-    separate_xyz_001 = render_branch_visualize.nodes.new("ShaderNodeSeparateXYZ")
-    separate_xyz_001.label = "cx,cy,cz"
-    separate_xyz_001.name = "Separate XYZ.001"
-    separate_xyz_001.hide = True
-
     #node Math.006
     math_006_1 = render_branch_visualize.nodes.new("ShaderNodeMath")
     math_006_1.label = "Norm_X"
@@ -1113,16 +951,66 @@ def render_branch_visualize_node_group():
     group_001_1.name = "Group.001"
     group_001_1.node_tree = circle_visualize_node_group()
 
+    #node Group Input
+    group_input_2 = render_branch_visualize.nodes.new("NodeGroupInput")
+    group_input_2.name = "Group Input"
+    #render_branch_visualize inputs
+    #input Tangent Angle
+    render_branch_visualize.inputs.new('NodeSocketVector', "Tangent Angle")
+    render_branch_visualize.inputs[0].attribute_domain = 'POINT'
+
+    #input Tangent Radius
+    render_branch_visualize.inputs.new('NodeSocketFloat', "Tangent Radius")
+    render_branch_visualize.inputs[1].attribute_domain = 'POINT'
+
+    #input Shift Z
+    render_branch_visualize.inputs.new('NodeSocketFloat', "Shift Z")
+    render_branch_visualize.inputs[2].attribute_domain = 'POINT'
+
+    #input Render Center
+    render_branch_visualize.inputs.new('NodeSocketObject', "Render Center")
+    render_branch_visualize.inputs[3].attribute_domain = 'POINT'
+
+    #input Circle Radius
+    render_branch_visualize.inputs.new('NodeSocketFloat', "Circle Radius")
+    render_branch_visualize.inputs[4].attribute_domain = 'POINT'
+
+    #input Text Material
+    render_branch_visualize.inputs.new('NodeSocketMaterial', "Text Material")
+    render_branch_visualize.inputs[5].attribute_domain = 'POINT'
+
+    #input Material A
+    render_branch_visualize.inputs.new('NodeSocketMaterial', "Material A")
+    render_branch_visualize.inputs[6].attribute_domain = 'POINT'
+
+    #input Material B
+    render_branch_visualize.inputs.new('NodeSocketMaterial', "Material B")
+    render_branch_visualize.inputs[7].attribute_domain = 'POINT'
+
+
+
+    #node Separate XYZ.001
+    separate_xyz_001 = render_branch_visualize.nodes.new("ShaderNodeSeparateXYZ")
+    separate_xyz_001.label = "cx,cy,cz"
+    separate_xyz_001.name = "Separate XYZ.001"
+    separate_xyz_001.hide = True
+
+    #node Math
+    math_2 = render_branch_visualize.nodes.new("ShaderNodeMath")
+    math_2.label = "Shift Z"
+    math_2.name = "Math"
+    math_2.hide = True
+    math_2.operation = 'ADD'
+    math_2.use_clamp = False
+
 
 
     #Set locations
-    group_input_2.location = (-652.7306518554688, 0.0)
     math_044_1.location = (-429.8410949707031, 65.2533950805664)
     vector_math_001.location = (-411.7771301269531, 152.63455200195312)
     separate_xyz.location = (-413.8541564941406, 206.00833129882812)
     object_info.location = (-423.79144287109375, -44.29651641845703)
     value_002.location = (-227.41383361816406, -48.059120178222656)
-    separate_xyz_001.location = (-224.15135192871094, 4.136842727661133)
     math_006_1.location = (-219.10365295410156, 208.31396484375)
     math_007_1.location = (-219.10365295410156, 165.54180908203125)
     math_008_1.location = (-218.03614807128906, 117.42318725585938)
@@ -1130,28 +1018,13 @@ def render_branch_visualize_node_group():
     group_output_3.location = (510.9173278808594, -5.075558662414551)
     group_002.location = (-18.656234741210938, 163.33322143554688)
     group_001_1.location = (222.2908172607422, 9.503557205200195)
-
-    #Set dimensions
-    group_input_2.width, group_input_2.height = 140.0, 100.0
-    math_044_1.width, math_044_1.height = 140.0, 100.0
-    vector_math_001.width, vector_math_001.height = 140.0, 100.0
-    separate_xyz.width, separate_xyz.height = 140.0, 100.0
-    object_info.width, object_info.height = 140.0, 100.0
-    value_002.width, value_002.height = 140.0, 100.0
-    separate_xyz_001.width, separate_xyz_001.height = 140.0, 100.0
-    math_006_1.width, math_006_1.height = 140.0, 100.0
-    math_007_1.width, math_007_1.height = 140.0, 100.0
-    math_008_1.width, math_008_1.height = 140.0, 100.0
-    math_009_1.width, math_009_1.height = 140.0, 100.0
-    group_output_3.width, group_output_3.height = 140.0, 100.0
-    group_002.width, group_002.height = 140.0, 100.0
-    group_001_1.width, group_001_1.height = 215.52963256835938, 100.0
+    group_input_2.location = (-652.7306518554688, 0.0)
+    separate_xyz_001.location = (-421.10443115234375, 4.136842727661133)
+    math_2.location = (-224.37274169921875, 15.625839233398438)
 
     #initialize render_branch_visualize links
     #separate_xyz_001.Y -> group_002.py
     render_branch_visualize.links.new(separate_xyz_001.outputs[1], group_002.inputs[5])
-    #separate_xyz_001.Z -> group_002.Z
-    render_branch_visualize.links.new(separate_xyz_001.outputs[2], group_002.inputs[2])
     #separate_xyz_001.X -> group_002.px
     render_branch_visualize.links.new(separate_xyz_001.outputs[0], group_002.inputs[4])
     #math_006_1.Value -> group_002.X
@@ -1193,13 +1066,19 @@ def render_branch_visualize_node_group():
     #group_001_1.Geometry -> group_output_3.Geometry
     render_branch_visualize.links.new(group_001_1.outputs[0], group_output_3.inputs[0])
     #group_input_2.Render Center -> object_info.Object
-    render_branch_visualize.links.new(group_input_2.outputs[2], object_info.inputs[0])
+    render_branch_visualize.links.new(group_input_2.outputs[3], object_info.inputs[0])
     #group_input_2.Circle Radius -> group_001_1.Radius
-    render_branch_visualize.links.new(group_input_2.outputs[3], group_001_1.inputs[2])
+    render_branch_visualize.links.new(group_input_2.outputs[4], group_001_1.inputs[2])
     #group_input_2.Text Material -> group_001_1.Text Material
-    render_branch_visualize.links.new(group_input_2.outputs[4], group_001_1.inputs[3])
+    render_branch_visualize.links.new(group_input_2.outputs[5], group_001_1.inputs[3])
     #group_input_2.Material A -> group_001_1.Material 0
-    render_branch_visualize.links.new(group_input_2.outputs[5], group_001_1.inputs[4])
+    render_branch_visualize.links.new(group_input_2.outputs[6], group_001_1.inputs[4])
     #group_input_2.Material B -> group_001_1.Material 1
-    render_branch_visualize.links.new(group_input_2.outputs[6], group_001_1.inputs[5])
+    render_branch_visualize.links.new(group_input_2.outputs[7], group_001_1.inputs[5])
+    #separate_xyz_001.Z -> math_2.Value
+    render_branch_visualize.links.new(separate_xyz_001.outputs[2], math_2.inputs[0])
+    #group_input_2.Shift Z -> math_2.Value
+    render_branch_visualize.links.new(group_input_2.outputs[2], math_2.inputs[1])
+    #math_2.Value -> group_002.Z
+    render_branch_visualize.links.new(math_2.outputs[0], group_002.inputs[2])
     return render_branch_visualize

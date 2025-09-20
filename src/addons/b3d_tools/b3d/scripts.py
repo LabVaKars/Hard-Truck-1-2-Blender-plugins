@@ -27,7 +27,8 @@ from .data_api_utils import (
     create_circle_center_rad_driver,
     get_render_branch_visualize_node_group,
     create_center_driver,
-    create_rad_driver
+    create_rad_driver,
+    create_color_material_node
 )
 
 from .class_descr import (
@@ -621,8 +622,66 @@ def hide_conditionals(root, group):
     else:
         process_cond(root, group, True)
 
+def create_render_branch_materials(color_cnt):
+    def gradient_three(start, mid, end, steps):
 
-def show_hide_render_tree_branch(src_obj, render_center_object, material_text, material_a, material_b):
+        if steps < 2:
+            raise ValueError("steps must be at least 2")
+
+        half = (steps - 1) / 2.0
+        colors = []
+
+        for i in range(steps):
+            if i <= half:
+                # Interpolate start → mid
+                t = i / half
+                r = start[0] + (mid[0] - start[0]) * t
+                g = start[1] + (mid[1] - start[1]) * t
+                b = start[2] + (mid[2] - start[2]) * t
+            else:
+                # Interpolate mid → end
+                t = (i - half) / half
+                r = mid[0] + (end[0] - mid[0]) * t
+                g = mid[1] + (end[1] - mid[1]) * t
+                b = mid[2] + (end[2] - mid[2]) * t
+            colors.append((r, g, b))
+        return colors
+    
+    def gradient(start, end, steps):
+        colors = []
+        for i in range(steps):
+            t = i / (steps - 1)          # interpolation factor 0 → 1
+            r = start[0] + (end[0] - start[0]) * t
+            g = start[1] + (end[1] - start[1]) * t
+            b = start[2] + (end[2] - start[2]) * t
+            colors.append((r, g, b))
+        return colors
+
+    steps = color_cnt
+    circle_gradient = gradient((0.0, 0.0, 1.0), (1.0, 0.0, 0.0), steps)
+    for i, color in enumerate(circle_gradient):
+        mat_name = 'RenderBranchMat_{}_{}'.format(i+1, color_cnt)
+        material = bpy.data.materials.get(mat_name)
+        if not material:
+            create_color_material_node(mat_name, color + (1.0,), 0.8)
+
+    mat_name = 'RenderBranchText0'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.3, 0.3, 0.3, 1.0))
+
+    mat_name = 'RenderBranchText1'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.0, 0.0, 0.0, 1.0))
+
+    mat_name = 'RenderBranchTransp'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.0, 0.0, 0.0, 1.0), 0.0)
+
+
+def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, material_text, material_a, material_b):
 
     transf_collection = get_or_create_collection(TEMP_COLLECTION)
     if not is_before_2_80():
@@ -663,11 +722,12 @@ def show_hide_render_tree_branch(src_obj, render_center_object, material_text, m
         # Assigning input values
         gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk009.Unk_XYZ.get_prop()]        
         gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = src_obj[Blk009.Unk_R.get_prop()]
-        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = render_center_object
-        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 3)
-        gnode_modifier[gnode_modifier.node_group.inputs[4].identifier] = material_text
-        gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_a
-        gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_b
+        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = float(shift_z)
+        gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = render_center_object
+        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 4)
+        gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_text
+        gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_a
+        gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_b
 
 
 def show_hide_sphere(src_obj, center_prop, rad_prop):
