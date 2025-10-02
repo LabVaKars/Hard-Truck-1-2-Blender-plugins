@@ -301,7 +301,24 @@ class PanelSettings(bpy.types.PropertyGroup):
         default = 0, # index, not value
         update = select_object_on_update('render_tree_enum')
     )
+
+    render_branch_offset = FloatVectorProperty(
+        name = 'Branch offset',
+        description = 'Branch offset',
+        default = (0.0,0.0,0.0)
+        # update = select_object_on_update('render_tree_enum')
+    )
+
+    render_branch_angle = FloatProperty(
+        name = 'Branch angle',
+        description = 'Branch angle',
+        default = 0.0 
+        # update = select_object_on_update('render_tree_enum')
+    )
+
     #Render tree end
+
+    #LOD start
     LOD_enum = EnumProperty(
         name = 'LOD root',
         description = 'LOD root',
@@ -310,6 +327,8 @@ class PanelSettings(bpy.types.PropertyGroup):
         update = select_object_on_update('LOD_enum')
     )
     #LOD end
+
+    #event start
     event_enum = EnumProperty(
         name = 'Event root',
         description = 'Event root',
@@ -1321,7 +1340,9 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
             return level
 
         def get_group(src_obj):
-            return src_obj.parent.name[6]
+            if src_obj.parent.name[:5] == 'GROUP':
+                return src_obj.parent.name[6]
+            return '0'
 
         # get list of tree branches
         branch_list = [{'obj':o, 'lvl':get_level(o, b3d_obj), 'grp':get_group(o)} for o in bpy.data.objects if o.get('block_type') == 9 and is_inside_object(o, b3d_obj)]
@@ -1761,6 +1782,8 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
             box.prop(mytool, 'render_tree_enum')
             o = layout.operator('wm.visualise_render_tree_operator')
             o.node_name = getattr(mytool, 'render_tree_enum')
+            box.prop(mytool, 'render_branch_offset')
+            box.prop(mytool, 'render_branch_angle')
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')

@@ -1,9 +1,7 @@
 import bpy
 
-from .geom_nodes import (
-    render_branch_visualize_node_group,
-    lod_branch_visualize_node_group
-)
+from .geom_nodes.render_branch_visualize import (render_branch_visualize_node_group)
+from .geom_nodes.lod_branch_visualize import (lod_branch_visualize_node_group)
 
 from ..compatibility import (
     get_context_collection_objects,
