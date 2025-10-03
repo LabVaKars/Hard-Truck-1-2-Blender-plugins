@@ -30,7 +30,8 @@ from .data_api_utils import (
     get_lod_branch_visualize_node_group,
     create_center_driver,
     create_rad_driver,
-    create_color_material_node
+    create_color_material_node,
+    create_render_branch_drivers
 )
 
 from .class_descr import (
@@ -735,6 +736,8 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         temp_obj = bpy.data.objects.new(obj_name, cubemesh)
         
         transf_collection.objects.link(temp_obj)
+
+        create_render_branch_drivers(src_obj, temp_obj, render_center_object)
 
         # Adding new modifier
         temp_obj.modifiers.new('Render_branch_node', type='NODES')

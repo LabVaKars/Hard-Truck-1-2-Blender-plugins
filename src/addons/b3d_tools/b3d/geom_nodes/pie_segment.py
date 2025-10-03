@@ -165,7 +165,7 @@ def pie_segment_node_group():
     #Offset
     extrude_arc.inputs[2].default_value = (0.0, 0.0, 0.0)
     #Offset Scale
-    extrude_arc.inputs[3].default_value = -0.1
+    extrude_arc.inputs[3].default_value = -0.10000000149011612
     #Individual
     extrude_arc.inputs[4].default_value = True
 
@@ -183,19 +183,6 @@ def pie_segment_node_group():
     #Selection
     material_extrude.inputs[1].default_value = True
 
-    #node Join Geometry
-    join_geometry = pie_segment.nodes.new("GeometryNodeJoinGeometry")
-    join_geometry.name = "Join Geometry"
-
-    #node Position_Circle
-    position_circle = pie_segment.nodes.new("GeometryNodeSetPosition")
-    position_circle.label = "Position Circle"
-    position_circle.name = "Position_Circle"
-    #Selection
-    position_circle.inputs[1].default_value = True
-    #Position
-    position_circle.inputs[2].default_value = (0.0, 0.0, 0.0)
-
     #node Pie_segment_GO
     pie_segment_go = pie_segment.nodes.new("NodeGroupOutput")
     pie_segment_go.label = "Group Output"
@@ -211,6 +198,10 @@ def pie_segment_node_group():
     pie_segment.outputs[1].attribute_domain = 'POINT'
 
 
+
+    #node Join Geometry
+    join_geometry = pie_segment.nodes.new("GeometryNodeJoinGeometry")
+    join_geometry.name = "Join Geometry"
 
 
 
@@ -233,9 +224,8 @@ def pie_segment_node_group():
     extrude_arc.location = (707.877685546875, 148.20428466796875)
     material_fill.location = (1419.2493896484375, 272.2935485839844)
     material_extrude.location = (1421.6993408203125, 121.72770690917969)
-    join_geometry.location = (1671.9873046875, 251.46034240722656)
-    position_circle.location = (1855.50732421875, 95.57281494140625)
     pie_segment_go.location = (2081.9248046875, -126.84184265136719)
+    join_geometry.location = (1671.9873046875, 251.46034240722656)
 
     #initialize pie_segment links
     #pi.Value -> arc.Sweep Angle
@@ -276,8 +266,6 @@ def pie_segment_node_group():
     pie_segment.links.new(pie_segment_gi.outputs[4], reroute_002.inputs[0])
     #reroute_002.Output -> material_fill.Material
     pie_segment.links.new(reroute_002.outputs[0], material_fill.inputs[2])
-    #position_circle.Geometry -> pie_segment_go.Curve
-    pie_segment.links.new(position_circle.outputs[0], pie_segment_go.inputs[0])
     #pie_segment_gi.String -> string_to_curves.String
     pie_segment.links.new(pie_segment_gi.outputs[1], string_to_curves.inputs[0])
     #r_div_20.Value -> string_to_curves.Size
@@ -296,10 +284,8 @@ def pie_segment_node_group():
     pie_segment.links.new(fill_arc.outputs[0], attribute_statistic.inputs[0])
     #attribute_statistic.Mean -> position_numbers.Offset
     pie_segment.links.new(attribute_statistic.outputs[8], position_numbers.inputs[3])
-    #join_geometry.Geometry -> position_circle.Geometry
-    pie_segment.links.new(join_geometry.outputs[0], position_circle.inputs[0])
-    #pie_segment_gi.Position -> position_circle.Offset
-    pie_segment.links.new(pie_segment_gi.outputs[2], position_circle.inputs[3])
     #fill_arc.Mesh -> material_fill.Geometry
     pie_segment.links.new(fill_arc.outputs[0], material_fill.inputs[0])
+    #join_geometry.Geometry -> pie_segment_go.Curve
+    pie_segment.links.new(join_geometry.outputs[0], pie_segment_go.inputs[0])
     return pie_segment

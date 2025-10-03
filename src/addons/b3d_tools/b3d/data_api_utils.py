@@ -9,6 +9,10 @@ from ..compatibility import (
     set_empty_size
 )
 
+from .class_descr import (
+    Blk009
+)
+
 def get_lod_branch_visualize_node_group():
     result = bpy.data.node_groups.get('LOD_branch_visualize')
     if not result:
@@ -144,3 +148,138 @@ def create_circle_center_rad_driver(src_obj, modif_name, input_index):
 
     d.expression =  'abs({}*{})'.format(v1.name, v2.name)
 
+def create_render_branch_drivers(src_obj, temp_obj, center_obj):
+    
+    def set_variable(v, name, obj, pname):
+        v.type = 'SINGLE_PROP'
+        v.name = name
+        v.targets[0].id = obj
+        v.targets[0].data_path = pname
+
+    temp_obj['eps'] = 1e-6
+
+    drivers = {}
+
+    temp_vars = ['r', 'dx', 'dy', 'Tx', 'Ty', 'Px', 'Py', 'wx', 'wy', 't']
+    for var in temp_vars:
+        if not temp_obj.get(var):
+            temp_obj[var] = 0.0
+            # temp_obj.id_properties_ui(var).update(min=float("inf"), max=float("-inf"))
+        else:
+            temp_obj.driver_remove('["{}"]'.format(var))
+        drivers[var] = temp_obj.driver_add('["{}"]'.format(var)).driver
+        drivers[var].type = 'SCRIPTED'
+
+    # r driver
+    d = drivers['r']
+    v1 = d.variables.new()
+    set_variable(v1, 'r', src_obj, '["{}"]'.format(Blk009.Unk_R.get_prop()))
+    d.expression =  '-{}'.format(v1.name)
+
+    d = drivers['dx']
+    v1 = d.variables.new()
+    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.get_prop()))
+    v2 = d.variables.new()
+    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.get_prop()))
+    d.expression =  '{ax} / sqrt({ax}*{ax} + {ay}*{ay})'.format(ax=v1.name, ay=v2.name) 
+
+    d = drivers['dy']
+    v1 = d.variables.new()
+    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.get_prop()))
+    v2 = d.variables.new()
+    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.get_prop()))
+    d.expression =  '{ay} / sqrt({ax}*{ax} + {ay}*{ay})'.format(ax=v1.name, ay=v2.name) 
+
+    d = drivers['Tx']
+    v1 = d.variables.new()
+    set_variable(v1, 'dy', temp_obj, '["{}"]'.format('dy'))
+    v2 = d.variables.new()
+    set_variable(v2, 'eps', temp_obj, '["{}"]'.format('eps'))
+    d.expression =  '-{dy} + (fabs(-{dy})<{eps})*{eps}'.format(dy=v1.name, eps=v2.name) 
+
+    d = drivers['Ty']
+    v1 = d.variables.new()
+    set_variable(v1, 'dx', temp_obj, '["{}"]'.format('dx'))
+    v2 = d.variables.new()
+    set_variable(v2, 'eps', temp_obj, '["{}"]'.format('eps'))
+    d.expression =  '{dx} + (fabs({dx})<{eps})*{eps}'.format(dx=v1.name, eps=v2.name) 
+
+    d = drivers['wx']
+    v1 = d.variables.new()
+    set_variable(v1, 'Tx', temp_obj, '["{}"]'.format('Tx'))
+    v2 = d.variables.new()
+    set_variable(v2, 'Ty', temp_obj, '["{}"]'.format('Ty'))
+    d.expression =  'fabs({Tx}) / (fabs({Tx}) + fabs({Ty}))'.format(Tx=v1.name, Ty=v2.name) 
+
+    d = drivers['wy']
+    v1 = d.variables.new()
+    set_variable(v1, 'Tx', temp_obj, '["{}"]'.format('Tx'))
+    v2 = d.variables.new()
+    set_variable(v2, 'Ty', temp_obj, '["{}"]'.format('Ty'))
+    d.expression =  'fabs({Ty}) / (fabs({Tx}) + fabs({Ty}))'.format(Tx=v1.name, Ty=v2.name) 
+
+    d = drivers['Px']
+    v1 = d.variables.new()
+    set_variable(v1, 'r', temp_obj, '["{}"]'.format('r'))
+    v2 = d.variables.new()
+    set_variable(v2, 'dx', temp_obj, '["{}"]'.format('dx'))
+    d.expression =  '{}*{}'.format(v1.name, v2.name) 
+
+    d = drivers['Py']
+    v1 = d.variables.new()
+    set_variable(v1, 'r', temp_obj, '["{}"]'.format('r'))
+    v2 = d.variables.new()
+    set_variable(v2, 'dy', temp_obj, '["{}"]'.format('dy'))
+    d.expression =  '{}*{}'.format(v1.name, v2.name) 
+
+    d = drivers['t']
+    v1 = d.variables.new()
+    set_variable(v1, 'cx', center_obj, '{}'.format('location.x'))
+    v2 = d.variables.new()
+    set_variable(v2, 'cy', center_obj, '{}'.format('location.y'))
+    v3 = d.variables.new()
+    set_variable(v3, 'Px', temp_obj, '["{}"]'.format('Px'))
+    v4 = d.variables.new()
+    set_variable(v4, 'Py', temp_obj, '["{}"]'.format('Py'))
+    v5 = d.variables.new()
+    set_variable(v5, 'Tx', temp_obj, '["{}"]'.format('Tx'))
+    v6 = d.variables.new()
+    set_variable(v6, 'Ty', temp_obj, '["{}"]'.format('Ty'))
+    v7 = d.variables.new()
+    set_variable(v7, 'wx', temp_obj, '["{}"]'.format('wx'))
+    v8 = d.variables.new()
+    set_variable(v8, 'wy', temp_obj, '["{}"]'.format('wy'))
+    d.expression =  '(({cx} - {Px}) / {Tx}) * {wx} + (({cy} - {Py}) / {Ty}) * {wy}'.format(
+        cx=v1.name, cy=v2.name,
+        Px=v3.name, Py=v4.name,
+        Tx=v5.name, Ty=v6.name,
+        wx=v7.name, wy=v8.name
+    ) 
+
+    d = temp_obj.driver_add('delta_location', 0).driver
+    d.type = 'SCRIPTED'
+    v1 = d.variables.new()
+    set_variable(v1, 'Px', temp_obj, '["{}"]'.format('Px'))
+    v2 = d.variables.new()
+    set_variable(v2, 'Tx', temp_obj, '["{}"]'.format('Tx'))
+    v3 = d.variables.new()
+    set_variable(v3, 't', temp_obj, '["{}"]'.format('t'))
+    d.expression =  '{Px} + {Tx} * {t}'.format(Px=v1.name, Tx=v2.name, t=v3.name) 
+
+    d = temp_obj.driver_add('delta_location', 1).driver
+    d.type = 'SCRIPTED'
+    v1 = d.variables.new()
+    set_variable(v1, 'Py', temp_obj, '["{}"]'.format('Py'))
+    v2 = d.variables.new()
+    set_variable(v2, 'Ty', temp_obj, '["{}"]'.format('Ty'))
+    v3 = d.variables.new()
+    set_variable(v3, 't', temp_obj, '["{}"]'.format('t'))
+    d.expression =  '{Py} + {Ty} * {t}'.format(Py=v1.name, Ty=v2.name, t=v3.name) 
+
+    d = temp_obj.driver_add('delta_location', 2).driver
+    d.type = 'SCRIPTED'
+    v1 = d.variables.new()
+    set_variable(v1, 'z', center_obj, '{}'.format('location.z'))
+    d.expression =  '{}'.format(v1.name) 
+
+    
