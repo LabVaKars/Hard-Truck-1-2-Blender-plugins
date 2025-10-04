@@ -737,7 +737,7 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         
         transf_collection.objects.link(temp_obj)
 
-        create_render_branch_drivers(src_obj, temp_obj, render_center_object)
+        create_render_branch_drivers(src_obj, temp_obj, render_center_object, float(shift_z))
 
         # Adding new modifier
         temp_obj.modifiers.new('Render_branch_node', type='NODES')
@@ -747,14 +747,11 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         gnode_modifier.node_group = get_render_branch_visualize_node_group()
         
         # Assigning input values
-        gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk009.Unk_XYZ.get_prop()]        
-        gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = src_obj[Blk009.Unk_R.get_prop()]
-        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = float(shift_z)
-        gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = render_center_object
-        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 4)
-        gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_text
-        gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_a
-        gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_b
+        gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk009.Unk_XYZ.get_prop()]
+        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 1)
+        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
+        gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = material_a
+        gnode_modifier[gnode_modifier.node_group.inputs[4].identifier] = material_b
 
 def show_hide_lod_tree_branch(src_obj, material):
 

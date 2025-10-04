@@ -148,7 +148,7 @@ def create_circle_center_rad_driver(src_obj, modif_name, input_index):
 
     d.expression =  'abs({}*{})'.format(v1.name, v2.name)
 
-def create_render_branch_drivers(src_obj, temp_obj, center_obj):
+def create_render_branch_drivers(src_obj, temp_obj, center_obj, shift_z):
     
     def set_variable(v, name, obj, pname):
         v.type = 'SINGLE_PROP'
@@ -280,6 +280,6 @@ def create_render_branch_drivers(src_obj, temp_obj, center_obj):
     d.type = 'SCRIPTED'
     v1 = d.variables.new()
     set_variable(v1, 'z', center_obj, '{}'.format('location.z'))
-    d.expression =  '{}'.format(v1.name) 
+    d.expression =  '{}+{}'.format(v1.name, shift_z) 
 
     

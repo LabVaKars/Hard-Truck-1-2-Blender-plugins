@@ -301,21 +301,6 @@ class PanelSettings(bpy.types.PropertyGroup):
         default = 0, # index, not value
         update = select_object_on_update('render_tree_enum')
     )
-
-    render_branch_offset = FloatVectorProperty(
-        name = 'Branch offset',
-        description = 'Branch offset',
-        default = (0.0,0.0,0.0)
-        # update = select_object_on_update('render_tree_enum')
-    )
-
-    render_branch_angle = FloatProperty(
-        name = 'Branch angle',
-        description = 'Branch angle',
-        default = 0.0 
-        # update = select_object_on_update('render_tree_enum')
-    )
-
     #Render tree end
 
     #LOD start
@@ -1782,8 +1767,6 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
             box.prop(mytool, 'render_tree_enum')
             o = layout.operator('wm.visualise_render_tree_operator')
             o.node_name = getattr(mytool, 'render_tree_enum')
-            box.prop(mytool, 'render_branch_offset')
-            box.prop(mytool, 'render_branch_angle')
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
