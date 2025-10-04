@@ -25,13 +25,18 @@ def get_render_branch_visualize_node_group():
         result = render_branch_visualize_node_group()
     return result
 
-def get_render_center_object():
-    result = bpy.data.objects.get('Render_center')
+def get_render_center_object(name, location, collection = None):
+    rc_name = 'Render_center_{}'.format(name)
+    result = bpy.data.objects.get(rc_name)
     if not result:
-        result = bpy.data.objects.new('Render_center', None)
+        result = bpy.data.objects.new(rc_name, None)
+        result.location = location
         set_empty_type(result, 'SPHERE')
-        set_empty_size(result, 50)
-        get_context_collection_objects(bpy.context).link(result)
+        set_empty_size(result, 30)
+        if collection is None:
+            get_context_collection_objects(bpy.context).link(result)
+        else:
+            collection.objects.link(result)
     return result
 
 
@@ -127,7 +132,7 @@ def create_rad_driver(src_obj, edit_obj, pname):
 
     d.expression =  'abs({}*{})'.format(v1.name, v2.name)
 
-def create_circle_center_rad_driver(src_obj, modif_name, input_index):
+def create_circle_center_rad_driver(src_obj, modif_name, input_index, render_center_object):
     modifier = src_obj.modifiers[modif_name]
     input_name = modifier.node_group.inputs[input_index].identifier
     d = modifier.driver_add('["{}"]'.format(input_name)).driver
@@ -136,13 +141,13 @@ def create_circle_center_rad_driver(src_obj, modif_name, input_index):
     v1 = d.variables.new()
     v1.type = 'SINGLE_PROP'
     v1.name = 'empty_rad'
-    v1.targets[0].id = get_render_center_object()
+    v1.targets[0].id = render_center_object
     v1.targets[0].data_path = 'empty_display_size'
 
     v2 = d.variables.new()
     v2.type = 'TRANSFORMS'
     v2.name = 'empty_scale'
-    v2.targets[0].id = get_render_center_object()
+    v2.targets[0].id = render_center_object
     v2.targets[0].transform_type = 'SCALE_AVG'
     v2.targets[0].transform_space = 'WORLD_SPACE'
 

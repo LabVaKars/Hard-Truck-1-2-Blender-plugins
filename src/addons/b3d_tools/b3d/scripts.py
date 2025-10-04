@@ -113,9 +113,6 @@ def apply_transforms():
 def apply_transform(root):
 
     transf_collection = get_or_create_collection(TRANSF_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     if bpy.data.objects.get('b3dCenterSpace') is None:
         b3d_obj = bpy.data.objects.new('b3dCenterSpace', None)
@@ -715,12 +712,7 @@ def create_cube_mesh(name):
     
     return mesh
 
-def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, material_text, material_a, material_b):
-
-    transf_collection = get_or_create_collection(TEMP_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
+def show_hide_render_tree_branch(src_obj, collection, render_center_object, shift_z, material_text, material_a, material_b):
 
     obj_name = "{}||temp".format(src_obj.name)
 
@@ -735,7 +727,7 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         # creating object
         temp_obj = bpy.data.objects.new(obj_name, cubemesh)
         
-        transf_collection.objects.link(temp_obj)
+        collection.objects.link(temp_obj)
 
         create_render_branch_drivers(src_obj, temp_obj, render_center_object, float(shift_z))
 
@@ -748,7 +740,7 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
         
         # Assigning input values
         gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk009.Unk_XYZ.get_prop()]
-        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 1)
+        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 1, render_center_object)
         gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
         gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = material_a
         gnode_modifier[gnode_modifier.node_group.inputs[4].identifier] = material_b
@@ -756,9 +748,6 @@ def show_hide_render_tree_branch(src_obj, render_center_object, shift_z, materia
 def show_hide_lod_tree_branch(src_obj, material):
 
     transf_collection = get_or_create_collection(TEMP_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     obj_name = "{}||temp".format(src_obj.name)
 
@@ -791,9 +780,6 @@ def show_hide_lod_tree_branch(src_obj, material):
 def show_hide_sphere(src_obj, center_prop, rad_prop):
 
     transf_collection = get_or_create_collection(TEMP_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     obj_name = "{}||temp".format(src_obj.name)
 

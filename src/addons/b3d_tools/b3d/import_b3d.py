@@ -2241,9 +2241,6 @@ def import_b3d(file, context, self, filepath):
 
     #create room borders(30)
     transf_collection = get_or_create_collection(BORDER_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     for key in borders.keys():
 

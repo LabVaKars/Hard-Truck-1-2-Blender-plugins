@@ -1,11 +1,5 @@
 import bpy
 
-from ..compatibility import(
-    get_ui_region,
-    get_active_object,
-    set_active_object
-)
-
 from ..common import (
     panel_logger
 )
@@ -22,7 +16,8 @@ from .common import (
     modules_callback,
     render_tree_callback,
     LOD_callback,
-    event_callback
+    event_callback,
+    get_mult_obj_bounding_sphere
 )
 from .ui_utils import (
     draw_common,
@@ -66,7 +61,7 @@ from .classes import (
 
 from .class_descr import (
     Blk009, Blk010,
-    Blk020,Blk021,Blk023,
+    Blk020,Blk021,Blk023, Blk030,
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
     Blk050, Blk051, Blk052,
     ResBlock
@@ -92,10 +87,14 @@ from bpy.props import (StringProperty,
                         )
 
 from ..compatibility import (
+    get_ui_region,
+    get_active_object,
+    set_active_object,
     make_annotations,
     layout_split,
     get_context_collection_objects,
     get_or_create_collection,
+    remove_collection,
     is_before_2_80,
     is_before_2_93,
     set_empty_type,
@@ -1312,8 +1311,8 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
 
         b3d_obj = bpy.data.objects.get(self.node_name)
 
+
         #Create needed objects and materials
-        render_center_object = get_render_center_object()
 
         def get_level(src_obj, dest_obj):
             obj = src_obj
@@ -1335,6 +1334,25 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
         max_lvl = sorted([o['lvl'] for o in branch_list])[-1]
         create_render_branch_materials(max_lvl)
 
+        #Set Render center initial location in a room if possible
+        location = (0.0,0.0,0.0)
+        room = get_room_obj(b3d_obj)
+        if room is not None:
+            borders = [{'obj':o.name,'transf':o.name} for o in bpy.data.objects if o.get(consts.BLOCK_TYPE) == 30 and 
+                (o.get(Blk030.RoomName1.get_prop()) == room.name or o.get(Blk030.RoomName2.get_prop()) == room.name)]
+
+            bbox_params = get_mult_obj_bounding_sphere(borders)
+            location = bbox_params[0]
+        
+        collection_name = 'RenderTree_{}'.format(b3d_obj.name)
+        temp_collection = get_or_create_collection(collection_name)
+
+        if len(temp_collection.objects) > 0:
+            remove_collection(temp_collection.name)
+            return {'FINISHED'}
+
+        render_center_object = get_render_center_object(b3d_obj.name, location, temp_collection)
+
         level_mult = -5.0
         for i, branch_obj in enumerate(branch_list):
             material_a = bpy.data.materials.get('RenderBranchTransp')
@@ -1346,7 +1364,7 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
 
             shift_z = branch_obj['lvl'] * level_mult + (1.0 if branch_obj['grp'] == "0" else -1.0)
 
-            show_hide_render_tree_branch(branch_obj['obj'], render_center_object, shift_z, material_text, material_a, material_b)
+            show_hide_render_tree_branch(branch_obj['obj'], temp_collection, render_center_object, shift_z, material_text, material_a, material_b)
 
         self.report({'INFO'}, "Render Tree visualiser created!")
 
