@@ -1,4 +1,5 @@
 import bpy
+import math
 
 from ..common import (
     recalc_to_local_coord,
@@ -1410,7 +1411,59 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
         self.report({'INFO'}, "Render Tree visualiser created!")
 
         return {'FINISHED'}
+
+@make_annotations
+class ApplyRenderTreeChangesOperator(bpy.types.Operator):
+    bl_idname = "wm.apply_render_tree_changes_operator"
+    bl_label = "Apply changes"
+    bl_description = "Apply render tree changes"
     
+    def execute(self, context):
+
+        branches = [o for o in bpy.data.objects if o.name[:9] == 'RT_Branch']
+
+        for branch_obj in branches:
+            obj_name = branch_obj.name.split("||")[1]
+            b3d_obj = bpy.data.objects[obj_name]
+            ax = b3d_obj[Blk009.Unk_XYZ.get_prop()][0]
+            ay = b3d_obj[Blk009.Unk_XYZ.get_prop()][1]
+            length = math.sqrt(ax**2 + ay**2)
+            axn = ax / length
+            ayn = ay / length
+            angle = math.atan2(ayn, axn) + math.pi/2 
+            # + math.pi/4
+            # Given
+            Px = branch_obj.delta_location[0] + branch_obj.location[0]
+            Py = branch_obj.delta_location[1] + branch_obj.location[1]
+
+            theta = angle + branch_obj.rotation_euler[2] #only z axis rotation
+
+            # Step 1: compute lambda
+            lam = Px*math.cos(theta) + Py*math.sin(theta)
+
+            # Step 2: compute tangent point
+            Tx = Px - lam*math.cos(theta)
+            Ty = Py - lam*math.sin(theta)
+
+            # Step 3: compute radius
+            R = math.sqrt(Tx**2 + Ty**2)
+
+            new_vec = (Tx/R, Ty/R, 0.0)
+
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][0] = new_vec[0]
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][1] = new_vec[1]
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][2] = new_vec[2]
+            b3d_obj[Blk009.Unk_R.get_prop()] = -R
+            b3d_obj.update_tag(refresh={'OBJECT'})
+
+            branch_obj.location[0] = 0.0
+            branch_obj.location[1] = 0.0
+            branch_obj.location[2] = 0.0
+            branch_obj.rotation_euler[2] = 0.0
+
+        return {'FINISHED'}
+
+
 @make_annotations
 class VisualiseLODTreeOperator(bpy.types.Operator):
     bl_idname = "wm.visualise_lod_tree_operator"
@@ -1826,6 +1879,7 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
             box.prop(mytool, 'render_tree_enum')
             o = layout.operator('wm.visualise_render_tree_operator')
             o.node_name = getattr(mytool, 'render_tree_enum')
+            layout.operator('wm.apply_render_tree_changes_operator')
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
@@ -2240,24 +2294,30 @@ _classes = [
     SelectSimilarObjectsOperator,
     SelectSimilarFacesOperator,
     VisualiseRenderTreeOperator,
+    ApplyRenderTreeChangesOperator,
     VisualiseLODTreeOperator,
     # panels
+    #Block add
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,
     # OBJECT_PT_b3d_template_add_panel,
     OBJECT_PT_b3d_cast_add_panel,
+    #Block edit
     OBJECT_PT_b3d_edit_panel,
     OBJECT_PT_b3d_pob_single_edit_panel,
     OBJECT_PT_b3d_pob_edit_panel,
     OBJECT_PT_b3d_pfb_edit_panel,
     OBJECT_PT_b3d_pvb_edit_panel,
     OBJECT_PT_b3d_hier_edit_panel,
+    #RES resources
     OBJECT_PT_b3d_res_module_panel,
     OBJECT_PT_b3d_palette_panel,
     OBJECT_PT_b3d_maskfiles_panel,
     OBJECT_PT_b3d_textures_panel,
     OBJECT_PT_b3d_materials_panel,
+    #Additional options
     OBJECT_PT_b3d_func_panel,
+    #Misc
     OBJECT_PT_b3d_misc_panel,
 ]
 

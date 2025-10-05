@@ -146,6 +146,21 @@ def create_rad_driver(src_obj, edit_obj, pname):
 
     d.expression =  'abs({}*{})'.format(v1.name, v2.name)
 
+def create_vector_location_driver(src_obj, modif_name, input_index, b3d_obj, pname):
+    modifier = src_obj.modifiers[modif_name]
+    input_name = modifier.node_group.inputs[input_index].identifier
+    for i in range(3):
+        d = modifier.driver_add('["{}"]'.format(input_name), i).driver
+        d.type = 'SCRIPTED'
+
+        v1 = d.variables.new()
+        v1.type = 'SINGLE_PROP'
+        v1.name = 'location'
+        v1.targets[0].id = b3d_obj
+        v1.targets[0].data_path = '["{}"][{}]'.format(pname, i)
+        
+        d.expression =  '{}'.format(v1.name)
+
 def create_circle_center_rad_driver(src_obj, modif_name, input_index, render_center_object):
     modifier = src_obj.modifiers[modif_name]
     input_name = modifier.node_group.inputs[input_index].identifier

@@ -26,6 +26,7 @@ from .common import (
 
 from .data_api_utils import (
     create_circle_center_rad_driver,
+    create_vector_location_driver,
     get_render_branch_visualize_node_group,
     get_lod_branch_visualize_node_group,
     create_center_driver,
@@ -714,7 +715,7 @@ def create_cube_mesh(name):
 
 def show_hide_render_tree_branch(src_obj, collection, render_center_object, shift_z, material_text, material_a, material_b):
 
-    obj_name = "{}||temp".format(src_obj.name)
+    obj_name = "RT_Branch||{}".format(src_obj.name)
 
     temp_obj = bpy.data.objects.get(obj_name)
 
@@ -739,7 +740,7 @@ def show_hide_render_tree_branch(src_obj, collection, render_center_object, shif
         gnode_modifier.node_group = get_render_branch_visualize_node_group()
         
         # Assigning input values
-        gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk009.Unk_XYZ.get_prop()]
+        create_vector_location_driver(temp_obj, 'Render_branch_node', 0, src_obj, Blk009.Unk_XYZ.get_prop())
         create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 1, render_center_object)
         gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
         gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = material_a
@@ -749,7 +750,7 @@ def show_hide_lod_tree_branch(src_obj, material):
 
     transf_collection = get_or_create_collection(TEMP_COLLECTION)
 
-    obj_name = "{}||temp".format(src_obj.name)
+    obj_name = "LOD_Branch||{}".format(src_obj.name)
 
     temp_obj = bpy.data.objects.get(obj_name)
 
