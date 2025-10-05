@@ -1353,6 +1353,12 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
 
         b3d_obj = bpy.data.objects.get(self.node_name)
 
+        collection_name = 'RenderTree_{}'.format(b3d_obj.name)
+        temp_collection = get_or_create_collection(collection_name)
+
+        if len(temp_collection.objects) > 0:
+            remove_collection(temp_collection.name)
+            return {'FINISHED'}
 
         #Create needed objects and materials
 
@@ -1386,12 +1392,6 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
             bbox_params = get_mult_obj_bounding_sphere(borders)
             location = bbox_params[0]
         
-        collection_name = 'RenderTree_{}'.format(b3d_obj.name)
-        temp_collection = get_or_create_collection(collection_name)
-
-        if len(temp_collection.objects) > 0:
-            remove_collection(temp_collection.name)
-            return {'FINISHED'}
 
         render_center_object = get_render_center_object(b3d_obj.name, location, temp_collection)
 
@@ -1478,6 +1478,13 @@ class VisualiseLODTreeOperator(bpy.types.Operator):
 
         b3d_obj = bpy.data.objects.get(self.node_name)
 
+        collection_name = 'LODTree_{}'.format(b3d_obj.name)
+        temp_collection = get_or_create_collection(collection_name)
+
+        if len(temp_collection.objects) > 0:
+            remove_collection(temp_collection.name)
+            return {'FINISHED'}
+        
         #Create needed objects and materials
         def get_level(src_obj, dest_obj):
             obj = src_obj
@@ -1500,9 +1507,42 @@ class VisualiseLODTreeOperator(bpy.types.Operator):
         for i, branch_obj in enumerate(branch_list):
             material = bpy.data.materials.get('RenderBranchMat_{}_{}'.format(branch_obj['lvl'], max_lvl))
 
-            show_hide_lod_tree_branch(branch_obj['obj'], material)
+            show_hide_lod_tree_branch(branch_obj['obj'], temp_collection, material)
 
         self.report({'INFO'}, "LOD Tree visualiser created!")
+
+        return {'FINISHED'}
+
+@make_annotations
+class ApplyLODTreeChangesOperator(bpy.types.Operator):
+    bl_idname = "wm.apply_lod_tree_changes_operator"
+    bl_label = "Apply changes"
+    bl_description = "Apply LOD tree changes"
+    
+    def execute(self, context):
+
+        branches = [o for o in bpy.data.objects if o.name[:10] == 'LOD_Branch']
+
+        for branch_obj in branches:
+            obj_name = branch_obj.name.split("||")[1]
+            b3d_obj = bpy.data.objects[obj_name]
+
+            R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.get_prop()]
+
+            print(R)
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
+            b3d_obj[Blk010.LOD_R.get_prop()] = R
+            b3d_obj.update_tag(refresh={'OBJECT'})
+
+            branch_obj.location[0] = 0.0
+            branch_obj.location[1] = 0.0
+            branch_obj.location[2] = 0.0
+            
+            branch_obj.scale[0] = 1.0
+            branch_obj.scale[1] = 1.0
+            branch_obj.scale[2] = 1.0
 
         return {'FINISHED'}
 
@@ -1885,6 +1925,7 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
             box.prop(mytool, 'LOD_enum')
             o = layout.operator('wm.visualise_lod_tree_operator')
             o.node_name = getattr(mytool, 'LOD_enum')
+            layout.operator('wm.apply_lod_tree_changes_operator')
         elif current_hier == "LOD_21":
             # draw_enum(box, 'event')
             box.prop(mytool, 'event_enum')
@@ -2296,6 +2337,7 @@ _classes = [
     VisualiseRenderTreeOperator,
     ApplyRenderTreeChangesOperator,
     VisualiseLODTreeOperator,
+    ApplyLODTreeChangesOperator,
     # panels
     #Block add
     OBJECT_PT_b3d_add_panel,

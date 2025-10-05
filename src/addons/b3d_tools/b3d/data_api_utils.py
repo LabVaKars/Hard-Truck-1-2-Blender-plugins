@@ -146,37 +146,52 @@ def create_rad_driver(src_obj, edit_obj, pname):
 
     d.expression =  'abs({}*{})'.format(v1.name, v2.name)
 
-def create_vector_location_driver(src_obj, modif_name, input_index, b3d_obj, pname):
-    modifier = src_obj.modifiers[modif_name]
-    input_name = modifier.node_group.inputs[input_index].identifier
+def create_simple_value_driver(driven_obj, dname, b3d_obj, pname):
+    d = driven_obj.driver_add(dname).driver
+    d.type = 'SCRIPTED'
+    
+    v1 = d.variables.new()
+    v1.type = 'SINGLE_PROP'
+    v1.name = 'var1'
+    v1.targets[0].id = b3d_obj
+    v1.targets[0].data_path = '["{}"]'.format(pname)
+    
+    d.expression =  '{}'.format(v1.name)
+
+def create_vector_location_driver(driven_obj, dname, b3d_obj, pname):
+
     for i in range(3):
-        d = modifier.driver_add('["{}"]'.format(input_name), i).driver
+        d = driven_obj.driver_add('{}'.format(dname), i).driver
         d.type = 'SCRIPTED'
 
         v1 = d.variables.new()
         v1.type = 'SINGLE_PROP'
-        v1.name = 'location'
+        v1.name = 'var1'
         v1.targets[0].id = b3d_obj
         v1.targets[0].data_path = '["{}"][{}]'.format(pname, i)
         
         d.expression =  '{}'.format(v1.name)
 
-def create_circle_center_rad_driver(src_obj, modif_name, input_index, render_center_object):
-    modifier = src_obj.modifiers[modif_name]
-    input_name = modifier.node_group.inputs[input_index].identifier
-    d = modifier.driver_add('["{}"]'.format(input_name)).driver
+# def create_vector_location_driver_modifier(src_obj, modif_name, input_index, b3d_obj, pname):
+#     modifier = src_obj.modifiers[modif_name]
+#     input_name = modifier.node_group.inputs[input_index].identifier
+#     create_vector_location_driver(src_obj, '["{}"]'.format(input_name), b3d_obj, pname)
+
+
+def create_circle_center_rad_driver(driven_obj, dname, empty_obj):
+    d = driven_obj.driver_add(dname).driver
     d.type = 'SCRIPTED'
 
     v1 = d.variables.new()
     v1.type = 'SINGLE_PROP'
     v1.name = 'empty_rad'
-    v1.targets[0].id = render_center_object
+    v1.targets[0].id = empty_obj
     v1.targets[0].data_path = 'empty_display_size'
 
     v2 = d.variables.new()
     v2.type = 'TRANSFORMS'
     v2.name = 'empty_scale'
-    v2.targets[0].id = render_center_object
+    v2.targets[0].id = empty_obj
     v2.targets[0].transform_type = 'SCALE_AVG'
     v2.targets[0].transform_space = 'WORLD_SPACE'
 

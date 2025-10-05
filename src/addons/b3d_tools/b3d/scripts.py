@@ -25,8 +25,9 @@ from .common import (
 )
 
 from .data_api_utils import (
-    create_circle_center_rad_driver,
+    create_simple_value_driver,
     create_vector_location_driver,
+    create_circle_center_rad_driver,
     get_render_branch_visualize_node_group,
     get_lod_branch_visualize_node_group,
     create_center_driver,
@@ -740,15 +741,15 @@ def show_hide_render_tree_branch(src_obj, collection, render_center_object, shif
         gnode_modifier.node_group = get_render_branch_visualize_node_group()
         
         # Assigning input values
-        create_vector_location_driver(temp_obj, 'Render_branch_node', 0, src_obj, Blk009.Unk_XYZ.get_prop())
-        create_circle_center_rad_driver(temp_obj, 'Render_branch_node', 1, render_center_object)
+        input_name = gnode_modifier.node_group.inputs[0].identifier
+        create_vector_location_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk009.Unk_XYZ.get_prop())
+        input_name = gnode_modifier.node_group.inputs[1].identifier
+        create_circle_center_rad_driver(gnode_modifier, '["{}"]'.format(input_name), render_center_object)
         gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
         gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = material_a
         gnode_modifier[gnode_modifier.node_group.inputs[4].identifier] = material_b
 
-def show_hide_lod_tree_branch(src_obj, material):
-
-    transf_collection = get_or_create_collection(TEMP_COLLECTION)
+def show_hide_lod_tree_branch(src_obj, collection, material):
 
     obj_name = "LOD_Branch||{}".format(src_obj.name)
 
@@ -763,7 +764,9 @@ def show_hide_lod_tree_branch(src_obj, material):
         # creating object
         temp_obj = bpy.data.objects.new(obj_name, cubemesh)
         
-        transf_collection.objects.link(temp_obj)
+        collection.objects.link(temp_obj)
+        
+        create_vector_location_driver(temp_obj, 'delta_location', src_obj, Blk010.LOD_XYZ.get_prop())
 
         # Adding new modifier
         temp_obj.modifiers.new('LOD_branch_node', type='NODES')
@@ -773,9 +776,9 @@ def show_hide_lod_tree_branch(src_obj, material):
         gnode_modifier.node_group = get_lod_branch_visualize_node_group()
         
         # Assigning input values
-        gnode_modifier[gnode_modifier.node_group.inputs[0].identifier] = src_obj[Blk010.LOD_XYZ.get_prop()]        
-        gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = src_obj[Blk010.LOD_R.get_prop()]
-        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material
+        input_name = gnode_modifier.node_group.inputs[0].identifier
+        create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk010.LOD_R.get_prop())
+        gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = material
 
 
 def show_hide_sphere(src_obj, center_prop, rad_prop):

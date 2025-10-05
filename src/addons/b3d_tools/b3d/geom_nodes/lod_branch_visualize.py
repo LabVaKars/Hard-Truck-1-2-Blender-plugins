@@ -67,36 +67,6 @@ def lod_branch_visualize_node_group():
     #Fill Caps
     z_mesh.inputs[2].default_value = False
 
-    #node X Transform
-    x_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
-    x_transform.label = "X Transform"
-    x_transform.name = "X Transform"
-    x_transform.hide = True
-    #Rotation
-    x_transform.inputs[2].default_value = (1.5707963705062866, 0.0, 0.0)
-    #Scale
-    x_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
-
-    #node Y Transform
-    y_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
-    y_transform.label = "Y Transform"
-    y_transform.name = "Y Transform"
-    y_transform.hide = True
-    #Rotation
-    y_transform.inputs[2].default_value = (0.0, 1.5707963705062866, 0.0)
-    #Scale
-    y_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
-
-    #node Z Transform
-    z_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
-    z_transform.label = "Z Transform"
-    z_transform.name = "Z Transform"
-    z_transform.hide = True
-    #Rotation
-    z_transform.inputs[2].default_value = (0.0, 0.0, 1.5707963705062866)
-    #Scale
-    z_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
-
     #node Set Material
     set_material = lod_branch_visualize.nodes.new("GeometryNodeSetMaterial")
     set_material.name = "Set Material"
@@ -119,22 +89,54 @@ def lod_branch_visualize_node_group():
 
 
 
+    #node X Transform
+    x_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    x_transform.label = "X Transform"
+    x_transform.name = "X Transform"
+    x_transform.hide = True
+    #Translation
+    x_transform.inputs[1].default_value = (0.0, 0.0, 0.0)
+    #Rotation
+    x_transform.inputs[2].default_value = (1.5707963705062866, 0.0, 0.0)
+    #Scale
+    x_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+    #node Y Transform
+    y_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    y_transform.label = "Y Transform"
+    y_transform.name = "Y Transform"
+    y_transform.hide = True
+    #Translation
+    y_transform.inputs[1].default_value = (0.0, 0.0, 0.0)
+    #Rotation
+    y_transform.inputs[2].default_value = (0.0, 1.5707963705062866, 0.0)
+    #Scale
+    y_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+    #node Z Transform
+    z_transform = lod_branch_visualize.nodes.new("GeometryNodeTransform")
+    z_transform.label = "Z Transform"
+    z_transform.name = "Z Transform"
+    z_transform.hide = True
+    #Translation
+    z_transform.inputs[1].default_value = (0.0, 0.0, 0.0)
+    #Rotation
+    z_transform.inputs[2].default_value = (0.0, 0.0, 1.5707963705062866)
+    #Scale
+    z_transform.inputs[3].default_value = (1.0, 1.0, 1.0)
+
     #node LOD_branch_viz_GI
     lod_branch_viz_gi = lod_branch_visualize.nodes.new("NodeGroupInput")
     lod_branch_viz_gi.label = "Group Output"
     lod_branch_viz_gi.name = "LOD_branch_viz_GI"
     #lod_branch_visualize inputs
-    #input Location
-    lod_branch_visualize.inputs.new('NodeSocketVector', "Location")
-    lod_branch_visualize.inputs[0].attribute_domain = 'POINT'
-
     #input Radius
     lod_branch_visualize.inputs.new('NodeSocketFloat', "Radius")
-    lod_branch_visualize.inputs[1].attribute_domain = 'POINT'
+    lod_branch_visualize.inputs[0].attribute_domain = 'POINT'
 
     #input Material
     lod_branch_visualize.inputs.new('NodeSocketMaterial', "Material")
-    lod_branch_visualize.inputs[2].attribute_domain = 'POINT'
+    lod_branch_visualize.inputs[1].attribute_domain = 'POINT'
 
 
 
@@ -150,12 +152,12 @@ def lod_branch_visualize_node_group():
     x_mesh.location = (-4448.77587890625, 6646.96484375)
     y_mesh.location = (-4451.70751953125, 6504.47265625)
     z_mesh.location = (-4447.81298828125, 6362.9189453125)
-    x_transform.location = (-4256.88037109375, 6628.8193359375)
-    y_transform.location = (-4259.68896484375, 6485.9306640625)
-    z_transform.location = (-4252.93701171875, 6338.02734375)
     set_material.location = (-3873.507080078125, 6419.6962890625)
     join_geometry.location = (-4054.37939453125, 6542.4951171875)
     lod_branch_viz_go.location = (-3699.537353515625, 6536.4755859375)
+    x_transform.location = (-4256.88037109375, 6628.8193359375)
+    y_transform.location = (-4259.68896484375, 6485.9306640625)
+    z_transform.location = (-4252.93701171875, 6338.02734375)
     lod_branch_viz_gi.location = (-4922.5146484375, 6550.20166015625)
 
     #initialize lod_branch_visualize links
@@ -196,17 +198,11 @@ def lod_branch_visualize_node_group():
     #join_geometry.Geometry -> set_material.Geometry
     lod_branch_visualize.links.new(join_geometry.outputs[0], set_material.inputs[0])
     #lod_branch_viz_gi.Radius -> x_circle.Radius
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[1], x_circle.inputs[4])
+    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], x_circle.inputs[4])
     #lod_branch_viz_gi.Radius -> y_circle.Radius
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[1], y_circle.inputs[4])
+    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], y_circle.inputs[4])
     #lod_branch_viz_gi.Radius -> z_circle.Radius
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[1], z_circle.inputs[4])
-    #lod_branch_viz_gi.Location -> x_transform.Translation
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], x_transform.inputs[1])
-    #lod_branch_viz_gi.Location -> y_transform.Translation
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], y_transform.inputs[1])
-    #lod_branch_viz_gi.Location -> z_transform.Translation
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], z_transform.inputs[1])
+    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[0], z_circle.inputs[4])
     #lod_branch_viz_gi.Material -> set_material.Material
-    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[2], set_material.inputs[2])
+    lod_branch_visualize.links.new(lod_branch_viz_gi.outputs[1], set_material.inputs[2])
     return lod_branch_visualize
