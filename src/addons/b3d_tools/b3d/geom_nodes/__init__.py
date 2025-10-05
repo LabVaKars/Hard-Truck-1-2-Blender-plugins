@@ -7,6 +7,7 @@ if "bpy" in locals():
     importlib.reload(render_branch_visualize)
     importlib.reload(lod_branch_visualize)
     importlib.reload(portal_visualize)
+    importlib.reload(vert_collision_visualize)
 else:
     import bpy
     from . import (
@@ -15,5 +16,6 @@ else:
         circle_visualize,
         render_branch_visualize,
         lod_branch_visualize,
-        portal_visualize
+        portal_visualize,
+        vert_collision_visualize
     )

@@ -8,7 +8,8 @@ from ..common import (
 from .. import consts
 
 from .data_api_utils import (
-    get_portal_visualize_node_group
+    get_portal_visualize_node_group,
+    get_vert_collision_visualize_node_group
 )
 
 from .common import (
@@ -476,26 +477,16 @@ class SingleAddOperator(bpy.types.Operator):
 
             get_context_collection_objects(context).link(b3d_obj)
 
-        elif block_type in [28]:
+        elif block_type == 28:
 
             sprite_center = cursor_pos
 
-            l_vertexes = []
-
-            if block_type == 28:
-                l_vertexes = [
-                    (0.0, -1.0, -1.0),
-                    (0.0, -1.0, 1.0),
-                    (0.0, 1.0, 1.0),
-                    (0.0, 1.0, -1.0)
-                ]
-            # elif block_type == 30:
-            #     l_vertexes = [
-            #         (0.0, -10.0, -20.0),
-            #         (0.0, -10.0, 20.0),
-            #         (0.0, 10.0, 20.0),
-            #         (0.0, 10.0, -20.0)
-            #     ]
+            l_vertexes = [
+                (0.0, -1.0, -1.0),
+                (0.0, -1.0, 1.0),
+                (0.0, 1.0, 1.0),
+                (0.0, 1.0, -1.0)
+            ]
 
             l_faces = [(0,1,2,3)]
 
@@ -511,11 +502,10 @@ class SingleAddOperator(bpy.types.Operator):
                 set_objs_by_type(b3d_obj, zclass)
             get_context_collection_objects(context).link(b3d_obj)
 
-        elif block_type in [30]:
+        elif block_type == 30:
 
             sprite_center = cursor_pos
             
-            # if block_type == 30:
             l_points = [
                 (0.0, 0.0, 0.0),
                 (0.0, 20.0, 40.0)
@@ -705,23 +695,26 @@ class CastAddOperator(bpy.types.Operator):
 
             for poly_obj in context.selected_objects:
                 if poly_obj.type == 'CURVE':
-
+                    new_obj = None
                     if to_copy:
                         new_obj = poly_obj.copy()
                         new_obj.data = poly_obj.data.copy()
-                        new_obj[consts.BLOCK_TYPE] = 20
-                        new_obj.data.bevel_depth = 0
-                        new_obj.data.extrude = 10
-                        new_obj.parent = parent_obj
-                        set_objs_by_type(new_obj, Blk020)
+                    else: 
+                        new_obj = poly_obj
+
+                    new_obj[consts.BLOCK_TYPE] = 20
+                    new_obj.parent = parent_obj
+                    set_objs_by_type(new_obj, Blk020)
+
+                    new_obj.modifiers.new('Portal_node', type='NODES')
+                    gnode_modifier = new_obj.modifiers.get('Portal_node')
+
+                    gnode_modifier.node_group = get_vert_collision_visualize_node_group()
+
+                    if to_copy:
                         get_context_collection_objects(context).link(new_obj)
                         log.info("Created new B3D 2d colision: {}.".format(new_obj.name))
                     else:
-                        poly_obj[consts.BLOCK_TYPE] = 20
-                        poly_obj.data.bevel_depth = 0
-                        poly_obj.data.extrude = 10
-                        poly_obj.parent = parent_obj
-                        set_objs_by_type(poly_obj, Blk020)
                         log.info("Cast exiting object to B3D 2d colision: {}.".format(poly_obj.name))
 
                 else:

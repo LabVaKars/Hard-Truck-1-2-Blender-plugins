@@ -95,7 +95,8 @@ from ..compatibility import (
 )
 
 from .data_api_utils import (
-    get_portal_visualize_node_group
+    get_portal_visualize_node_group,
+    get_vert_collision_visualize_node_group
 )
 
 
@@ -1243,7 +1244,7 @@ def import_b3d(file, context, self, filepath):
 
                 curve_data = bpy.data.curves.new('curve', type='CURVE')
 
-                curve_data.dimensions = '2D'
+                curve_data.dimensions = '3D'
                 curve_data.resolution_u = 2
 
                 # map coords to spline
@@ -1261,9 +1262,6 @@ def import_b3d(file, context, self, filepath):
                     x,y,z = coord
                     polyline.points[i].co = (x, y, z, 1)
 
-                curve_data.bevel_depth = 0
-                curve_data.extrude = 10
-
                 # create Object
                 b3d_obj = bpy.data.objects.new(obj_name, curve_data)
                 # b3d_obj.location = (0,0,0)
@@ -1276,6 +1274,12 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj[Blk020.Unk_List.get_prop()] = unknowns
 
                 b3d_obj.parent = parent_obj
+                
+                b3d_obj.modifiers.new('Vert_collision_node', type='NODES')
+                gnode_modifier = b3d_obj.modifiers.get('Vert_collision_node')
+
+                gnode_modifier.node_group = get_vert_collision_visualize_node_group()
+
                 get_context_collection_objects(context).link(b3d_obj)
                 real_name = b3d_obj.name
                 obj_string[-1] = b3d_obj.name
