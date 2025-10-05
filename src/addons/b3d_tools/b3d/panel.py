@@ -1,10 +1,15 @@
 import bpy
 
 from ..common import (
+    recalc_to_local_coord,
     panel_logger
 )
 
 from .. import consts
+
+from .data_api_utils import (
+    get_portal_visualize_node_group
+)
 
 from .common import (
     is_root_obj,
@@ -471,7 +476,7 @@ class SingleAddOperator(bpy.types.Operator):
 
             get_context_collection_objects(context).link(b3d_obj)
 
-        elif block_type in [28, 30]:
+        elif block_type in [28]:
 
             sprite_center = cursor_pos
 
@@ -484,13 +489,13 @@ class SingleAddOperator(bpy.types.Operator):
                     (0.0, 1.0, 1.0),
                     (0.0, 1.0, -1.0)
                 ]
-            elif block_type == 30:
-                l_vertexes = [
-                    (0.0, -10.0, -20.0),
-                    (0.0, -10.0, 20.0),
-                    (0.0, 10.0, 20.0),
-                    (0.0, 10.0, -20.0)
-                ]
+            # elif block_type == 30:
+            #     l_vertexes = [
+            #         (0.0, -10.0, -20.0),
+            #         (0.0, -10.0, 20.0),
+            #         (0.0, 10.0, 20.0),
+            #         (0.0, 10.0, -20.0)
+            #     ]
 
             l_faces = [(0,1,2,3)]
 
@@ -505,6 +510,49 @@ class SingleAddOperator(bpy.types.Operator):
             if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
                 set_objs_by_type(b3d_obj, zclass)
             get_context_collection_objects(context).link(b3d_obj)
+
+        elif block_type in [30]:
+
+            sprite_center = cursor_pos
+            
+            # if block_type == 30:
+            l_points = [
+                (0.0, 0.0, 0.0),
+                (0.0, 20.0, 40.0)
+            ]
+
+            curve_data = bpy.data.curves.new(object_name, type='CURVE')
+
+            curve_data.dimensions = '3D'
+            curve_data.resolution_u = 2
+
+            # map coords to spline
+            polyline = curve_data.splines.new('POLY')
+            polyline.points.add(1)
+
+            p1 = l_points[0]
+            p2 = l_points[1]
+
+            p1l = recalc_to_local_coord(p1, [p1])[0]
+            p2l = recalc_to_local_coord(p1, [p2])[0]
+
+            polyline.points[0].co = (p1l[0], p1l[1], p1l[2], 1)
+            polyline.points[1].co = (p2l[0], p2l[1], p2l[2], 1)
+
+            b3d_obj = bpy.data.objects.new(object_name, curve_data)
+            b3d_obj[consts.BLOCK_TYPE] = block_type
+            b3d_obj.location = p1
+            if parent_obj is not None and block_type != 111:
+                b3d_obj.parent = parent_obj
+            if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
+                set_objs_by_type(b3d_obj, zclass)
+
+            b3d_obj.modifiers.new('Portal_node', type='NODES')
+            gnode_modifier = b3d_obj.modifiers.get('Portal_node')
+
+            gnode_modifier.node_group = get_portal_visualize_node_group()
+
+            get_context_collection_objects(bpy.context).link(b3d_obj)
 
         return {'FINISHED'}
 

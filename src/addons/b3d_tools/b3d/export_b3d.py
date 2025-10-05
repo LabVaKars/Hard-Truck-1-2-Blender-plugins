@@ -1111,14 +1111,14 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             else:
                 write_name(get_room_name(current_module_name, roomname1), file)
 
-            vertexes = [matrix_multiply(block.matrix_world, cn.co) for cn in block.data.vertices]
+            points = [matrix_multiply(block.matrix_world, cn.co) for cn in block.data.splines[0].points]
 
             if to_import_second_side:
-                p1 = vertexes[0]
-                p2 = vertexes[2]
+                p1 = (points[0][0], points[0][1], points[0][2])
+                p2 = (points[1][0], points[1][1], points[1][2])
             else:
-                p1 = vertexes[1]
-                p2 = vertexes[3]
+                p1 = (points[1][0], points[1][1], points[0][2])
+                p2 = (points[0][0], points[0][1], points[1][2])
 
             file.write(struct.pack("<3f", *p1))
             file.write(struct.pack("<3f", *p2))
