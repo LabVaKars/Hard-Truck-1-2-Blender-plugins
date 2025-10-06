@@ -603,6 +603,19 @@ class TemplateAddOperator(bpy.types.Operator):
             bpy.ops.object.select_all(action='DESELECT')
 
         return {'FINISHED'}
+    
+class HierarchyAddOperator(bpy.types.Operator):
+    bl_idname = "wm.hierarchy_add_operator"
+    bl_label = "Add block hierarchy to scene"
+
+    def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+        
+        lod_level = getattr(mytool, "lod_level_int")
+
+
+        return {'FINISHED'}
 
 class CastAddOperator(bpy.types.Operator):
     bl_idname = "wm.cast_add_operator"
@@ -1529,7 +1542,6 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
 
             R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.get_prop()]
 
-            print(R)
             b3d_obj[Blk010.LOD_XYZ.get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
             b3d_obj[Blk010.LOD_XYZ.get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
             b3d_obj[Blk010.LOD_XYZ.get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
@@ -1550,6 +1562,27 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
 # panels
 # ------------------------------------------------------------------------
 
+class OBJECT_PT_b3d_info_panel(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_b3d_info_panel"
+    bl_label = "Block info"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = get_ui_region()
+    bl_category = "b3d Tools"
+    #bl_context = "objectmode"
+
+    @classmethod
+    def poll(self,context):
+        return context.object is not None
+
+    def draw(self, context):
+        layout = self.layout
+        mytool = context.scene.my_tool
+
+        b3d_obj = get_active_object()
+
+        if b3d_obj is not None:
+            draw_common(self, b3d_obj)
+
 class OBJECT_PT_b3d_add_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_add_panel"
     bl_label = "Block add"
@@ -1566,12 +1599,6 @@ class OBJECT_PT_b3d_add_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = get_active_object()
-
-        object_name = '' if b3d_obj is None else b3d_obj.name
-
-        box = layout.box()
-        box.label(text="Selected object: " + str(object_name))
 
 class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_single_add_panel"
@@ -1590,10 +1617,7 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         mytool = scene.my_tool
-        # print(type(mytool))
-        # print(bpy.types.Scene.my_tool)
-        # print(dir(bpy.types.Scene.my_tool))
-        # print(dir(context.scene.my_tool))
+        
         block_type = int(mytool.add_block_type_enum)
 
         self.layout.label(text="Block type:")
@@ -1606,6 +1630,53 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
             draw_fields_by_type(self, zclass)
 
         layout.operator("wm.single_add_operator")
+
+class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
+    bl_idname = "OBJECT_PT_b3d_hier_add_panel"
+    bl_label = "Block hierarchy"
+    bl_parent_id = "OBJECT_PT_b3d_add_panel"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = get_ui_region()
+    bl_category = "b3d Tools"
+    #bl_context = "objectmode"
+
+    @classmethod
+    def poll(self,context):
+        return context.object is not None
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        mytool = scene.my_tool
+
+        layout.prop(mytool, "current_hierarchy_enum")
+
+        layout.prop(mytool, "lod_level_int")
+
+        current_hier = getattr(mytool, "current_hierarchy_enum")
+        lod_level = getattr(mytool, "lod_level_int")
+
+        if current_hier == "LOD_9":
+            # draw_enum(box, 'render_tree')
+            # box.prop(mytool, 'render_tree_enum')
+            # o = layout.operator('wm.visualise_render_tree_operator')
+            # o.node_name = getattr(mytool, 'render_tree_enum')
+            # layout.operator('wm.apply_render_tree_changes_operator')
+            zclass = BlockClassHandler.get_class_def_by_type(9)
+            draw_fields_by_type(self, zclass)
+        elif current_hier == "LOD_10":
+            # draw_enum(box, 'LOD')
+            # box.prop(mytool, 'LOD_enum')
+            # o = layout.operator('wm.visualise_lod_tree_operator')
+            # o.node_name = getattr(mytool, 'LOD_enum')
+            # layout.operator('wm.apply_lod_tree_changes_operator')
+            zclass = BlockClassHandler.get_class_def_by_type(10)
+            draw_fields_by_type(self, zclass)
+        elif current_hier == "LOD_21":
+            zclass = BlockClassHandler.get_class_def_by_type(21)
+            draw_fields_by_type(self, zclass)
+            # draw_enum(box, 'event')
+            # box.prop(mytool, 'event_enum')
 
 class OBJECT_PT_b3d_template_add_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_template_add_panel"
@@ -1793,13 +1864,9 @@ class OBJECT_PT_b3d_edit_panel(bpy.types.Panel):
         layout = self.layout
         mytool = context.scene.my_tool
 
-        b3d_obj = get_active_object()
-        if b3d_obj is not None:
-            draw_common(self, b3d_obj)
-
 class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pob_edit_panel"
-    bl_label = "Multiple block edit"
+    bl_label = "Multiple blocks"
     bl_parent_id = "OBJECT_PT_b3d_edit_panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
@@ -1839,17 +1906,10 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
                 if zclass is not None:
                     draw_fields_by_type(self, zclass)
 
-            # else:
-            #     self.layout.label(text="Выбранный объект не имеет типа.")
-            #     self.layout.label(text="Чтобы указать его, нажмите на кнопку сохранения настроек.")
-
-            # layout.operator("wm.del_block_values_operator")
-            # layout.operator("wm.fix_uv_operator")
-            # layout.operator("wm.fix_verts_operator")
 
 class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pob_single_edit_panel"
-    bl_label = "Single block edit"
+    bl_label = "Single block"
     bl_parent_id = "OBJECT_PT_b3d_edit_panel"
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
@@ -1895,7 +1955,7 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
 class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_hier_edit_panel"
     bl_parent_id = "OBJECT_PT_b3d_edit_panel"
-    bl_label = "Hierarchy edit"
+    bl_label = "Block hierarchy"
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
@@ -2304,6 +2364,7 @@ _classes = [
     SetParentOperator,
     SingleAddOperator,
     TemplateAddOperator,
+    HierarchyAddOperator,
     CastAddOperator,
     # getters
     GetValuesOperator,
@@ -2339,11 +2400,14 @@ _classes = [
     VisualiseLODTreeOperator,
     ApplyLODTreeChangesOperator,
     # panels
+    #Block info
+    OBJECT_PT_b3d_info_panel,
     #Block add
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,
     # OBJECT_PT_b3d_template_add_panel,
     OBJECT_PT_b3d_cast_add_panel,
+    OBJECT_PT_b3d_hier_add_panel,
     #Block edit
     OBJECT_PT_b3d_edit_panel,
     OBJECT_PT_b3d_pob_single_edit_panel,
