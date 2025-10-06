@@ -126,6 +126,7 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
 
         layout.prop(mytool, "current_hierarchy_enum")
 
+        layout.prop(mytool, "block_name_string")
         layout.prop(mytool, "lod_level_int")
 
         current_hier = getattr(mytool, "current_hierarchy_enum")
@@ -134,60 +135,15 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
         if current_hier == "LOD_9":
             zclass = BlockClassHandler.get_class_def_by_type(9)
             draw_fields_by_type(self, zclass)
+            layout.operator("wm.hierarchy_add_operator")
         elif current_hier == "LOD_10":
             zclass = BlockClassHandler.get_class_def_by_type(10)
             draw_fields_by_type(self, zclass)
+            layout.operator("wm.hierarchy_add_operator")
         elif current_hier == "LOD_21":
             zclass = BlockClassHandler.get_class_def_by_type(21)
             draw_fields_by_type(self, zclass)
 
-class OBJECT_PT_b3d_template_add_panel(bpy.types.Panel):
-    bl_idname = "OBJECT_PT_b3d_template_add_panel"
-    bl_label = "Block template"
-    bl_parent_id = "OBJECT_PT_b3d_add_panel"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = get_ui_region()
-    bl_category = "b3d Tools"
-    #bl_context = "objectmode"
-
-    @classmethod
-    def poll(self,context):
-        return context.object is not None
-
-    def draw(self, context):
-        layout = self.layout
-        mytool = context.scene.my_tool
-
-        block_type = mytool.add_blocks_enum
-
-        layout.prop(mytool, "add_blocks_enum")
-
-        if block_type == "LOD_9":
-
-            layout.prop(mytool, "lod_level_int")
-
-            zclass = BlockClassHandler.get_class_def_by_type(9)
-            draw_fields_by_type(self, zclass)
-
-        elif block_type == "LOD_10":
-
-            layout.prop(mytool, "lod_level_int")
-
-            zclass = BlockClassHandler.get_class_def_by_type(10)
-            draw_fields_by_type(self, zclass)
-
-        elif block_type == "LOD_21":
-
-            layout.prop(mytool, "lod_level_int")
-
-            zclass = BlockClassHandler.get_class_def_by_type(21)
-            draw_fields_by_type(self, zclass)
-
-            # layout.prop(mytool, "add_room_name_index_string")
-            # layout.prop(mytool, "radius")
-
-
-        layout.operator("wm.template_add_operator")
 
 class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_cast_add_panel"
@@ -825,7 +781,6 @@ _classes = [
     #Block add
     OBJECT_PT_b3d_add_panel,
     OBJECT_PT_b3d_single_add_panel,
-    # OBJECT_PT_b3d_template_add_panel,
     OBJECT_PT_b3d_cast_add_panel,
     OBJECT_PT_b3d_hier_add_panel,
     #Block edit

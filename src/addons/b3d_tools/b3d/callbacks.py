@@ -171,9 +171,9 @@ def rooms_callback_mytool(self, context):
     return enum_properties
 
 
-def res_modules_callback(self, context):
+def b3d_modules_callback(self, context):
 
-    cache_key = 'res_modules'
+    cache_key = 'b3d_modules'
 
     enum_properties = get_cached(cache_key)
     if enum_properties:
@@ -185,6 +185,18 @@ def res_modules_callback(self, context):
     enum_properties.extend([(cn.value, cn.value, "") for i, cn in enumerate(modules)])
     
     save_cache(cache_key, enum_properties)
+
+    return enum_properties
+
+
+def res_modules_callback(self, context):
+
+    mytool = context.scene.my_tool
+    res_modules = mytool.res_modules
+
+    enum_properties = [("-1", "None", "")]
+
+    enum_properties.extend([(str(i), cn.value, "") for i, cn in enumerate(res_modules)])
 
     return enum_properties
 

@@ -56,18 +56,18 @@ def register():
     custom_ui_list.register()
     class_descr.register()
     classes.register()
+    mytool.register()
     menus.register()
     operators.register()
     panels.register()
-    mytool.register()
 
 
 def unregister():
     print("unregistering addons")
-    mytool.unregister()
     panels.unregister()
     operators.unregister()
     menus.unregister()
+    mytool.unregister()
     classes.unregister()
     class_descr.unregister()
     custom_ui_list.unregister()

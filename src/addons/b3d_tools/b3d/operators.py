@@ -273,7 +273,75 @@ class HierarchyAddOperator(bpy.types.Operator):
         scene = context.scene
         mytool = scene.my_tool
         
+        b3d_obj = get_active_object()
+
+        blocktool = bpy.context.scene.block_tool
+        current_hier = getattr(mytool, "current_hierarchy_enum")
         lod_level = getattr(mytool, "lod_level_int")
+        block_name = getattr(mytool, "block_name_string")
+
+        if current_hier == 'LOD_9':
+            
+            stack = [b3d_obj]
+            group_cnt = 2
+            next_stack = []
+            for lvl in range(lod_level):
+                while stack:
+                    parent_obj = stack.pop()
+                    # create object ...
+                    new_b3d = bpy.data.objects.new("{}_{}".format(block_name, lvl), None)
+                    new_b3d.location=(0.0,0.0,0.0)
+                    new_b3d[consts.BLOCK_TYPE] = 9
+                    if parent_obj is not None:
+                        new_b3d.parent = parent_obj
+                    set_objs_by_type(new_b3d, Blk009)
+                    get_context_collection_objects(context).link(new_b3d)
+
+                    # and its subgroups
+                    for i in range(group_cnt):
+                        group = bpy.data.objects.new("GROUP_{}".format(i), None)
+                        group.location=(0.0,0.0,0.0)
+                        group[consts.BLOCK_TYPE] = 444
+                        group.parent = new_b3d
+                        get_context_collection_objects(context).link(group)
+                        next_stack.append(group)
+                stack = next_stack.copy()
+                next_stack = []
+
+        elif current_hier == 'LOD_10':
+
+            stack = [b3d_obj]
+            group_cnt = 2
+            next_stack = []
+            for lvl in range(lod_level):
+                while stack:
+                    parent_obj = stack.pop()
+                    # create object ...
+                    new_b3d = bpy.data.objects.new("{}_{}".format(block_name, lvl), None)
+                    new_b3d.location=(0.0,0.0,0.0)
+                    new_b3d[consts.BLOCK_TYPE] = 10
+                    if parent_obj is not None:
+                        new_b3d.parent = parent_obj
+                    set_objs_by_type(new_b3d, Blk010)
+                    get_context_collection_objects(context).link(new_b3d)
+
+                    # and its subgroups
+                    for i in range(group_cnt):
+                        group = bpy.data.objects.new("GROUP_{}".format(i), None)
+                        group.location=(0.0,0.0,0.0)
+                        group[consts.BLOCK_TYPE] = 444
+                        group.parent = new_b3d
+                        get_context_collection_objects(context).link(group)
+                        next_stack.append(group)
+                stack = next_stack.copy()
+                next_stack = []
+
+        elif current_hier == 'LOD_21':
+            group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
+            pass
+
+        print(lod_level)
+
 
 
         return {'FINISHED'}
