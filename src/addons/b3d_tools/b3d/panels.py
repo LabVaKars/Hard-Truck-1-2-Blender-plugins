@@ -771,7 +771,7 @@ class OBJECT_PT_b3d_misc_panel(bpy.types.Panel):
         scene = context.scene
         mytool = scene.my_tool
 
-        self.layout.label(text="Add-on author: aleko2144")
+        self.layout.label(text="Add-on author: aleko2144, LabVaKars")
         self.layout.label(text="vk.com/rnr_mods")
 
 _classes = [
