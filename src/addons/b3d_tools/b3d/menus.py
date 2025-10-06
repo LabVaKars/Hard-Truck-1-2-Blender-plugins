@@ -29,9 +29,11 @@ from .class_descr import (
 from . import (
     import_b3d, export_b3d, import_res, export_res
 )
-from .common import (
+from .callbacks import (
     res_modules_callback,
-    modules_callback,
+    modules_callback
+)
+from .common import (
     get_col_property_by_name
 )
 from .ui_utils import (
