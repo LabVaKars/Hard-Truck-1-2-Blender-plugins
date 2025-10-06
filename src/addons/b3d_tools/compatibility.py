@@ -67,9 +67,18 @@ def get_or_create_collection(name):
     else:
         collection = bpy.data.collections.get(name)
         if collection is None:
-            return bpy.data.collections.new(name)
-        else:
-            return collection
+            collection = bpy.data.collections.new(name)
+        if collection.name not in bpy.context.scene.collection.children:
+            bpy.context.scene.collection.children.link(collection)
+        return collection
+
+def remove_collection(name):
+    collection = bpy.data.collections.get(name)
+    if collection is not None:
+        for obj in list(collection.objects):
+            bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.data.collections.remove(collection, do_unlink=True)
+
 
 def get_context_collection_objects(context):
     if is_before_2_80():

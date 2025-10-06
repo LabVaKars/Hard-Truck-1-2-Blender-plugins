@@ -58,12 +58,15 @@ def draw_common(l_self, obj):
     level_group = None
     if BLOCK_TYPE in obj:
         block_type = obj[BLOCK_TYPE]
+        
+    object_name = '' if obj is None else obj.name
 
     level_group = get_level_group(obj)
 
     len_str = str(len(obj.children))
 
     box = l_self.layout.box()
+    box.label(text="Selected object: " + str(object_name))
     box.label(text="Block type: " + str(block_type))
     box.label(text="Children block count: " + len_str)
     box.label(text="Block group: " + str(level_group))
@@ -102,11 +105,9 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                 col = box.column()
 
                 props = col.operator("wm.show_hide_sphere_operator")
-                props.pname = pname
 
         elif ftype == FieldType.STRING \
         or ftype == FieldType.COORD \
-        or ftype == FieldType.RAD \
         or ftype == FieldType.INT \
         or ftype == FieldType.FLOAT \
         or ftype == FieldType.ENUM \
@@ -128,7 +129,6 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                 if ftype in [
                     FieldType.STRING,
                     FieldType.COORD,
-                    FieldType.RAD,
                     FieldType.INT,
                     FieldType.FLOAT
                 ]:

@@ -25,6 +25,11 @@ from .common import (
     get_mat_texture_ref_dict
 )
 
+from .data_api_utils import (
+    create_color_material_node,
+    create_image_material_node
+)
+
 from ..compatibility import (
     get_user_preferences,
     is_before_2_93
@@ -150,38 +155,11 @@ def create_material(res_module, mat):
     palette_module = get_active_palette_module(res_module)
     palette = palette_module.palette_colors
 
-    new_mat = bpy.data.materials.get(mat.mat_name)
-    if new_mat is None:
-        new_mat = bpy.data.materials.new(name=mat.mat_name)
-    new_mat.use_nodes = True
-        
-    bsdf = new_mat.node_tree.nodes.get("Principled BSDF")
-    if bsdf is None:
-        bsdf = new_mat.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
-
-    mat_output = new_mat.node_tree.nodes.get("Material Output")
-    if mat_output is None:
-        mat_output = new_mat.node_tree.nodes.new("ShaderNodeOutputMaterial")
-
-    new_mat.node_tree.links.new(bsdf.outputs['BSDF'], mat_output.inputs['Surface'])        
-
-    for link in bsdf.inputs['Base Color'].links:
-        new_mat.node_tree.nodes.remove(link.from_node)
-
-    # for link in bsdf.inputs['Alpha'].links:
-    #     new_mat.node_tree.nodes.remove(link.from_node)
-
     if (mat.is_tex and int(mat.tex) > 0):
-        path = texture_list[mat.tex-1].tex_name
-        tex_image = new_mat.node_tree.nodes.new("ShaderNodeTexImage")
-        tex_image.image = bpy.data.images.get(path)
-        new_mat.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
-        # new_mat.node_tree.links.new(bsdf.inputs['Alpha'], tex_image.outputs['Alpha'])
+        create_image_material_node(mat.mat_name, texture_list[mat.tex-1].tex_name)
 
     elif mat.is_col and int(mat.col) > 0:
-        tex_color = new_mat.node_tree.nodes.new("ShaderNodeRGB")
-        tex_color.outputs['Color'].default_value = palette[mat.col-1].value
-        new_mat.node_tree.links.new(bsdf.inputs['Base Color'], tex_color.outputs['Color'])
+        create_color_material_node(mat.mat_name, palette[mat.col-1].value)
 
 
 def load_materials(res_module):

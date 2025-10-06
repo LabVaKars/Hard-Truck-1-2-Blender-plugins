@@ -39,13 +39,32 @@ imghelp_logger = createLogger("b3d_tools.imghelp")
 importb3d_logger = createLogger("b3d_tools.import_b3d")
 importres_logger = createLogger("b3d_tools.import_res")
 importway_logger = createLogger("b3d_tools.import_way")
-panel_logger = createLogger("b3d_tools.panel")
+mytool_logger = createLogger("b3d_tools.mytool")
+callbacks_logger = createLogger("b3d_tools.callbacks")
+operators_logger = createLogger("b3d_tools.operators")
+panels_logger = createLogger("b3d_tools.panels")
 menus_logger = createLogger("b3d_tools.menus")
 scripts_logger = createLogger("b3d_tools.scripts")
 classes_logger = createLogger("b3d_tools.classes")
 custom_ui_list_logger = createLogger("b3d_tools.ui_list")
 
-loggers = [common_logger, exportb3d_logger, importres_logger, exportway_logger, imghelp_logger, importb3d_logger, importway_logger, panel_logger, menus_logger, scripts_logger, classes_logger, custom_ui_list_logger]
+loggers = [
+    common_logger, 
+    exportb3d_logger, 
+    importres_logger, 
+    exportway_logger, 
+    imghelp_logger, 
+    importb3d_logger, 
+    importway_logger, 
+    mytool_logger, 
+    callbacks_logger, 
+    operators_logger, 
+    panels_logger, 
+    menus_logger, 
+    scripts_logger, 
+    classes_logger, 
+    custom_ui_list_logger
+]
 
 def updateLoggers(self, context):
     user_prefs = get_user_preferences()

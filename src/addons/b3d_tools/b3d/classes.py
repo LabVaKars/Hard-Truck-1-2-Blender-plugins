@@ -76,34 +76,13 @@ from .class_descr import (
     Blk052
 )
 
-from .common import (
+from .callbacks import (
     res_materials_callback,
     spaces_callback,
     referenceables_callback,
     rooms_callback,
     modules_callback
 )
-
-def set_cust_mytool_value(subtype, pname):
-    def callback_func(self, context):
-
-        mytool = context.scene.my_tool
-        result = getattr(mytool, '{}_enum'.format(pname))
-        if subtype == FieldType.INT:
-            result = int(result)
-        elif subtype == FieldType.FLOAT:
-            result = float(result)
-        elif subtype == FieldType.STRING:
-            result = str(result)
-
-        setattr(
-            mytool,
-            '{}'.format(pname),
-            result
-        )
-
-    return callback_func
-
 
 def set_cust_obj_value(subtype, bname, pname):
     def callback_func(self, context):
@@ -211,7 +190,6 @@ class BlockClassHandler():
 
             if attr_class.get_block_type() == FieldType.STRING \
             or attr_class.get_block_type() == FieldType.COORD \
-            or attr_class.get_block_type() == FieldType.RAD \
             or attr_class.get_block_type() == FieldType.FLOAT \
             or attr_class.get_block_type() == FieldType.INT \
             or attr_class.get_block_type() == FieldType.LIST:
@@ -234,7 +212,7 @@ class BlockClassHandler():
                         default = attr_class.get_default()
                     )
 
-                elif (attr_class.get_block_type() == FieldType.RAD or attr_class.get_block_type() == FieldType.FLOAT) and multiple_edit:
+                elif attr_class.get_block_type() == FieldType.FLOAT and multiple_edit:
                     prop = FloatProperty(
                         name = attr_class.get_name(),
                         description = attr_class.get_description(),

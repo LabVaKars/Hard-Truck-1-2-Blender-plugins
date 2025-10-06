@@ -94,6 +94,11 @@ from ..compatibility import (
     set_active_object
 )
 
+from .data_api_utils import (
+    get_portal_visualize_node_group,
+    get_vert_collision_visualize_node_group
+)
+
 
 #Setup module logger
 log = importb3d_logger
@@ -1239,7 +1244,7 @@ def import_b3d(file, context, self, filepath):
 
                 curve_data = bpy.data.curves.new('curve', type='CURVE')
 
-                curve_data.dimensions = '2D'
+                curve_data.dimensions = '3D'
                 curve_data.resolution_u = 2
 
                 # map coords to spline
@@ -1257,9 +1262,6 @@ def import_b3d(file, context, self, filepath):
                     x,y,z = coord
                     polyline.points[i].co = (x, y, z, 1)
 
-                curve_data.bevel_depth = 0
-                curve_data.extrude = 10
-
                 # create Object
                 b3d_obj = bpy.data.objects.new(obj_name, curve_data)
                 # b3d_obj.location = (0,0,0)
@@ -1272,6 +1274,12 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj[Blk020.Unk_List.get_prop()] = unknowns
 
                 b3d_obj.parent = parent_obj
+                
+                b3d_obj.modifiers.new('Vert_collision_node', type='NODES')
+                gnode_modifier = b3d_obj.modifiers.get('Vert_collision_node')
+
+                gnode_modifier.node_group = get_vert_collision_visualize_node_group()
+
                 get_context_collection_objects(context).link(b3d_obj)
                 real_name = b3d_obj.name
                 obj_string[-1] = b3d_obj.name
@@ -1714,32 +1722,25 @@ def import_b3d(file, context, self, filepath):
 
                 sorted_rooms = sorted([current_room_name, full_room_name])
 
-
                 border_name = "|".join(sorted_rooms)
 
+                points = []
+                if sorted_rooms[0] == current_room_name:
+                    points = [
+                        (p1[0], p1[1], p1[2]),
+                        (p2[0], p2[1], p2[2])
+                    ]
+                else:
+                    points = [
+                        (p2[0], p2[1], p1[2]),
+                        (p1[0], p1[1], p2[2])
+                    ]
 
                 if not border_name in borders:
                     borders[border_name] = {
-                        "bounding_point": bounding_sphere[0:3],
-                        "bounding_rad": bounding_sphere[3],
-                        "points": [None]*4
+                        "bounding_point": p1,
+                        "points": points
                     }
-
-
-                    if sorted_rooms[0] == current_room_name:
-                        borders[border_name]["points"] = [
-                            (p1[0], p1[1], p1[2]),
-                            (p1[0], p1[1], p2[2]),
-                            (p2[0], p2[1], p2[2]),
-                            (p2[0], p2[1], p1[2]),
-                        ]
-                    else:
-                        borders[border_name]["points"] = [
-                            (p1[0], p1[1], p2[2]),
-                            (p1[0], p1[1], p1[2]),
-                            (p2[0], p2[1], p1[2]),
-                            (p2[0], p2[1], p2[2]),
-                        ]
 
             elif (block_type == 31):
 
@@ -2241,40 +2242,35 @@ def import_b3d(file, context, self, filepath):
 
     #create room borders(30)
     transf_collection = get_or_create_collection(BORDER_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     for key in borders.keys():
 
         border = borders[key]
 
-        b3d_mesh = (bpy.data.meshes.new("{}_mesh".format(key)))
+        # b3d_mesh = (bpy.data.meshes.new("{}_mesh".format(key)))
         #0-x
         #1-y
         #2-z
 
-        points = border["points"]
+        
+        curve_data = bpy.data.curves.new('curve', type='CURVE')
 
-        l_vertexes = [
-            points[0],
-            points[1],
-            points[2],
-            points[3],
-        ]
+        curve_data.dimensions = '3D'
+        curve_data.resolution_u = 2
 
+        # map coords to spline
+        polyline = curve_data.splines.new('POLY')
+        polyline.points.add(1)
 
-        l_vertexes = recalc_to_local_coord(border["bounding_point"], l_vertexes)
+        p1 = border['points'][0]
+        p2 = border['points'][1]
 
-        l_faces = [
-            (0,1,2,3)
-        ]
+        p1l = recalc_to_local_coord(p1, [p1])[0]
+        p2l = recalc_to_local_coord(p1, [p2])[0]
 
-        b3d_mesh.from_pydata(l_vertexes,[],l_faces)
+        polyline.points[0].co = (p1l[0], p1l[1], p1l[2], 1)
+        polyline.points[1].co = (p2l[0], p2l[1], p2l[2], 1)
 
-        # Tr = threading.Thread(target=b3d_mesh.from_pydata, args = (l_vertexes,[],l_faces))
-        # Tr.start()
-        # Tr.join()
         room_names = key.split("|")
         splitted1 = room_names[0].split(":")
         splitted2 = room_names[1].split(":")
@@ -2285,18 +2281,18 @@ def import_b3d(file, context, self, filepath):
         res_name2 = splitted2[0]
         room_name2 = splitted2[1]
 
-        b3d_obj = bpy.data.objects.new(key, b3d_mesh)
+        b3d_obj = bpy.data.objects.new(key, curve_data)
         b3d_obj[BLOCK_TYPE] = 30
-        b3d_obj.location = border["bounding_point"]
-        # b3d_obj[Blk030.XYZ.get_prop()] = border["bounding_point"]
-        # b3d_obj[Blk030.r.get_prop()] = border["bounding_rad"]
+        b3d_obj.location = p1
         b3d_obj[Blk030.ResModule1.get_prop()] = res_name1
         b3d_obj[Blk030.RoomName1.get_prop()] = room_name1
         b3d_obj[Blk030.ResModule2.get_prop()] = res_name2
         b3d_obj[Blk030.RoomName2.get_prop()] = room_name2
-        # b3d_obj[Blk030.Name.get_prop()] = connected_room_name
-        # b3d_obj[Blk030.XYZ1.get_prop()] = p1
-        # b3d_obj[Blk030.XYZ2.get_prop()] = p2
+
+        b3d_obj.modifiers.new('Portal_node', type='NODES')
+        gnode_modifier = b3d_obj.modifiers.get('Portal_node')
+
+        gnode_modifier.node_group = get_portal_visualize_node_group()
 
         b3d_obj.parent = None
         transf_collection.objects.link(b3d_obj)

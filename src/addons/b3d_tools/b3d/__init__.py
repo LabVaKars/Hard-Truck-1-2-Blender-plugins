@@ -7,8 +7,11 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(common)
+    importlib.reload(geom_nodes)
+    importlib.reload(data_api_utils)
     importlib.reload(custom_ui_list)
     importlib.reload(class_descr)
+    importlib.reload(callbacks)
     importlib.reload(classes)
     importlib.reload(ui_utils)
     importlib.reload(imghelp)
@@ -19,14 +22,19 @@ if "bpy" in locals():
     importlib.reload(export_way)
     importlib.reload(export_res)
     importlib.reload(scripts)
-    importlib.reload(panel)
+    importlib.reload(operators)
+    importlib.reload(panels)
     importlib.reload(menus)
+    importlib.reload(mytool)
 else:
     import bpy
     from . import (
         common,
+        geom_nodes,
+        data_api_utils,
         custom_ui_list,
         class_descr,
+        callbacks,
         classes,
         ui_utils,
         imghelp,
@@ -37,8 +45,10 @@ else:
         export_way,
         export_res,
         scripts,
-        panel,
-        menus
+        operators,
+        panels,
+        menus,
+        mytool
     )
 
 def register():
@@ -46,14 +56,18 @@ def register():
     custom_ui_list.register()
     class_descr.register()
     classes.register()
+    mytool.register()
     menus.register()
-    panel.register()
+    operators.register()
+    panels.register()
 
 
 def unregister():
     print("unregistering addons")
-    panel.unregister()
+    panels.unregister()
+    operators.unregister()
     menus.unregister()
+    mytool.unregister()
     classes.unregister()
     class_descr.unregister()
     custom_ui_list.unregister()

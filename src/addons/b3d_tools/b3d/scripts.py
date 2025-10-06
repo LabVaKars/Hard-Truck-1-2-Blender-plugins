@@ -3,6 +3,8 @@ import re
 import struct
 
 from .class_descr import (
+    Blk009,
+    Blk010,
     Blk018,
     Blk021
 )
@@ -21,6 +23,19 @@ from .common import (
     itof,
     RGBPacker
 )
+
+from .data_api_utils import (
+    create_simple_value_driver,
+    create_vector_location_driver,
+    create_circle_center_rad_driver,
+    get_render_branch_visualize_node_group,
+    get_lod_branch_visualize_node_group,
+    create_center_driver,
+    create_rad_driver,
+    create_color_material_node,
+    create_render_branch_drivers
+)
+
 from .class_descr import (
     FieldType
 )
@@ -100,9 +115,6 @@ def apply_transforms():
 def apply_transform(root):
 
     transf_collection = get_or_create_collection(TRANSF_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
 
     if bpy.data.objects.get('b3dCenterSpace') is None:
         b3d_obj = bpy.data.objects.new('b3dCenterSpace', None)
@@ -328,8 +340,7 @@ def select_similar_objects_by_type(b3d_obj, zclass):
 
             if getattr(blk, "show_{}".format(pname)):
 
-                if attr_class.get_block_type() == FieldType.FLOAT \
-                    or attr_class.get_block_type() == FieldType.RAD:
+                if attr_class.get_block_type() == FieldType.FLOAT:
                     param = float(getattr(blk, pname))
 
                 elif attr_class.get_block_type() == FieldType.INT:
@@ -401,8 +412,7 @@ def select_similar_faces_by_type(b3d_obj, zclass):
             
             if getattr(blk, "show_{}".format(pname)):
     
-                if attr_class.get_block_type() == FieldType.FLOAT \
-                    or attr_class.get_block_type() == FieldType.RAD:
+                if attr_class.get_block_type() == FieldType.FLOAT:
                     param = float(getattr(blk, pname))
 
                 elif attr_class.get_block_type() == FieldType.INT:
@@ -614,80 +624,192 @@ def hide_conditionals(root, group):
     else:
         process_cond(root, group, True)
 
+def create_render_branch_materials(color_cnt):
+    def gradient_three(start, mid, end, steps):
 
+        if steps < 2:
+            raise ValueError("steps must be at least 2")
 
-# ------------------------------------------------------------------------
-#    drivers
-# ------------------------------------------------------------------------
-def create_center_driver(src_obj, bname, pname):
-    d = None
-    for i in range(3):
+        half = (steps - 1) / 2.0
+        colors = []
 
-        d = src_obj.driver_add('location', i).driver
+        for i in range(steps):
+            if i <= half:
+                # Interpolate start → mid
+                t = i / half
+                r = start[0] + (mid[0] - start[0]) * t
+                g = start[1] + (mid[1] - start[1]) * t
+                b = start[2] + (mid[2] - start[2]) * t
+            else:
+                # Interpolate mid → end
+                t = (i - half) / half
+                r = mid[0] + (end[0] - mid[0]) * t
+                g = mid[1] + (end[1] - mid[1]) * t
+                b = mid[2] + (end[2] - mid[2]) * t
+            colors.append((r, g, b))
+        return colors
+    
+    def gradient(start, end, steps):
+        colors = []
+        if steps > 1:
+            for i in range(steps):
+                t = i / (steps - 1)          # interpolation factor 0 → 1
+                r = start[0] + (end[0] - start[0]) * t
+                g = start[1] + (end[1] - start[1]) * t
+                b = start[2] + (end[2] - start[2]) * t
+                colors.append((r, g, b))
+        else:
+            colors.append((start[0], start[1], start[2]))
+        return colors
 
-        v = d.variables.new()
-        v.name = 'location{}'.format(i)
-        # v.targets[0].id_type = 'SCENE'
-        # v.targets[0].id = bpy.context.scene
-        # v.targets[0].data_path = 'my_tool.{}.{}[{}]'.format(bname, pname, i)
-        v.targets[0].id = bpy.context.object
-        v.targets[0].data_path = '["{}"][{}]'.format(pname, i)
+    steps = color_cnt
+    circle_gradient = gradient((0.0, 0.0, 1.0), (1.0, 0.0, 0.0), steps)
+    for i, color in enumerate(circle_gradient):
+        mat_name = 'RenderBranchMat_{}_{}'.format(i+1, color_cnt)
+        material = bpy.data.materials.get(mat_name)
+        if not material:
+            create_color_material_node(mat_name, color + (1.0,), 0.8)
 
-        d.expression = v.name
+    mat_name = 'RenderBranchText0'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.3, 0.3, 0.3, 1.0))
 
-def create_rad_driver(src_obj, bname, pname):
-    d = src_obj.driver_add('empty_display_size').driver
+    mat_name = 'RenderBranchText1'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.0, 0.0, 0.0, 1.0))
 
-    v1 = d.variables.new()
-    v1.name = 'rad'
-    # v1.targets[0].id_type = 'SCENE'
-    # v1.targets[0].id = bpy.context.scene
-    # v1.targets[0].data_path = 'my_tool.{}.{}'.format(bname, pname)
-    v1.targets[0].id = bpy.context.object
-    v1.targets[0].data_path = '["{}"]'.format(pname)
+    mat_name = 'RenderBranchTransp'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (0.0, 0.0, 0.0, 1.0), 0.0)
 
-    d.expression = v1.name
+def create_cube_mesh(name):
+    mesh = bpy.data.meshes.new(name=name)
 
-def show_hide_sphere(context, root, pname):
+    # --- Define cube vertices and faces ---
+    verts = [
+        (-1, -1, -1),
+        (-1, -1,  1),
+        (-1,  1, -1),
+        (-1,  1,  1),
+        ( 1, -1, -1),
+        ( 1, -1,  1),
+        ( 1,  1, -1),
+        ( 1,  1,  1),
+    ]
 
-    transf_collection = get_or_create_collection(TEMP_COLLECTION)
-    if not is_before_2_80():
-        if transf_collection.name not in bpy.context.scene.collection.children:
-            bpy.context.scene.collection.children.link(transf_collection)
+    faces = [
+        (0,1,3,2),  # -X
+        (4,6,7,5),  # +X
+        (0,4,5,1),  # -Y
+        (2,3,7,6),  # +Y
+        (0,2,6,4),  # -Z
+        (1,5,7,3),  # +Z
+    ]
 
-    obj_name = "{}||{}||temp".format(root.name, pname)
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    
+    return mesh
 
-    b3d_obj = bpy.data.objects.get(obj_name)
+def show_hide_render_tree_branch(src_obj, collection, render_center_object, shift_z, material_text, material_a, material_b):
 
-    if b3d_obj is not None:
-        bpy.data.objects.remove(b3d_obj, do_unlink=True)
+    obj_name = "RT_Branch||{}".format(src_obj.name)
+
+    temp_obj = bpy.data.objects.get(obj_name)
+
+    if temp_obj is not None:
+        bpy.data.objects.remove(temp_obj, do_unlink=True)
     else:
 
-        bnum = root.get(BLOCK_TYPE)
-
-        center_name = "{}_center".format(pname)
-        rad_name = "{}_rad".format(pname)
-
-        center = root.get(center_name)
-        rad = root.get(rad_name)
+        cubemesh = create_cube_mesh(obj_name)
 
         # creating object
+        temp_obj = bpy.data.objects.new(obj_name, cubemesh)
+        
+        collection.objects.link(temp_obj)
 
-        b3d_obj = bpy.data.objects.new(obj_name, None)
-        set_empty_type(b3d_obj, 'SPHERE')
-        set_empty_size(b3d_obj, rad)
-        b3d_obj.location = center
-        b3d_obj.parent = root.parent
+        create_render_branch_drivers(src_obj, temp_obj, render_center_object, float(shift_z))
 
-        transf_collection.objects.link(b3d_obj)
+        # Adding new modifier
+        temp_obj.modifiers.new('Render_branch_node', type='NODES')
+        gnode_modifier = temp_obj.modifiers.get('Render_branch_node')
+    
+        # Setting node group
+        gnode_modifier.node_group = get_render_branch_visualize_node_group()
+        
+        # Assigning input values
+        input_name = gnode_modifier.node_group.inputs[0].identifier
+        create_vector_location_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk009.Unk_XYZ.get_prop())
+        input_name = gnode_modifier.node_group.inputs[1].identifier
+        create_circle_center_rad_driver(gnode_modifier, '["{}"]'.format(input_name), render_center_object)
+        gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
+        gnode_modifier[gnode_modifier.node_group.inputs[3].identifier] = material_a
+        gnode_modifier[gnode_modifier.node_group.inputs[4].identifier] = material_b
+
+def show_hide_lod_tree_branch(src_obj, collection, material):
+
+    obj_name = "LOD_Branch||{}".format(src_obj.name)
+
+    temp_obj = bpy.data.objects.get(obj_name)
+
+    if temp_obj is not None:
+        bpy.data.objects.remove(temp_obj, do_unlink=True)
+    else:
+
+        cubemesh = create_cube_mesh(obj_name)
+
+        # creating object
+        temp_obj = bpy.data.objects.new(obj_name, cubemesh)
+        
+        collection.objects.link(temp_obj)
+        
+        create_vector_location_driver(temp_obj, 'delta_location', src_obj, Blk010.LOD_XYZ.get_prop())
+
+        # Adding new modifier
+        temp_obj.modifiers.new('LOD_branch_node', type='NODES')
+        gnode_modifier = temp_obj.modifiers.get('LOD_branch_node')
+    
+        # Setting node group
+        gnode_modifier.node_group = get_lod_branch_visualize_node_group()
+        
+        # Assigning input values
+        input_name = gnode_modifier.node_group.inputs[0].identifier
+        create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk010.LOD_R.get_prop())
+        gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = material
+
+
+def show_hide_sphere(src_obj, center_prop, rad_prop):
+
+    transf_collection = get_or_create_collection(TEMP_COLLECTION)
+
+    obj_name = "{}||temp".format(src_obj.name)
+
+    temp_obj = bpy.data.objects.get(obj_name)
+
+    if temp_obj is not None:
+        for i in range(3):
+            src_obj.driver_remove('["{}"]'.format(center_prop), i)
+        src_obj.driver_remove('["{}"]'.format(rad_prop))
+        bpy.data.objects.remove(temp_obj, do_unlink=True)
+    else:
+
+        # creating object
+        temp_obj = bpy.data.objects.new(obj_name, None)
+        set_empty_type(temp_obj, 'SPHERE')
+        set_empty_size(temp_obj, src_obj.get(rad_prop))
+        temp_obj.location = src_obj.get(center_prop)
+        temp_obj.parent = src_obj.parent
+
+        transf_collection.objects.link(temp_obj)
 
         # center driver
-        bname = BlockClassHandler.get_mytool_block_name('Blk', bnum)
-
-        create_center_driver(b3d_obj, bname, center_name)
+        create_center_driver(src_obj, temp_obj, center_prop)
 
         # rad driver
-        create_rad_driver(b3d_obj, bname, rad_name)
+        create_rad_driver(src_obj, temp_obj, rad_prop)
 
 # ------------------------------------------------------------------------
 # Per Object Properties
@@ -749,8 +871,7 @@ def get_objs_by_type(b3d_obj, zclass):
             blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
             if getattr(blk, "show_{}".format(pname)):
 
-                if attr_class.get_block_type() == FieldType.FLOAT \
-                or attr_class.get_block_type() == FieldType.RAD:
+                if attr_class.get_block_type() == FieldType.FLOAT:
                     setattr(
                         blk,
                         pname,
@@ -826,7 +947,7 @@ def set_objs_by_type(b3d_obj, zclass):
             # if getattr(getattr(mytool, bname), "show_"+attr_class.get_prop()) is not None \
             #     and getattr(getattr(mytool, bname), "show_"+attr_class.get_prop()):
 
-                if attr_class.get_block_type() == FieldType.FLOAT or attr_class.get_block_type() == FieldType.RAD:
+                if attr_class.get_block_type() == FieldType.FLOAT:
                     b3d_obj[pname] = float(getattr(blk, pname))
 
                 elif attr_class.get_block_type() == FieldType.INT:

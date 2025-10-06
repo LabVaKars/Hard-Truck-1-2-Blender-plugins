@@ -157,28 +157,9 @@ def get_room_name(cur_res_module, room_string):
 
     return result
 
-borders = {}
-current_res = ''
-current_room_name = ''
-current_module = None
-current_materials = {}
-
-meshes_in_empty = {}
-empty_to_mesh_keys = {}
-unique_arrays = {}
-created_bounders = {}
-
-def fill_bounding_sphere_lists():
-
-    global meshes_in_empty
-    global empty_to_mesh_keys
-    global unique_arrays
-    global created_bounders
-
-    # Getting 'mesh' objects
-    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) in [8, 28, 35]]
-
-    for obj in objs:
+def map_meshes_to_parents(mesh_objs):
+    meshes_in_empty = {}
+    for obj in mesh_objs:
         cur_mesh_name = obj.name
         cur_obj = obj.parent
         while cur_obj is not None and not is_root_obj(cur_obj):
@@ -196,11 +177,10 @@ def fill_bounding_sphere_lists():
                     })
 
             cur_obj = cur_obj.parent
+    return meshes_in_empty
 
-    #extend with 18 blocks
-    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 18]
-
-    for obj in objs:
+def extend_with_references(ref_objs, meshes_in_empty):
+    for obj in ref_objs:
         referenceable_name = obj.get(Blk018.Add_Name.get_prop())
         space_name = obj.get(Blk018.Space_Name.get_prop())
         cur_mesh_list = meshes_in_empty.get(referenceable_name)
@@ -237,11 +217,23 @@ def fill_bounding_sphere_lists():
                 meshes_in_empty[cur_obj.name].extend(local_transf_mesh_list)
             else:
                 meshes_in_empty[cur_obj.name].extend(local_transf_mesh_list)
+    return meshes_in_empty
 
-    # meshesInEmptyStr = [str(cn) for cn in meshes_in_empty.values()]
+def fill_bounding_sphere_lists():
 
-    # for m in meshesInEmptyStr:
-    #     log.debug(m)
+    empty_to_mesh_keys = {}
+    unique_arrays = {}
+    created_bounders = {}
+
+    # Getting 'mesh' objects
+    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) in [8, 28, 35]]
+
+    meshes_in_empty = map_meshes_to_parents(objs)
+    
+    #extend with 18 blocks
+    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 18]
+
+    meshes_in_empty = extend_with_references(objs, meshes_in_empty)
 
     for empty_name in meshes_in_empty.keys():
         meshes_in_empty[empty_name].sort(key= lambda x: '{}{}'.format(str(x["obj"]), str(x["transf"])))
@@ -255,16 +247,19 @@ def fill_bounding_sphere_lists():
         # objArr = [bpy.data.objects[cn] for cn in unique_arrays[key]]
         # created_bounders[key] = get_mult_obj_bounding_sphere(objArr)
         created_bounders[key] = get_mult_obj_bounding_sphere(unique_arrays[key])
+    
+    return {
+        "created_bounders": created_bounders,
+        "empty_to_mesh_keys": empty_to_mesh_keys
+    }
 
 
-def create_border_list():
+def create_border_list(current_module_name):
 
-    global borders
-    global current_res
     borders = {}
 
     border_blocks = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 30 \
-        and (cn.get(Blk030.ResModule1.get_prop()) == current_res or cn.get(Blk030.ResModule2.get_prop()) == current_res)]
+        and (cn.get(Blk030.ResModule1.get_prop()) == current_module_name or cn.get(Blk030.ResModule2.get_prop()) == current_module_name)]
 
     for bb in border_blocks:
 
@@ -288,6 +283,8 @@ def create_border_list():
         else:
             borders[border2].append(bb)
 
+    return borders
+
 
 def write_mesh_sphere(file, obj):
 
@@ -305,10 +302,8 @@ def write_mesh_sphere(file, obj):
         file.write(struct.pack("<f", rad))
 
 
-def write_calculated_sphere(file, obj):
-    global created_bounders
-    global empty_to_mesh_keys
-
+def write_calculated_sphere(file, obj, created_bounders, empty_to_mesh_keys):
+    
     block_type = obj.get(BLOCK_TYPE)
 
     center = (0.0, 0.0, 0.0)
@@ -345,23 +340,13 @@ def write_bound_sphere(file, center, rad):
 
 def export_b3d(context, op, export_dir):
 
-    global current_module
-    global current_res
-    global current_materials
-
-    global meshes_in_empty
-    global empty_to_mesh_keys
-    global unique_arrays
-    global created_bounders
-
     current_materials = {}
 
-    meshes_in_empty = {}
-    empty_to_mesh_keys = {}
-    unique_arrays = {}
-    created_bounders = {}
+    res = fill_bounding_sphere_lists()
 
-    fill_bounding_sphere_lists()
+    created_bounders = res['created_bounders']
+    empty_to_mesh_keys = res['empty_to_mesh_keys']
+
 
     if not os.path.isdir(export_dir):
         export_dir = os.path.dirname(export_dir)
@@ -431,8 +416,7 @@ def export_b3d(context, op, export_dir):
             # current_materials = {cn:ind for ind, cn in enumerate(sorted(used_materials))}
             current_materials = {cn.mat_name:ind for ind, cn in enumerate(current_module.materials)}
 
-            current_res = cur_res_name
-            create_border_list()
+            borders = create_border_list(cur_res_name)
 
             file.write(struct.pack('<i', len(current_materials))) #Materials Count
             for mat in current_materials.keys():
@@ -445,6 +429,15 @@ def export_b3d(context, op, export_dir):
 
             file.write(struct.pack("<i",111)) # Begin_Chunks
 
+            extra = {}
+            extra['current_module'] = current_module
+            extra['current_materials'] = current_materials
+            extra['borders'] = borders
+            extra['current_room_name'] = ''
+            extra['created_bounders'] = created_bounders
+            extra['empty_to_mesh_keys'] = empty_to_mesh_keys
+
+
             # prevLevel = 0
             if len(r_child) > 0:
                 for obj in r_child[:-1]:
@@ -454,7 +447,7 @@ def export_b3d(context, op, export_dir):
                         cur_max_cnt = obj[Blk021.GroupCnt.get_prop()]
 
                     if is_valid_block(obj):
-                        export_block(obj, False, cur_level, cur_max_cnt, [0], {}, file)
+                        export_block(obj, False, cur_level, cur_max_cnt, [0], extra, file)
 
                     file.write(struct.pack("<i", 444)) #divider block between all first level blocks
 
@@ -465,7 +458,7 @@ def export_b3d(context, op, export_dir):
                     cur_max_cnt = obj[Blk021.GroupCnt.get_prop()]
 
                 if is_valid_block(obj):
-                    export_block(obj, False, cur_level, cur_max_cnt, [0], {}, file)
+                    export_block(obj, False, cur_level, cur_max_cnt, [0], extra, file)
 
             file.write(struct.pack("<i",222))#EOF
 
@@ -482,10 +475,8 @@ def export_b3d(context, op, export_dir):
             file.seek(20,0)
             file.write(struct.pack("<i", cp_eof - cp_data_blocks))
 
-def common_sort(cur_center, arr):
-    global created_bounders
-    global empty_to_mesh_keys
-
+def common_sort(cur_center, arr, created_bounders, empty_to_mesh_keys):
+    
     def dist(cur_center, obj):
 
         center = None
@@ -508,11 +499,13 @@ def common_sort(cur_center, arr):
 
 def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
-    global borders
-    global current_res
-    global current_room_name
-    global current_module
-    global current_materials
+    current_module = extra['current_module']
+    current_module_name = current_module['value']
+    current_materials = extra['current_materials']
+    borders = extra['borders']
+    current_room_name = extra['current_room_name']
+    created_bounders = extra['created_bounders']
+    empty_to_mesh_keys = extra['empty_to_mesh_keys']
 
     block = obj
 
@@ -538,7 +531,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         if int(block.name[6]) > 0: #GROUP_?
             file.write(struct.pack("<i",444))#Group Chunk
 
-        bl_children = common_sort(cur_center, bl_children)
+        bl_children = common_sort(cur_center, bl_children, created_bounders, empty_to_mesh_keys)
 
         if(len(bl_children) > 0):
             for i, ch in enumerate(bl_children[:-1]):
@@ -554,7 +547,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         file.write(struct.pack("<i",333))#Begin Chunk
 
         if obj_type not in [2, 9, 10, 21]:
-            bl_children = common_sort(cur_center, bl_children)
+            bl_children = common_sort(cur_center, bl_children, created_bounders, empty_to_mesh_keys)
 
         if obj_type == 30:
             write_name('', file)
@@ -573,7 +566,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 2:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<3f", *block[Blk002.Unk_XYZ.get_prop()]))
             file.write(struct.pack("<f", block[Blk002.Unk_R.get_prop()]))
 
@@ -588,7 +581,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 3:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -596,7 +589,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 4:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk004.Name1.get_prop()], file)
             write_name(block[Blk004.Name2.get_prop()], file)
 
@@ -606,7 +599,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 5:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk005.Name1.get_prop()], file)
 
             file.write(struct.pack("<i", len(get_children(block))))
@@ -615,7 +608,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 6:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk006.Name1.get_prop()], file)
             write_name(block[Blk006.Name2.get_prop()], file)
 
@@ -646,7 +639,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 7:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk007.Name1.get_prop()], file)
 
             offset = 0
@@ -753,7 +746,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 9 or obj_type == 22:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<3f", *block[Blk009.Unk_XYZ.get_prop()]))
             file.write(struct.pack("<f", block[Blk009.Unk_R.get_prop()]))
 
@@ -769,7 +762,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 10:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<3f", *block[Blk010.LOD_XYZ.get_prop()]))
             file.write(struct.pack("<f", block[Blk010.LOD_R.get_prop()]))
 
@@ -784,7 +777,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 11:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ1.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ2.get_prop()]))
             file.write(struct.pack("<f", block[Blk011.Unk_R1.get_prop()]))
@@ -880,13 +873,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 18:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk018.Space_Name.get_prop()], file)
             write_name(block[Blk018.Add_Name.get_prop()], file)
 
         elif obj_type == 19:
 
-            current_room_name = '{}:{}'.format(current_res, obj_name)
+            current_room_name = '{}:{}'.format(current_module_name, obj_name)
             border_blocks = borders[current_room_name]
             bl_children.extend(border_blocks)
 
@@ -921,7 +914,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 21:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<i", block[Blk021.GroupCnt.get_prop()]))
             file.write(struct.pack("<i", block[Blk021.Unk_Int2.get_prop()]))
 
@@ -1004,7 +997,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 26:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ1.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ2.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ3.get_prop()]))
@@ -1086,7 +1079,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 29:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<i", block[Blk029.Unk_Int1.get_prop()]))
             file.write(struct.pack("<i", block[Blk029.Unk_Int2.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk029.Unk_XYZ.get_prop()]))
@@ -1114,18 +1107,18 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                 to_import_second_side = False
 
             if to_import_second_side:
-                write_name(get_room_name(current_res, roomname2), file)
+                write_name(get_room_name(current_module_name, roomname2), file)
             else:
-                write_name(get_room_name(current_res, roomname1), file)
+                write_name(get_room_name(current_module_name, roomname1), file)
 
-            vertexes = [matrix_multiply(block.matrix_world, cn.co) for cn in block.data.vertices]
+            points = [matrix_multiply(block.matrix_world, cn.co) for cn in block.data.splines[0].points]
 
             if to_import_second_side:
-                p1 = vertexes[0]
-                p2 = vertexes[2]
+                p1 = (points[0][0], points[0][1], points[0][2])
+                p2 = (points[1][0], points[1][1], points[1][2])
             else:
-                p1 = vertexes[1]
-                p2 = vertexes[3]
+                p1 = (points[1][0], points[1][1], points[0][2])
+                p2 = (points[0][0], points[0][1], points[1][2])
 
             file.write(struct.pack("<3f", *p1))
             file.write(struct.pack("<3f", *p2))
@@ -1141,7 +1134,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 33:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<i", block[Blk033.Use_Lights.get_prop()]))
             file.write(struct.pack("<i", block[Blk033.Light_Type.get_prop()]))
             file.write(struct.pack("<i", block[Blk033.Flag.get_prop()]))
@@ -1261,7 +1254,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             # isSecondUvs = False
             format_raw = int(block[Blk036.VType.get_prop()])
             normal_switch = False
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk036.Name1.get_prop()], file)
             write_name(block[Blk036.Name2.get_prop()], file)
 
@@ -1325,7 +1318,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             # isSecondUvs = False
             format_raw = int(block[Blk037.VType.get_prop()])
             normal_switch = False
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk037.Name1.get_prop()], file)
 
             offset = 0
@@ -1383,7 +1376,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 39:
 
-            write_calculated_sphere(file, block)
+            write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             file.write(struct.pack("<i", block[Blk039.Color_R.get_prop()]))
             file.write(struct.pack("<f", block[Blk039.Unk_Float1.get_prop()]))
             file.write(struct.pack("<f", block[Blk039.Fog_Start.get_prop()]))
@@ -1409,9 +1402,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         if to_process_child:
             l_extra = extra
+            l_extra['current_room_name'] = current_room_name
             if(len(bl_children) > 0):
                 for i, ch in enumerate(bl_children[:-1]):
-
+                    
                     if len(pass_to_mesh) > 0:
                         l_extra['pass_to_mesh'] = pass_to_mesh
                         

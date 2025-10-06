@@ -59,7 +59,7 @@ class FieldType(enum.Enum):
     IGNORE = 0
     STRING = 1
     COORD = 2
-    RAD = 3
+    # RAD = 3
     INT = 4
     FLOAT = 5
     ENUM = 6
@@ -504,10 +504,6 @@ class FloatParam(BlkParam):
     block_type = FieldType.FLOAT
     default_value = 0.0
 
-class RadParam(BlkParam):
-    block_type = FieldType.RAD
-    default_value = 0.0
-
 class CoordParam(BlkParam):
     block_type = FieldType.COORD
     default_value = (0.0, 0.0, 0.0)
@@ -660,7 +656,7 @@ class Blk002():
     class Unk_XYZ(CoordParam):
         name = 'Unk. name 2'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
 
 
@@ -697,12 +693,8 @@ class Blk009():
         name = 'Unk. coord'
         group = 'b9_group'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
-        group = 'b9_group'
-
-    class Set_B9(SphereEditParam):
-        name = ''
         group = 'b9_group'
 
 
@@ -712,7 +704,7 @@ class Blk010():
         description = 'LOD center'
         group = 'LOD_group'
 
-    class LOD_R(RadParam):
+    class LOD_R(FloatParam):
         name = 'LOD rad'
         description = 'LOD radius'
         group = 'LOD_group'
@@ -730,10 +722,10 @@ class Blk011():
     class Unk_XYZ2(CoordParam):
         name = 'Unk. coord'
 
-    class Unk_R1(RadParam):
+    class Unk_R1(FloatParam):
         name = 'Unk. rad'
 
-    class Unk_R2(RadParam):
+    class Unk_R2(FloatParam):
         name = 'Unk. rad'
 
 
@@ -741,7 +733,7 @@ class Blk012():
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
 
     class Unk_Int1(IntParam):
@@ -769,7 +761,7 @@ class Blk014():
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
 
     class Unk_Int1(IntParam):
@@ -878,7 +870,7 @@ class Blk022():
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
 
 
@@ -974,7 +966,7 @@ class Blk029():
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
 
-    class Unk_R(RadParam):
+    class Unk_R(FloatParam):
         name = 'Unk. rad'
 
 

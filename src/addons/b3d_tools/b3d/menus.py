@@ -29,9 +29,11 @@ from .class_descr import (
 from . import (
     import_b3d, export_b3d, import_res, export_res
 )
+from .callbacks import (
+    b3d_modules_callback,
+    modules_callback
+)
 from .common import (
-    res_modules_callback,
-    modules_callback,
     get_col_property_by_name
 )
 from .ui_utils import (
@@ -203,7 +205,7 @@ class ExportRES(Operator, ExportHelper):
 
         # RES modules
         self.res_modules.clear()
-        for module in res_modules_callback(self, None):
+        for module in b3d_modules_callback(self, None):
             item = self.res_modules.add()
             item.name = str(module[0])
             item.state = False
