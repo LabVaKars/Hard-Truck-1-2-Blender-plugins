@@ -1,17 +1,9 @@
+import bpy
 import time
 import datetime
 import os
 from pathlib import Path
-
-
-import bpy
-
-from .imghelp import (
-    convert_txr_to_tga32,
-    msk_to_tga32,
-    parse_plm,
-    get_txr_params
-)
+from io import BytesIO
 
 from .common import (
     get_col_property_by_name,
@@ -22,7 +14,8 @@ from .common import (
     unmask_bits,
     read_res_sections,
     srgb_to_rgb,
-    get_mat_texture_ref_dict
+    get_mat_texture_ref_dict,
+    rgb_to_srgb
 )
 
 from .data_api_utils import (
@@ -37,6 +30,11 @@ from ..compatibility import (
 
 from ..common import (
     importres_logger
+)
+from .imghelp import (
+    txr_to_tga32,
+    msk_to_tga32,
+    parse_plm
 )
 
 log = importres_logger
@@ -201,16 +199,34 @@ def load_texturefiles(basedir, res_module, image_format, convert_txr):
     for i, texture in enumerate(res_module.textures):
         used_in_mat = res_module.materials[texture_to_mat[i]]
         transp_color = (0,0,0)
+        replace_transp = False
         if used_in_mat.tex_type == 'ttx' and used_in_mat.is_col:
             transp_color = srgb_to_rgb(*(palette[used_in_mat.col-1].value[:3]))
+            replace_transp = True
 
         no_ext_path = os.path.splitext(os.path.join(basedir, "TEXTUREFILES", (texture.subpath).replace(chr(92), chr(47)), texture.tex_name))[0]
+        txr_path = "{}.txr".format(no_ext_path)
+        tga_path = "{}.tga".format(no_ext_path)
+        
         result = None
-        img_path = "{}.txr".format(no_ext_path)
+        rawBuffer = None
+        with open(txr_path, "rb") as txr_file:
+            rawBuffer = BytesIO(txr_file.read())
+        
+        tex_params = {
+            'transp_color': transp_color,
+            'replace_transp': replace_transp,
+            'convert_txr': convert_txr,
+            'gen_mipmaps': False,
+            'tga_debug': False
+        }
+        result = txr_to_tga32(rawBuffer, tex_params)
         if convert_txr:
-            result = convert_txr_to_tga32(img_path, transp_color)
-        else:
-            result = get_txr_params(img_path)
+            with open(tga_path, "wb") as out_file:
+                tgaBuffer = result['data']
+                tgaBuffer.seek(0,0)
+                out_file.write(tgaBuffer.getvalue()) #BytesIO
+
         filename_no_ext = os.path.basename(no_ext_path)
         img_name = "{}.{}".format(filename_no_ext, image_format)
         log.debug('Importing image {}'.format(img_name))
@@ -225,15 +241,11 @@ def load_texturefiles(basedir, res_module, image_format, convert_txr):
 
         img_format = result['format']
         if img_format is not None:
-            r = unmask_bits(img_format[0]).ones
-            g = unmask_bits(img_format[1]).ones
-            b = unmask_bits(img_format[2]).ones
-            a = unmask_bits(img_format[3]).ones
+            bit_depth = ''.join(str(bin(x).count('1')) for x in img_format)
 
-            format_str = str(a) + str(r) + str(g) + str(b)
-            if format_str not in ['4444', '0565']:
-                format_str = '4444'
-            texture.img_format = format_str
+            if bit_depth not in ['4444', '0565']:
+                bit_depth = '4444'
+            texture.img_format = bit_depth
 
         texture.has_mipmap = result['has_mipmap']
 
@@ -241,8 +253,26 @@ def load_texturefiles(basedir, res_module, image_format, convert_txr):
 def load_maskfiles(basedir, res_module, image_format, convert_txr):
     for maskfile in res_module.maskfiles:
         no_ext_path = os.path.splitext(os.path.join(basedir, "MASKFILES", (maskfile.subpath).replace(chr(92), chr(47)), maskfile.msk_name))[0]
+        msk_path = "{}.msk".format(no_ext_path)
+        tga_path = "{}.tga".format(no_ext_path)
+        
+        result = None
+        rawBuffer = None
+        with open(msk_path, 'rb') as f:
+            rawBuffer = BytesIO(f.read())
+
+        msk_params = {
+            'transp_colot': (0,0,0),
+            'tga_debug': False
+        }
+        result = msk_to_tga32(rawBuffer, msk_params)
         if convert_txr:
-            msk_to_tga32("{}.msk".format(no_ext_path))
+            with open(tga_path, "wb") as f:
+                tgaBuffer = result['data']
+                tgaBuffer.seek(0,0)
+                f.write(tgaBuffer.getvalue()) #BytesIO
+
+
         filename_no_ext = os.path.basename(no_ext_path)
         img_name = "{}.{}".format(filename_no_ext, image_format)
         img_path = "{}.{}".format(no_ext_path, image_format)
@@ -258,7 +288,18 @@ def load_maskfiles(basedir, res_module, image_format, convert_txr):
 def load_palette_files(basedir, res_module):
     if len(res_module.palette_name) > 0:
         palette_path = os.path.join(basedir, "PALETTEFILES", (res_module.palette_subpath).replace(chr(92), chr(47)), res_module.palette_name)
-        parse_plm(res_module, palette_path)
+        
+        colors = []
+        plm_obj = None
+        with open(palette_path, "rb") as f:
+            rawBuffer = BytesIO(f.read())
+            plm_obj = parse_plm(rawBuffer)
+        
+        colors = plm_obj['PALT']
+
+        for color in colors:
+            pal_color = res_module.palette_colors.add()
+            pal_color.value = rgb_to_srgb(color['r'], color['g'], color['b'])
         for i, pal_color in enumerate(res_module.palette_colors):
             update_color_preview(res_module, i)
 
@@ -274,6 +315,15 @@ def save_material(res_module, material_str):
     name = name_split[0]
     params = name_split[1:]
 
+    def trim_to_next(params, i):
+        j = 0
+        val = params[i+j]
+        while val == "":
+            j+=1
+            val = params[i+j]
+        return val, j
+
+
     material = res_module.materials.add()
     material.mat_name = name
     i = 0
@@ -282,33 +332,47 @@ def save_material(res_module, material_str):
         if len(param_name) > 0:
             if param_name in ["tex", "ttx", "itx"]:
                 setattr(material, "is_tex", True)
-                setattr(material, "tex", int(params[i+1]))
+                val, j = trim_to_next(params, i+1)
+                setattr(material, "tex", int(val))
                 setattr(material, "tex_type", param_name)
-                i+=1
+                i+=j
+                # i+=1
             elif param_name in ["col", "att", "msk", "power", "coord"]:
                 setattr(material, "is_" + param_name, True)
-                setattr(material, param_name, int(params[i+1]))
-                i+=1
+                val, j = trim_to_next(params, i+1)
+                setattr(material, param_name, int(val))
+                i+=j
+                # i+=1
             elif param_name in ["reflect", "specular", "transp", "rot"]:
-                setattr(material, param_name, float(params[i+1]))
-                i+=1
+                val, j = trim_to_next(params, i+1)
+                setattr(material, param_name, float(val))
+                i+=j
+                # i+=1
             elif param_name in ["noz", "nof", "notile", "notileu", "notilev", \
                                 "alphamirr", "bumpcoord", "usecol", "wave"]:
                 setattr(material, "is_" + param_name, True)
                 # i+=1
             elif param_name in ["RotPoint", "move"]:
                 setattr(material, "is_" + param_name, True)
-                setattr(material, param_name, [float(params[i+1]), float(params[i+2])])
-                i+=2
+                val1, j = trim_to_next(params, i+1)
+                i+=j
+                val2, j = trim_to_next(params, i+1)
+                i+=j
+                setattr(material, param_name, [float(val1), float(val2)])
+                # i+=2
             elif param_name[0:3] == "env":
                 envid = param_name[3:]
                 if len(envid) > 0:
                     setattr(material, "is_envId", True)
                     setattr(material, "envId", int(envid))
                 else:
+                    val1, j = trim_to_next(params, i+1)
+                    i+=j
+                    val2, j = trim_to_next(params, i+1)
+                    i+=j
                     setattr(material, "is_env", True)
-                    setattr(material, "env", [float(params[i+1]), float(params[i+2])])
-                    i+=2
+                    setattr(material, "env", [float(val1), float(val2)])
+                    # i+=2
         i+=1
 
 

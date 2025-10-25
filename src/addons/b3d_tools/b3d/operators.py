@@ -340,10 +340,6 @@ class HierarchyAddOperator(bpy.types.Operator):
             group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
             pass
 
-        print(lod_level)
-
-
-
         return {'FINISHED'}
 
 class CastAddOperator(bpy.types.Operator):

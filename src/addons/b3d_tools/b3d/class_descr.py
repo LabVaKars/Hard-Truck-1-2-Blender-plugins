@@ -236,10 +236,10 @@ class TextureBlock(bpy.types.PropertyGroup):
 
     img_type = EnumProperty(
         name="Image type",
-        default='TRUECOLOR',
+        default='TIMG',
         items=[
-            ('TRUECOLOR', "True-color image", "Store each pixel value"),
-            ('COLORMAP', "Color mapped(palette) image", "Store indexes of palette")
+            ('TIMG', "True-color image", "Store each pixel value"),
+            ('CMAP', "Color mapped(palette) image", "Store indexes of palette")
         ]
     )
 

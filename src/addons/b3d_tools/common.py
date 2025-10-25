@@ -2,6 +2,8 @@ import bpy
 
 import logging
 import sys
+import time
+from functools import wraps
 
 
 # https://blenderartists.org/t/solved-adding-a-tab-in-blender-2-8/1133119/3
@@ -30,6 +32,17 @@ def createLogger(module_name):
         handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s - %(message)s','%H:%M:%S'))
         log.addHandler(handler)
     return log
+
+
+def perf_log(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print("{} took {:.6f} seconds".format(func.__name__, end - start))
+        return result
+    return wrapper
 
 common_logger = createLogger("b3d_tools.common")
 exportb3d_logger = createLogger("b3d_tools.export_b3d")

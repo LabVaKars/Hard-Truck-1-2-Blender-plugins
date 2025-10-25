@@ -20,17 +20,42 @@ from ..compatibility import (
 #Setup module logger
 log = common_logger
 
+def dec_byte(data, size=1, littleEndian=True):
+    order = str('<' if littleEndian else '>')
+    format_ = str((None, 'B', 'H', None, 'I')[size])
+
+    return struct.unpack(order + format_, data)[0]
+
+
+def multiple_dec_byte(stream, num, size=1, littleEndian=True):
+    return [dec_byte(stream.read(size), size, littleEndian) for number in range(num)]
+
+
+def gen_byte(data, size=1, littleEndian=True):
+    order = str('<' if littleEndian else '>')
+    format_ = str((None, 'B', 'H', None, 'I')[size])
+    if size == 3:
+        return struct.pack(order + 'BBB', data)
+    return struct.pack(order + format_, data)
+
 def get_class_attributes(zclass):
     return [obj for obj in zclass.__dict__.keys() if not obj.startswith('__')]
 
-def write_size(file, ms, write_ms=None):
-    if write_ms is None:
-        write_ms = ms
-    end_ms = file.tell()
-    size = end_ms - ms
-    file.seek(write_ms, 0)
-    file.write(struct.pack("<i", size))
-    file.seek(end_ms, 0)
+
+def write_size(io, ms, size):
+    end_ms = io.tell()
+    io.seek(ms, 0)
+    io.write(struct.pack("<i", size))
+    io.seek(end_ms, 0)
+
+# def write_size2(file, ms, write_ms=None):
+#     if write_ms is None:
+#         write_ms = ms
+#     end_ms = file.tell()
+#     size = end_ms - ms
+#     file.seek(write_ms, 0)
+#     file.write(struct.pack("<i", size))
+#     file.seek(end_ms, 0)
 
 def get_not_numeric_name(name):
     re_is_copy = re.compile(r'\|')

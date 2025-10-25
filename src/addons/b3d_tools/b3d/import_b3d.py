@@ -437,7 +437,7 @@ def import_b3d(file, context, self, filepath):
             begin_counter -= 1
 
             parent_obj = context.scene.objects.get(obj_string[-2])
-            if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 21, 29]: #blocks with subtypes
+            if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 11, 21, 29]: #blocks with subtypes
                 del obj_string[-1]
 
             del obj_string[-1]
@@ -509,7 +509,7 @@ def import_b3d(file, context, self, filepath):
                     for i in range(lvl+1-len(level_groups)):
                         level_groups.append(0)
 
-                if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 21, 29]: #blocks with subtypes
+                if parent_obj.get(BLOCK_TYPE) in [2, 9, 10, 11, 21, 29]: #blocks with subtypes
 
                     group_obj_name = 'GROUP_0'
 
@@ -528,7 +528,7 @@ def import_b3d(file, context, self, filepath):
 
             else:
                 skip_end_at.append(begin_counter)
-                if block_type in [2, 9, 10, 21, 29]:
+                if block_type in [2, 9, 10, 11, 21, 29]:
                     skip_group_at.append(begin_counter)
 
             if (block_type == 0): # Empty Block

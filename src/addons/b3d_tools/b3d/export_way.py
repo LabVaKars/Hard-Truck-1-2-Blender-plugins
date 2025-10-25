@@ -143,7 +143,7 @@ def export_way(context, op, export_dir):
                         write_wdth(file, way_obj)
                         write_rten(file, way_obj)
                         write_vdat(file, way_obj)
-                        write_size(file, rseg_ms, rseg_write_ms)
+                        write_size(file, rseg_write_ms, file.tell() - rseg_ms)
                     elif obj_type == 51:
                         write_type(file, "RNOD")
                         rnod_write_ms = file.tell()
@@ -155,7 +155,7 @@ def export_way(context, op, export_dir):
                         write_type(file, "FLAG")
                         file.write(struct.pack("<i", 4))
                         file.write(struct.pack("<i", way_obj[Blk051.Flag.get_prop()]))
-                        write_size(file, rnod_ms, rnod_write_ms)
+                        write_size(file, rnod_write_ms, file.tell() - rnod_ms)
                     elif obj_type == 52:
                         write_type(file, "RNOD")
                         rnod_write_ms = file.tell()
@@ -168,12 +168,12 @@ def export_way(context, op, export_dir):
                         write_type(file, "FLAG")
                         file.write(struct.pack("<i", 4))
                         file.write(struct.pack("<i", way_obj[Blk052.Flag.get_prop()]))
-                        write_size(file, rnod_ms, rnod_write_ms)
+                        write_size(file, rnod_write_ms, file.tell() - rnod_ms)
 
-                write_size(file, grom_ms, grom_write_ms)
+                write_size(file, grom_write_ms, file.tell() - grom_ms)
 
-        write_size(file, gdat_ms, gdat_write_ms)
-        write_size(file, wtwr_ms, wtwr_write_ms)
+        write_size(file, gdat_write_ms, file.tell() - gdat_ms)
+        write_size(file, wtwr_write_ms, file.tell() - wtwr_ms)
 
         file.close()
 

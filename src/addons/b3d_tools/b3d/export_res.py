@@ -1,6 +1,7 @@
 import os
 import bpy
 import struct
+from io import BytesIO
 
 from pathlib import Path
 
@@ -22,7 +23,7 @@ from .common import (
 )
 
 from .imghelp import (
-    convert_tga32_to_txr
+    tga32_to_txr
 )
 
 log = exportres_logger
@@ -100,27 +101,34 @@ def write_palettefiles(res_module, file):
         palette_name = res_module.palette_name
         if palette_name is None or len(palette_name) == 0:
             palette_name = "{}.plm".format(res_module.value)
+        
         write_cstring("{}".format(palette_name), file)
         pal_name_write_ms = file.tell()
         file.write(struct.pack("<i", 0)) # reserve
         pal_name_ms = file.tell()
+        
         file.write("PLM\00".encode("cp1251"))
         plm_write_ms = file.tell()
         file.write(struct.pack("<i", 0)) # reserve
         plm_ms = file.tell()
+        
         file.write("PALT".encode("cp1251"))
         palt_write_ms = file.tell()
         file.write(struct.pack("<i", 0)) # reserve
         palt_ms = file.tell()
+        
         for color in res_module.palette_colors:
             rgbcol = srgb_to_rgb(*color.value[:3])
             file.write(struct.pack("<B", rgbcol[0]))
             file.write(struct.pack("<B", rgbcol[1]))
             file.write(struct.pack("<B", rgbcol[2]))
 
-        write_size(file, pal_name_ms, pal_name_write_ms)
-        write_size(file, plm_ms, plm_write_ms)
-        write_size(file, palt_ms, palt_write_ms)
+        # write_size(file, pal_name_ms, pal_name_write_ms)
+        # write_size(file, plm_ms, plm_write_ms)
+        # write_size(file, palt_ms, palt_write_ms)
+        write_size(file, pal_name_write_ms, file.tell() - pal_name_ms)
+        write_size(file, plm_write_ms, file.tell() - plm_ms)
+        write_size(file, palt_write_ms, file.tell() - palt_ms)
 
 
 def write_soundfiles(res_module, file):
@@ -156,8 +164,10 @@ def write_texturefiles(res_module, file, filepath, save_images = True):
         for i, texture in enumerate(res_module.textures):
             used_in_mat = res_module.materials[texture_to_mat[i]]
             transp_color = (0,0,0)
+            replace_transp = False
             if used_in_mat.tex_type == 'ttx' and used_in_mat.is_col:
                 transp_color = srgb_to_rgb(*(palette[used_in_mat.col-1].value[:3]))
+                replace_transp = True
 
             basepath_no_ext = os.path.splitext(texture.tex_name)[0]
 
@@ -184,16 +194,31 @@ def write_texturefiles(res_module, file, filepath, save_images = True):
             if save_images:
                 save_image_as(texture.id_tex, image_path)
 
-            convert_tga32_to_txr(image_path, 2, texture.img_type, texture.img_format, texture.has_mipmap, transp_color)
+            rawBuffer = None
+            with open(image_path, 'rb') as f:
+                rawBuffer = BytesIO(f.read())
+            
+            tga32_params = {
+                'img_type': texture.img_type,
+                'pfrm': texture.img_format,
+                'has_pfrm': True,
+                'has_lvmp': texture.has_mipmap,
+                'palette': [],
+                'transp_color': transp_color,
+                'replace_transp': replace_transp,
+                'tga_debug': False
+            }
 
-            texture_size_ms = file.tell()
+            result = tga32_to_txr(rawBuffer, tga32_params)
+
+            tex_size_write_ms = file.tell()
             file.write(struct.pack("<i", 0))
-            outpath = os.path.splitext(image_path)[0] + ".txr"
-            with open(outpath, "rb") as txr_file:
-                txr_text = txr_file.read()
-            file.write(txr_text)
-            write_size(file, texture_size_ms)
-            file.write(struct.pack('<i', 0))
+            tex_size_ms = file.tell()
+            outBuffer = result['data']
+            outBuffer.seek(0,0)
+            file.write(outBuffer.getvalue())
+
+            write_size(file, tex_size_write_ms, file.tell() - tex_size_ms)
 
 
 
