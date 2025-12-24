@@ -81,6 +81,8 @@ def create_color_material_node(mat_name, color, alpha=None):
     tex_color = new_mat.node_tree.nodes.new("ShaderNodeRGB")
     tex_color.outputs['Color'].default_value = color
     new_mat.node_tree.links.new(bsdf.inputs['Base Color'], tex_color.outputs['Color'])
+    # Change preview_renter type to FLAT
+    new_mat.preview_render_type = 'FLAT'
 
 
 def create_image_material_node(mat_name, image_name):
@@ -106,6 +108,8 @@ def create_image_material_node(mat_name, image_name):
     tex_image = new_mat.node_tree.nodes.new("ShaderNodeTexImage")
     tex_image.image = bpy.data.images.get(path)
     new_mat.node_tree.links.new(bsdf.inputs['Base Color'], tex_image.outputs['Color'])
+    # Change preview_renter type to FLAT
+    new_mat.preview_render_type = 'FLAT'
     # new_mat.node_tree.links.new(bsdf.inputs['Alpha'], tex_image.outputs['Alpha'])
 
 

@@ -30,8 +30,14 @@ def make_annotations(cls):
 def layout_split(layout, factor=0.0, align=False):
     """Intermediate method for pre and post blender 2.8 split UI function"""
     if not hasattr(bpy.app, "version") or bpy.app.version < (2, 80):
-        return layout.split(percentage=factor, align=align)
-    return layout.split(factor=factor, align=align)
+        if factor > 0.0:
+            return layout.split(percentage=factor, align=align)
+        else:
+            return layout.split(align=align)
+    if factor > 0.0:
+        return layout.split(factor=factor, align=align)
+    else:
+        return layout.split(align=align)
 
 
 def get_user_preferences(context=None):

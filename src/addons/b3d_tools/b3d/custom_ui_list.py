@@ -187,9 +187,17 @@ class CUSTOM_UL_colors_grid(UIList):
 class CUSTOM_UL_materials(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout_split(layout, 0.15)
+        
+        mytool = context.scene.my_tool
+        
+        material_preview = getattr(mytool, 'material_preview')
+
+        split = layout_split(layout, 0.1)
         split.label(text= "{}".format(index+1))
-        split.template_ID(item, 'id_mat')
+        if material_preview:
+            split.template_ID_preview(item, 'id_mat', hide_buttons = True, rows=5, cols=1)
+        else:
+            split.template_ID(item, 'id_mat')
 
     def invoke(self, context, event):
         pass
@@ -197,9 +205,18 @@ class CUSTOM_UL_materials(UIList):
 class CUSTOM_UL_textures(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout_split(layout, 0.15)
+        
+        mytool = context.scene.my_tool
+        
+        show_preview = getattr(mytool, 'texture_preview')
+
+        split = layout_split(layout, 0.1)
         split.label(text= "{}".format(index+1))
-        split.template_ID(item, 'id_tex')
+        if show_preview:
+            split.template_ID_preview(item, 'id_tex', hide_buttons = True)
+        else:
+            split.template_ID(item, 'id_tex')
+
 
     def invoke(self, context, event):
         pass
@@ -207,9 +224,17 @@ class CUSTOM_UL_textures(UIList):
 class CUSTOM_UL_maskfiles(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        split = layout_split(layout, 0.15)
+        
+        mytool = context.scene.my_tool
+        
+        show_preview = getattr(mytool, 'maskfile_preview')
+
+        split = layout_split(layout, 0.1)
         split.label(text= "{}".format(index+1))
-        split.template_ID(item, 'id_msk')
+        if show_preview:
+            split.template_ID_preview(item, 'id_msk', hide_buttons = True)
+        else:
+            split.template_ID(item, 'id_msk')
 
     def invoke(self, context, event):
         pass

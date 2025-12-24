@@ -95,13 +95,13 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
 
     block_name_string = bpy.props.StringProperty(
-        name="Block name",
+        name="Name",
         default="",
         maxlen=30,
     )
 
     add_block_type_enum = bpy.props.EnumProperty(
-        name="Block type",
+        name="Type",
         items= consts.blockTypeList
     )
 
@@ -124,7 +124,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
 
     vertex_block_enum = bpy.props.EnumProperty(
-        name="Vertex block type",
+        name="Vertex type",
         default = '37',
         items=[
             ('6', "6(no Normals)", "Block without normals. Mostly used in HT1"),
@@ -135,7 +135,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
 
     poly_block_enum = bpy.props.EnumProperty(
-        name="Poly block type",
+        name="Poly type",
         default = '8',
         items=[
             ('8', "8(multiple textures)", "Block can use multiple materials per mesh. Casn use N-gons"),
@@ -168,7 +168,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
     
     current_hierarchy_enum = bpy.props.EnumProperty(
-        name="Hierarchy type",
+        name="Type",
         items=[
             ('LOD_9', "Render tree(9)", "Render tree(9)"),
             ('LOD_10', "LOD(10)", "LOD(10)"),
@@ -176,13 +176,13 @@ class PanelSettings(bpy.types.PropertyGroup):
         ]
     )
 
-    active_module_enum = EnumProperty(
-        name = 'Active module',
-        description = 'Active module',
-        items = modules_callback,
-        default = 0, # index, not value
-        update = set_cust_mytool_value(FieldType.STRING, 'active_module')
-    )
+    # active_module_enum = EnumProperty(
+    #     name = 'Module',
+    #     description = 'Active module',
+    #     items = modules_callback,
+    #     default = 0, # index, not value
+    #     update = set_cust_mytool_value(FieldType.STRING, 'active_module')
+    # )
     
     #Active module start
     active_module_switch = BoolProperty(
@@ -192,15 +192,15 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
 
     active_module_enum = EnumProperty(
-        name = 'Active module',
-        description = 'Active module',
+        name = 'Module',
+        description = 'Module',
         items = modules_callback,
         default = 0, # index, not value
         update = set_cust_mytool_value(FieldType.STRING, 'active_module')
     )
     
     active_module = StringProperty(
-        name = 'Active module',
+        name = 'Module',
         description = 'Active module',
         maxlen = 32
     )
@@ -214,7 +214,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
 
     active_room_enum = EnumProperty(
-        name = 'Active room',
+        name = 'Room',
         description = 'Active room',
         items = rooms_callback_mytool,
         default = 0, # index, not value
@@ -222,7 +222,7 @@ class PanelSettings(bpy.types.PropertyGroup):
     )
     
     active_room = StringProperty(
-        name = 'Active room',
+        name = 'Room',
         description = 'Active room',
         maxlen = 32
     )
@@ -281,7 +281,7 @@ class PanelSettings(bpy.types.PropertyGroup):
         )
 
     parent_str = bpy.props.StringProperty(
-        name ='Selected parent',
+        name ='Parent',
         description = 'New object will be parented to this object'
     )
 
@@ -289,6 +289,24 @@ class PanelSettings(bpy.types.PropertyGroup):
         name ='Create copy',
         description = 'Will be created copy of selected object and casted to B3D format',
         default = True
+    )
+
+    material_preview = bpy.props.BoolProperty(
+        name ='Show previews',
+        description = 'Display material previews in list and material selector',
+        default = False
+    )
+
+    texture_preview = bpy.props.BoolProperty(
+        name ='Show previews',
+        description = 'Display texture previews in list and texture selector',
+        default = False
+    )
+
+    maskfile_preview = bpy.props.BoolProperty(
+        name ='Show previews',
+        description = 'Display maskfile previews in list and maskfile selector',
+        default = False
     )
 
 _classes = [

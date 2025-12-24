@@ -17,6 +17,9 @@ from .common import (
     get_level_group,
     get_class_attributes
 )
+from ..compatibility import (
+    layout_split
+)
 
 def draw_enum(box, pname):
     mytool = bpy.context.scene.my_tool
@@ -65,11 +68,25 @@ def draw_common(l_self, obj):
 
     len_str = str(len(obj.children))
 
+    box = l_self.layout
+
+    split = layout_split(box, 0.25)
+    split.column().label(text = "Name:")
+    split.column().label(text = str(object_name))
+    
+    split = layout_split(box, 0.25)
+    split.column().label(text = "Type:")
+    split.column().label(text = str(block_type))
+
+    split = layout_split(box, 0.25)
+    split.column().label(text = "Children:")
+    split.column().label(text = str(len_str))
+
+    split = layout_split(box, 0.25)
+    split.column().label(text = "Group:")
+    split.column().label(text = str(level_group))
+
     box = l_self.layout.box()
-    box.label(text="Selected object: " + str(object_name))
-    box.label(text="Block type: " + str(block_type))
-    box.label(text="Children block count: " + len_str)
-    box.label(text="Block group: " + str(level_group))
 
     draw_enum(box, 'active_module')
     draw_enum(box, 'active_room')
@@ -235,7 +252,7 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                     if hasattr(blk, "show_{}".format(pname)):
                         col1.enabled = getattr(blk, "show_{}".format(pname))
 
-        elif ftype == FieldType.WAY_SEG_FLAGS:
+        elif ftype == FieldType.FLAGS:
             blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
             if blk is not None:
                 box = cur_layout.box()
@@ -246,40 +263,25 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                     
                     if hasattr(blk, "{}_show_int".format(pname)):
                         box.prop(blk, "{}_show_int".format(pname))
-                        
+
                     col1 = box.column()
                     if getattr(blk, "{}_show_int".format(pname)) == True:
                         
-                        if hasattr(blk, "{}_segment_flags".format(pname)):
-                            col1.prop(blk, "{}_segment_flags".format(pname))
+                        if hasattr(blk, "{}".format(pname)):
+                            col1.prop(blk, "{}".format(pname))
 
                     else:
 
-                        if hasattr(blk, "{}_is_curve".format(pname)):
-                            col1.prop(blk, "{}_is_curve".format(pname))
+                        flag_descriptions = attr_class.get_flag_description()
+                        if flag_descriptions is not None:
 
-                        if hasattr(blk, "{}_is_path".format(pname)):
-                            col1.prop(blk, "{}_is_path".format(pname))
-
-                        if hasattr(blk, "{}_is_right_lane".format(pname)):
-                            col1.prop(blk, "{}_is_right_lane".format(pname))
-
-                        if hasattr(blk, "{}_is_left_lane".format(pname)):
-                            col1.prop(blk, "{}_is_left_lane".format(pname))
-
-                        if hasattr(blk, "{}_is_hidden".format(pname)):
-                            col1.prop(blk, "{}_is_hidden".format(pname))
-
-                        if hasattr(blk, "{}_is_fillable".format(pname)):
-                            col1.prop(blk, "{}_is_fillable".format(pname))
-
-                        if hasattr(blk, "{}_no_traffic".format(pname)):
-                            col1.prop(blk, "{}_no_traffic".format(pname))
-
+                            for desc in flag_descriptions:
+                                if hasattr(blk, "{}_{}".format(pname, desc["key"])):
+                                    col1.prop(blk, "{}_{}".format(pname, desc["key"]))
 
                     if hasattr(blk, "show_{}".format(pname)):
                         col1.enabled = getattr(blk, "show_{}".format(pname))
-                else:
 
+                else:
                     col = box.column()
                     col.prop(bpy.context.object, '["{}"]'.format(pname), text=prop_text)

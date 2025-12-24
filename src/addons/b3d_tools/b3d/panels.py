@@ -39,10 +39,11 @@ log = panels_logger
 
 class OBJECT_PT_b3d_info_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_info_panel"
-    bl_label = "Block info"
+    bl_label = "Active block info"
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -64,6 +65,7 @@ class OBJECT_PT_b3d_add_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -82,6 +84,7 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -95,8 +98,11 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
         
         block_type = int(mytool.add_block_type_enum)
 
-        self.layout.label(text="Block type:")
-        layout.prop(mytool, "add_block_type_enum", text="")
+        # split = layout_split(self.layout, 0.25)
+        # split.column().label(text="Type:")
+        # split.column().prop(mytool, "add_block_type_enum", text="")
+        
+        layout.prop(mytool, "add_block_type_enum")
         layout.prop(mytool, "block_name_string")
 
         zclass = BlockClassHandler.get_class_def_by_type(block_type)
@@ -113,6 +119,7 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -152,6 +159,7 @@ class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -185,6 +193,7 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -230,6 +239,7 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -273,6 +283,7 @@ class OBJECT_PT_b3d_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -290,6 +301,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -333,6 +345,7 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -378,6 +391,7 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -396,15 +410,15 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
         if current_hier == "LOD_9":
             # draw_enum(box, 'render_tree')
             box.prop(mytool, 'render_tree_enum')
-            o = layout.operator('wm.visualise_render_tree_operator')
+            o = box.operator('wm.visualise_render_tree_operator')
             o.node_name = getattr(mytool, 'render_tree_enum')
-            layout.operator('wm.apply_render_tree_changes_operator')
+            box.operator('wm.apply_render_tree_changes_operator')
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
-            o = layout.operator('wm.visualise_lod_tree_operator')
+            o = box.operator('wm.visualise_lod_tree_operator')
             o.node_name = getattr(mytool, 'LOD_enum')
-            layout.operator('wm.apply_lod_tree_changes_operator')
+            box.operator('wm.apply_lod_tree_changes_operator')
         elif current_hier == "LOD_21":
             # draw_enum(box, 'event')
             box.prop(mytool, 'event_enum')
@@ -415,6 +429,7 @@ class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod
@@ -453,6 +468,7 @@ class OBJECT_PT_b3d_res_module_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self,context):
@@ -472,6 +488,7 @@ class OBJECT_PT_b3d_palette_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self,context):
@@ -515,6 +532,7 @@ class OBJECT_PT_b3d_maskfiles_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self,context):
@@ -532,6 +550,7 @@ class OBJECT_PT_b3d_maskfiles_panel(bpy.types.Panel):
             box = self.layout.box()
 
             rows = 2
+            box.prop(mytool, "maskfile_preview")
             row = box.row()
             row.template_list("CUSTOM_UL_maskfiles", "maskfiles_list", cur_res_module, "maskfiles", scene, "maskfiles_index", rows=rows)
 
@@ -560,6 +579,7 @@ class OBJECT_PT_b3d_textures_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self,context):
@@ -577,6 +597,7 @@ class OBJECT_PT_b3d_textures_panel(bpy.types.Panel):
             box = self.layout.box()
 
             rows = 2
+            box.prop(mytool, "texture_preview")
             row = box.row()
             row.template_list("CUSTOM_UL_textures", "textures_list", cur_res_module, "textures", scene, "textures_index", rows=rows)
 
@@ -611,6 +632,7 @@ class OBJECT_PT_b3d_materials_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(self,context):
@@ -625,12 +647,10 @@ class OBJECT_PT_b3d_materials_panel(bpy.types.Panel):
         if res_ind != -1:
             cur_res_module = mytool.res_modules[res_ind]
 
-
-            # self.layout.template_ID(item, 'id_value')
-
             box = self.layout.box()
 
             rows = 2
+            box.prop(mytool, "material_preview")
             row = box.row()
             row.template_list("CUSTOM_UL_materials", "materials_list", cur_res_module, "materials", scene, "materials_index", rows=rows)
 
@@ -760,6 +780,7 @@ class OBJECT_PT_b3d_misc_panel(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = get_ui_region()
     bl_category = "b3d Tools"
+    bl_options = {'DEFAULT_CLOSED'}
     #bl_context = "objectmode"
 
     @classmethod

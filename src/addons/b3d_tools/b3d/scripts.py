@@ -366,23 +366,18 @@ def select_similar_objects_by_type(b3d_obj, zclass):
                 #         item.index = i
                 #         item.value = obj
 
-                elif attr_class.get_block_type() == FieldType.WAY_SEG_FLAGS:
-                    flags = b3d_obj[pname]
+                elif attr_class.get_block_type() == FieldType.FLAGS:
                     param = None
                     show_int = getattr(blk, '{}_show_int'.format(pname))
+                    flag_descriptions = attr_class.get_flag_description()
                     
                     if show_int:
-                        param = getattr(blk, '{}_segment_flags'.format(pname))
+                        param = getattr(blk, '{}'.format(pname))
                     else:
                         param = 0
-                        param = param ^ (getattr(blk, '{}_is_curve'.format(pname)))
-                        param = param ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
-                        param = param ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
-                        param = param ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
-                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
-                        param = param ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
-            
+                        for desc in flag_descriptions:
+                            param = param ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])
+
             if param is not None:
                 b3d_objects = [obj for obj in b3d_objects if pname in obj.keys() and obj[pname] == param]
     
@@ -450,22 +445,19 @@ def select_similar_faces_by_type(b3d_obj, zclass):
                             value = value ^ 0b1
 
                         param = value ^ 1
-
-                elif attr_class.get_block_type() == FieldType.WAY_SEG_FLAGS:
+                
+                elif attr_class.get_block_type() == FieldType.FLAGS:
+                    param = None
                     show_int = getattr(blk, '{}_show_int'.format(pname))
+                    flag_descriptions = attr_class.get_flag_description()
                     
                     if show_int:
-                        param = getattr(blk, '{}_segment_flags'.format(pname))
+                        param = getattr(blk, '{}'.format(pname))
                     else:
                         param = 0
-                        param = param ^ (getattr(blk, '{}_is_curve'.format(pname)))
-                        param = param ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
-                        param = param ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
-                        param = param ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        param = param ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
-                        param = param ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
-                        param = param ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
-            
+                        for desc in flag_descriptions:
+                            param = param ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])
+
             if param is not None:
                 # poly.id_data - pointer to mesh
                 b3d_faces = [poly for poly in b3d_faces if get_per_face_by_type(poly.id_data, zclass, [poly], pname, True, True) == param]
@@ -912,17 +904,13 @@ def get_objs_by_type(b3d_obj, zclass):
                         item.index = i
                         item.value = obj
 
-                elif attr_class.get_block_type() == FieldType.WAY_SEG_FLAGS:
+                elif attr_class.get_block_type() == FieldType.FLAGS:
                     flags = b3d_obj[pname]
-                    setattr(blk, '{}_segment_flags'.format(pname), flags)
-                    setattr(blk, '{}_is_curve'.format(pname), (flags & 0b1))
-                    setattr(blk, '{}_is_path'.format(pname), (flags & 0b10) >> 1)
-                    setattr(blk, '{}_is_right_lane'.format(pname), (flags & 0b100) >> 2)
-                    setattr(blk, '{}_is_left_lane'.format(pname), (flags & 0b1000) >> 3)
-                    setattr(blk, '{}_is_hidden'.format(pname), (flags & 0b10000) >> 4)
-                    setattr(blk, '{}_is_fillable'.format(pname), (flags & 0b100000) >> 5)
-                    setattr(blk, '{}_no_traffic'.format(pname), (flags & 0b1000000) >> 6)
-
+                    setattr(blk, '{}'.format(pname), flags)
+                    flag_descriptions = attr_class.get_flag_description()
+                    for desc in flag_descriptions:
+                        setattr(blk, '{}_{}'.format(pname, desc["key"]), (flags & (1 << desc["bit_index"])) >> desc["bit_index"])
+                 
                 else:
                     setattr(
                         blk,
@@ -986,22 +974,18 @@ def set_objs_by_type(b3d_obj, zclass):
                         arr.append(item.value)
 
                     b3d_obj[pname] = arr
-                    
-                elif attr_class.get_block_type() == FieldType.WAY_SEG_FLAGS:
-                    # flags = b3d_obj[attr_class.get_prop()]
-                    pname = attr_class.get_prop()
+
+                elif attr_class.get_block_type() == FieldType.FLAGS:
+                    flags = None
                     show_int = getattr(blk, '{}_show_int'.format(pname))
+                    flag_descriptions = attr_class.get_flag_description()
+                    
                     if show_int:
-                        flags = getattr(blk, '{}_segment_flags'.format(pname))
+                        flags = getattr(blk, '{}'.format(pname))
                     else:
                         flags = 0
-                        flags = flags ^ (getattr(blk, '{}_is_curve'.format(pname)))
-                        flags = flags ^ (getattr(blk, '{}_is_path'.format(pname)) << 1)
-                        flags = flags ^ (getattr(blk, '{}_is_right_lane'.format(pname)) << 2)
-                        flags = flags ^ (getattr(blk, '{}_is_left_lane'.format(pname)) << 3)
-                        flags = flags ^ (getattr(blk, '{}_is_hidden'.format(pname)) << 4)
-                        flags = flags ^ (getattr(blk, '{}_is_fillable'.format(pname)) << 5)
-                        flags = flags ^ (getattr(blk, '{}_no_traffic'.format(pname)) << 6)
+                        for desc in flag_descriptions:
+                            flags = flags ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])        
                     
                     b3d_obj[pname] = int(flags)
 
