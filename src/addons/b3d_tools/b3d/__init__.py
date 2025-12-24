@@ -7,12 +7,14 @@ if "bpy" in locals():
     import importlib
 
     importlib.reload(common)
+    importlib.reload(common_classes)
     importlib.reload(geom_nodes)
     importlib.reload(data_api_utils)
     importlib.reload(custom_ui_list)
-    importlib.reload(class_descr)
+    importlib.reload(restool)
+    importlib.reload(blocktool_defs)
     importlib.reload(callbacks)
-    importlib.reload(classes)
+    importlib.reload(blocktool)
     importlib.reload(ui_utils)
     importlib.reload(imghelp)
     importlib.reload(import_b3d)
@@ -25,17 +27,19 @@ if "bpy" in locals():
     importlib.reload(operators)
     importlib.reload(panels)
     importlib.reload(menus)
-    importlib.reload(mytool)
+    importlib.reload(paneltool)
 else:
     import bpy
     from . import (
         common,
+        common_classes,
         geom_nodes,
         data_api_utils,
         custom_ui_list,
-        class_descr,
+        restool,
+        blocktool_defs,
         callbacks,
-        classes,
+        blocktool,
         ui_utils,
         imghelp,
         import_b3d,
@@ -48,15 +52,16 @@ else:
         operators,
         panels,
         menus,
-        mytool
+        paneltool
     )
 
 def register():
     print("registering addons")
+    common_classes.register()
     custom_ui_list.register()
-    class_descr.register()
-    classes.register()
-    mytool.register()
+    restool.register()
+    blocktool.register()
+    paneltool.register()
     menus.register()
     operators.register()
     panels.register()
@@ -67,7 +72,8 @@ def unregister():
     panels.unregister()
     operators.unregister()
     menus.unregister()
-    mytool.unregister()
-    classes.unregister()
-    class_descr.unregister()
+    paneltool.unregister()
+    blocktool.unregister()
+    restool.unregister()
     custom_ui_list.unregister()
+    common_classes.unregister()

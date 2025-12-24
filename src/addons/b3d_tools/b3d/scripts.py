@@ -2,13 +2,14 @@ import bpy
 import re
 import struct
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk009,
     Blk010,
     Blk018,
     Blk021
 )
 from ..common import (
+    get_block_tool,
     scripts_logger
 )
 from .common import (
@@ -36,11 +37,11 @@ from .data_api_utils import (
     create_render_branch_drivers
 )
 
-from .class_descr import (
+from .blocktool_defs import (
     FieldType
 )
 
-from .classes import (
+from .blocktool import (
     BlockClassHandler
 )
 
@@ -329,7 +330,7 @@ def select_similar_objects_by_type(b3d_obj, zclass):
 
     b3d_objects = [obj for obj in bpy.data.objects if "block_type" in obj.keys() and obj['block_type'] == bnum]
 
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
         pname = attr_class.get_prop()
@@ -395,7 +396,8 @@ def select_similar_faces_by_type(b3d_obj, zclass):
                     and 'block_type' in obj.keys()
                     and obj['block_type'] in [8, 35]
                 for face in obj.data.polygons]
-    blocktool = bpy.context.scene.block_tool
+    
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
         pname = attr_class.get_prop()
@@ -812,7 +814,7 @@ def get_obj_by_prop(b3d_obj, zclass, pname):
     attrs_cls = get_class_attributes(zclass)
     bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(zclass, True)
 
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
 
@@ -835,7 +837,7 @@ def set_obj_by_prop(b3d_obj, zclass, pname):
     attrs_cls = get_class_attributes(zclass)
     bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(zclass, True)
 
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
 
@@ -854,7 +856,7 @@ def get_objs_by_type(b3d_obj, zclass):
     attrs_cls = get_class_attributes(zclass)
     bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(zclass)
 
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
         pname = attr_class.get_prop()
@@ -922,7 +924,7 @@ def set_objs_by_type(b3d_obj, zclass):
     attrs_cls = get_class_attributes(zclass)
 
     bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(zclass)
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     for attr_class_name in attrs_cls:
         attr_class = zclass.__dict__[attr_class_name]
         pname = attr_class.get_prop()
@@ -1139,7 +1141,7 @@ def set_per_vertex_attr(mesh, zclass):
 
 def get_from_attributes(attr_class, bname, attr_object, only_result = False):
     
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     pname = attr_class.get_prop()
     value = None
     blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
@@ -1183,7 +1185,7 @@ def get_from_attributes(attr_class, bname, attr_object, only_result = False):
     return value
 
 def set_from_attributes(attr_class, bname, attr_object):
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     pname = attr_class.get_prop()
     blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
 
@@ -1228,7 +1230,7 @@ def set_from_attributes(attr_class, bname, attr_object):
 
 def get_from_vertex_colors(attr_class, bname, vcolors, poly, only_result = False):
     
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     pname = attr_class.get_prop()
     value = None
     blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
@@ -1260,7 +1262,7 @@ def get_from_vertex_colors(attr_class, bname, vcolors, poly, only_result = False
 
 def set_from_vertex_colors(attr_class, bname, vcolors, poly_object):
     
-    blocktool = bpy.context.scene.block_tool
+    blocktool = get_block_tool()
     pname = attr_class.get_prop()
     blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
 

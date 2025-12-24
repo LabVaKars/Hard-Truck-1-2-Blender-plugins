@@ -7,6 +7,8 @@ from pathlib import Path
 
 
 from ..common import (
+    get_res_tool,
+    get_res_modules,
     exportres_logger
 )
 
@@ -17,7 +19,6 @@ from .common import (
     get_col_property_by_name,
     write_size,
     get_mat_texture_ref_dict,
-    get_active_palette_module,
     is_inside_module,
     get_used_materials
 )
@@ -26,10 +27,14 @@ from .imghelp import (
     tga32_to_txr
 )
 
+from .restool import (
+    get_active_palette_module
+)
+
 log = exportres_logger
 
 def export_res(context, op, export_dir):
-    mytool = bpy.context.scene.my_tool
+    res_modules = get_res_modules()
 
     exported_modules = [sn.name for sn in op.res_modules if sn.state is True]
     if not os.path.isdir(export_dir):
@@ -37,7 +42,7 @@ def export_res(context, op, export_dir):
 
     for module_name in exported_modules:
 
-        res_module = get_col_property_by_name(mytool.res_modules, module_name)
+        res_module = get_col_property_by_name(res_modules, module_name)
         if res_module is not None:
 
             filepath = os.path.join(export_dir, "{}.res".format(res_module.value))

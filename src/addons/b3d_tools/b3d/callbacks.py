@@ -12,10 +12,14 @@ from .common import (
     is_root_obj,
     get_room_obj,
     get_parent
-
 )
 
-from ..common import callbacks_logger
+from ..common import (
+    get_res_tool,
+    get_res_modules,
+    get_panel_tool,
+    callbacks_logger
+)
 log = callbacks_logger
 
 callback_cache = {}
@@ -45,7 +49,6 @@ def referenceables_callback(self, context):
     if enum_properties:
         return enum_properties
     
-    mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
 
     referenceables = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) != 24]
@@ -65,7 +68,6 @@ def spaces_callback(self, context):
     if enum_properties:
         return enum_properties
 
-    mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
 
     spaces = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 24 and get_root_obj(cn) == root_obj]
@@ -85,11 +87,10 @@ def res_materials_callback(self, context):
     if enum_properties:
         return enum_properties
 
-    mytool = context.scene.my_tool
     root_obj = get_root_obj(context.object)
     module_name = root_obj.name[:-4]
 
-    res_modules = mytool.res_modules
+    res_modules = get_res_modules(context)
     cur_module = get_col_property_by_name(res_modules, module_name)
 
     enum_properties = [("-1", "None", "")]
@@ -111,7 +112,6 @@ def rooms_callback(bname, pname):
     
         enum_properties = []
 
-        mytool = context.scene.my_tool
         res_module = context.object.path_resolve('["{}"]'.format(pname))
 
         root_obj = bpy.data.objects.get('{}.b3d'.format(res_module))
@@ -153,7 +153,7 @@ def rooms_callback_mytool(self, context):
 
     enum_properties = []
 
-    mytool = context.scene.my_tool
+    mytool = get_panel_tool(context)
 
     selected_module = getattr(mytool, 'active_module')
     if selected_module not in ['?', '']:
@@ -179,8 +179,8 @@ def b3d_modules_callback(self, context):
     if enum_properties:
         return enum_properties
     
-    mytool = bpy.context.scene.my_tool
-    modules = [cn for cn in mytool.res_modules if cn.value != "-1"]
+    res_modules = get_res_modules(context)
+    modules = [cn for cn in res_modules if cn.value != "-1"]
     enum_properties = [("?", "None", "")]
     enum_properties.extend([(cn.value, cn.value, "") for i, cn in enumerate(modules)])
     
@@ -191,8 +191,7 @@ def b3d_modules_callback(self, context):
 
 def res_modules_callback(self, context):
 
-    mytool = context.scene.my_tool
-    res_modules = mytool.res_modules
+    res_modules = get_res_modules(context)
 
     enum_properties = [("-1", "None", "")]
 
@@ -211,7 +210,7 @@ def render_tree_callback(self, context):
 
     enum_properties = []
 
-    mytool = context.scene.my_tool
+    mytool = get_panel_tool(context)
 
     selected_module = getattr(mytool, 'active_module')
     selected_room = getattr(mytool, 'active_room')
@@ -242,7 +241,7 @@ def LOD_callback(self, context):
 
     enum_properties = []
 
-    mytool = context.scene.my_tool
+    mytool = get_panel_tool(context)
 
     selected_module = getattr(mytool, 'active_module')
     selected_room = getattr(mytool, 'active_room')
@@ -272,7 +271,7 @@ def event_callback(self, context):
 
     enum_properties = []
 
-    mytool = context.scene.my_tool
+    mytool = get_panel_tool(context)
 
     selected_module = getattr(mytool, 'active_module')
     selected_room = getattr(mytool, 'active_room')

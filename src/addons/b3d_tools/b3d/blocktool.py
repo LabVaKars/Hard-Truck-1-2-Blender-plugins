@@ -11,22 +11,20 @@ from bpy.props import (StringProperty,
                         CollectionProperty
                         )
 
-from .class_descr import (
-    FieldType,
+from .common_classes import (
     FloatBlock
 )
 
 from ..common import (
-    classes_logger
+    get_block_tool
 )
 
 from ..compatibility import (
     is_before_2_80
 )
 
-log = classes_logger
-
-from .class_descr import (
+from .blocktool_defs import (
+    FieldType,
     Blk001,
     Blk002,
     # Blk003,
@@ -87,7 +85,7 @@ from .callbacks import (
 def set_cust_obj_value(subtype, bname, pname):
     def callback_func(self, context):
 
-        blocktool = context.scene.block_tool
+        blocktool = get_block_tool(context)
         result = getattr(getattr(blocktool, bname), '{}_enum'.format(pname))
         if subtype == FieldType.INT:
             result = int(result)
@@ -175,6 +173,7 @@ class BlockClassHandler():
         attributes = {
             '__annotations__' : {}
         }
+        optional_groups = {}
         for attr_class_name in attrs_cls:
             attr_class = bclass.__dict__[attr_class_name]
 
@@ -182,20 +181,23 @@ class BlockClassHandler():
             prop = None
 
             if multiple_edit: # lock switches only for multiple edit
+                # switch for locking property from editing
                 lock_prop = BoolProperty(
                     name = "On./Off.",
                     description = "Enable/Disable param for editing",
                     default = True
                 )
+                attributes['__annotations__']["show_{}".format(pname)] = lock_prop
+
+                # switches for disabling/enabling defined optional groups from editing
+                # if 
+                # if optional_groups[]
 
             if attr_class.get_block_type() == FieldType.STRING \
             or attr_class.get_block_type() == FieldType.COORD \
             or attr_class.get_block_type() == FieldType.FLOAT \
             or attr_class.get_block_type() == FieldType.INT \
             or attr_class.get_block_type() == FieldType.LIST:
-
-                if multiple_edit: # lock switches only for multiple edit
-                    attributes['__annotations__']["show_{}".format(pname)] = lock_prop
 
                 if attr_class.get_block_type() == FieldType.STRING and multiple_edit:
                     prop = StringProperty(
@@ -237,10 +239,6 @@ class BlockClassHandler():
 
             elif attr_class.get_block_type() == FieldType.ENUM \
             or attr_class.get_block_type() == FieldType.ENUM_DYN:
-
-
-                if multiple_edit: # lock switches only for multiple edit
-                    attributes['__annotations__']["show_{}".format(pname)] = lock_prop
 
                 enum_callback = None
                 subtype = attr_class.get_subtype()
@@ -337,8 +335,6 @@ class BlockClassHandler():
 
             elif attr_class.get_block_type() == FieldType.V_FORMAT: # currently only available in vertex edit
 
-                attributes['__annotations__']["show_{}".format(pname)] = lock_prop
-
                 prop0 = BoolProperty(
                     name = 'Raw edit',
                     description = 'Show raw integer',
@@ -382,8 +378,6 @@ class BlockClassHandler():
                 attributes['__annotations__']['{}_normal_flag'.format(pname)] = prop4
 
             elif attr_class.get_block_type() == FieldType.FLAGS:
-                if multiple_edit: # lock switches only for multiple edit
-                    attributes['__annotations__']["show_{}".format(pname)] = lock_prop
                 
                 prop0 = BoolProperty(
                     name = 'Raw edit',

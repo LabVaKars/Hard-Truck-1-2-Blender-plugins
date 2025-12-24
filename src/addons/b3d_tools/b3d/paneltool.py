@@ -12,11 +12,7 @@ from bpy.props import (StringProperty,
 
 from .. import consts
 
-from .class_descr import (
-    ResBlock
-)
-
-from .classes import (
+from .blocktool_defs import (
     FieldType
 )
 
@@ -37,13 +33,14 @@ from ..compatibility import (
     set_active_object
 )
 
-from ..common import mytool_logger
-log = mytool_logger
+from ..common import (
+    get_panel_tool
+)
 
 def set_cust_mytool_value(subtype, pname):
     def callback_func(self, context):
 
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
         result = getattr(mytool, '{}_enum'.format(pname))
         if subtype == FieldType.INT:
             result = int(result)
@@ -73,8 +70,6 @@ def select_object_on_update(pname):
 
 @make_annotations
 class PanelSettings(bpy.types.PropertyGroup):
-
-    res_modules = CollectionProperty(type=ResBlock)
 
     is_importing = bpy.props.BoolProperty(
         name ='isRESImporting',

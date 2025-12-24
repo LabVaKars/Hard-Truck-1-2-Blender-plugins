@@ -5,11 +5,16 @@ from ..consts import (
     BLOCK_TYPE
 )
 
-from .class_descr import (
+from ..common import (
+    get_block_tool,
+    get_panel_tool
+)
+
+from .blocktool_defs import (
     FieldType
 )
 
-from .classes import (
+from .blocktool import (
     BlockClassHandler
 )
 
@@ -22,7 +27,7 @@ from ..compatibility import (
 )
 
 def draw_enum(box, pname):
-    mytool = bpy.context.scene.my_tool
+    mytool = get_panel_tool()
 
     switch_attr = getattr(mytool, '{}_switch'.format(pname))
     if switch_attr is not None:
@@ -107,7 +112,7 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
         cur_group_name = attr_class.get_group()
         prop_text = attr_class.get_name()
         pname = attr_class.get_prop()
-        blocktool = bpy.context.scene.block_tool
+        blocktool = get_block_tool()
         cur_layout = l_self.layout
 
         if cur_group_name is not None or len(cur_group_name) > 0:
@@ -149,7 +154,7 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                     FieldType.INT,
                     FieldType.FLOAT
                 ]:
-                    if multiple_edit: # getting from my_tool
+                    if multiple_edit: # getting from panel_tool
                         attr = getattr(blocktool, bname)
                         if attr is not None:
                             col.prop(attr, pname)

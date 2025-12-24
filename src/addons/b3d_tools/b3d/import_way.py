@@ -14,7 +14,7 @@ from ..consts import (
     EMPTY_NAME
 )
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk050,Blk051,Blk052
 )
 

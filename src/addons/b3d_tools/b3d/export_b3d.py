@@ -10,7 +10,7 @@ import os.path
 from math import cos
 from math import sin
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk001,
     Blk002,
     # Blk003,
@@ -61,12 +61,13 @@ from ..consts import (
 )
 
 from ..common import (
+    get_res_tool,
+    get_res_modules,
     exportb3d_logger
 )
 
 from .common import (
     get_col_property_by_name,
-    get_material_index_in_res,
     get_non_copy_name,
     is_root_obj,
     get_root_obj,
@@ -408,7 +409,7 @@ def export_b3d(context, op, export_dir):
             r_child.extend(spaces)
             r_child.extend(other)
 
-            res_modules = bpy.context.scene.my_tool.res_modules
+            res_modules = get_res_modules()
             cur_res_name = cur_root.name[:-4]
             current_module = get_col_property_by_name(res_modules, cur_res_name)
 

@@ -45,21 +45,17 @@ from bpy.types import (Operator,
                        PropertyGroup,
                        UIList)
 
-from .common import (
-    get_current_res_module,
-    update_color_preview
-)
-
 from ..compatibility import (
     make_annotations,
     layout_split
 )
 
-from ..common import (
-    classes_logger
+from ..common import(
+    get_panel_tool,
+    get_block_tool
 )
 
-log = classes_logger
+
 # -------------------------------------------------------------------
 #   Operators
 # -------------------------------------------------------------------
@@ -69,10 +65,10 @@ def action_invoke(self, context, event, arr_bname = False):
     idx = getattr(scn, self.customindex)
 
     if arr_bname:
-        tool = scn.my_tool
+        tool = get_panel_tool(context)
         param = getattr(getattr(tool, self.bname)[self.bindex], self.pname)
     else:
-        tool = scn.block_tool
+        tool = get_block_tool(context)
         param = getattr(getattr(tool, self.bname), self.pname)
 
     try:
@@ -188,7 +184,7 @@ class CUSTOM_UL_materials(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
         
         material_preview = getattr(mytool, 'material_preview')
 
@@ -206,7 +202,7 @@ class CUSTOM_UL_textures(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
         
         show_preview = getattr(mytool, 'texture_preview')
 
@@ -225,7 +221,7 @@ class CUSTOM_UL_maskfiles(UIList):
 
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
         
         show_preview = getattr(mytool, 'maskfile_preview')
 

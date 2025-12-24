@@ -11,7 +11,7 @@ from ..compatibility import (
     set_empty_size
 )
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk009
 )
 
@@ -123,9 +123,6 @@ def create_center_driver(src_obj, edit_obj, pname):
 
         v = d.variables.new()
         v.name = 'location{}'.format(i)
-        # v.targets[0].id_type = 'SCENE'
-        # v.targets[0].id = bpy.context.scene
-        # v.targets[0].data_path = 'my_tool.{}.{}[{}]'.format(bname, pname, i)
         v.targets[0].id = edit_obj
         v.targets[0].data_path = 'location[{}]'.format(i)
 

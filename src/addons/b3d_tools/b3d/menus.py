@@ -23,7 +23,7 @@ from bpy.types import (
     AddonPreferences
 )
 
-from .class_descr import (
+from .common_classes import (
     BoolBlock
 )
 from . import (
@@ -40,6 +40,8 @@ from .ui_utils import (
     draw_multi_select_list
 )
 from ..common import (
+    get_res_tool,
+    get_res_modules,
     menus_logger,
     updateLoggers
 )
@@ -129,8 +131,7 @@ class ImportRES(Operator, ImportHelper):
     def execute(self, context):
 
         # importing Res
-        mytool = bpy.context.scene.my_tool
-        res_modules = mytool.res_modules
+        res_modules = get_res_modules()
 
         #importing COMMON.RES(Hard Truck 2)
         user_prefs = get_user_preferences()
@@ -339,9 +340,7 @@ class ImportB3D(Operator, ImportHelper):
 
     def execute(self, context):
         # importing Res
-
-        mytool = bpy.context.scene.my_tool
-        res_modules = mytool.res_modules
+        res_modules = get_res_modules()
 
         #importing COMMON.RES(Hard Truck 2)
         user_prefs = get_user_preferences()

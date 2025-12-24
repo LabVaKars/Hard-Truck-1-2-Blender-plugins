@@ -12,7 +12,7 @@ from math import atan2
 
 import re
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk001,
     Blk002,
     # Blk003,
@@ -74,11 +74,12 @@ from .common import (
     get_used_face,
     get_used_vertices_and_transform,
     get_polygons_by_selected_vertices,
-    get_center_coord,
-    get_material_index_in_res
+    get_center_coord
 )
 
 from ..common import (
+    get_res_tool,
+    get_res_modules,
     recalc_to_local_coord,
     importb3d_logger
 )
@@ -99,6 +100,9 @@ from .data_api_utils import (
     get_vert_collision_visualize_node_group
 )
 
+from .restool import (
+    get_material_index_in_res
+)
 
 #Setup module logger
 log = importb3d_logger
@@ -352,13 +356,11 @@ def import_b3d(file, context, self, filepath):
         log.info("correct file")
     else:
         log.error("b3d error")
-    scene = context.scene
-    mytool = scene.my_tool
 
     #skip to materials list
     file.seek(21,1)
 
-    res_modules = getattr(mytool, "res_modules")
+    res_modules = get_res_modules()
 
     res_path = ''
     if len(self.res_location) > 0 and os.path.exists(self.res_location):

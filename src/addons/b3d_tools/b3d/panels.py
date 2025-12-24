@@ -17,11 +17,11 @@ from .ui_utils import (
     draw_fields_by_type
 )
 
-from .classes import (
+from .blocktool import (
     BlockClassHandler
 )
 
-from .class_descr import (
+from .blocktool_defs import (
     Pvb008, Pvb035,
     Pfb008, Pfb028, Pfb035
 )
@@ -30,7 +30,13 @@ from .common import (
     get_current_res_index
 )
 
-from ..common import panels_logger
+
+from ..common import (
+    get_panel_tool,
+    get_res_tool,
+    get_res_modules,
+    panels_logger
+)
 log = panels_logger
 
 # ------------------------------------------------------------------------
@@ -51,8 +57,6 @@ class OBJECT_PT_b3d_info_panel(bpy.types.Panel):
         return context.object is not None
 
     def draw(self, context):
-        layout = self.layout
-        mytool = context.scene.my_tool
 
         b3d_obj = get_active_object()
 
@@ -73,8 +77,7 @@ class OBJECT_PT_b3d_add_panel(bpy.types.Panel):
         return context.object is not None
 
     def draw(self, context):
-        layout = self.layout
-        mytool = context.scene.my_tool
+        pass
 
 
 class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
@@ -93,8 +96,7 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
         
         block_type = int(mytool.add_block_type_enum)
 
@@ -128,8 +130,7 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         layout.prop(mytool, "current_hierarchy_enum")
 
@@ -168,7 +169,7 @@ class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         split = layout_split(layout, 0.75)
         c = split.column()
@@ -209,7 +210,7 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
 
@@ -257,7 +258,7 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
 
@@ -292,7 +293,7 @@ class OBJECT_PT_b3d_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
 class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pob_edit_panel"
@@ -310,7 +311,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         block_type = ''
         #for i in range(len(bpy.context.selected_objects)):
@@ -354,7 +355,7 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         #for i in range(len(bpy.context.selected_objects)):
 
@@ -400,7 +401,7 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mytool = context.scene.my_tool
+        mytool = get_panel_tool(context)
 
         layout.prop(mytool, "current_hierarchy_enum")
 
@@ -438,8 +439,7 @@ class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
 
         # layout.prop(mytool, "mirror_type_enum")
@@ -476,8 +476,7 @@ class OBJECT_PT_b3d_res_module_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         layout.prop(mytool, "selected_res_module")
 
@@ -497,11 +496,11 @@ class OBJECT_PT_b3d_palette_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        mytool = scene.my_tool
+        res_modules = get_res_modules()
 
         res_ind = get_current_res_index()
         if res_ind != -1:
-            cur_res_module = mytool.res_modules[res_ind]
+            cur_res_module = res_modules[res_ind]
 
             box = self.layout.box()
 
@@ -541,11 +540,12 @@ class OBJECT_PT_b3d_maskfiles_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
+        res_modules = get_res_modules()
 
         res_ind = get_current_res_index()
         if res_ind != -1:
-            cur_res_module = mytool.res_modules[res_ind]
+            cur_res_module = res_modules[res_ind]
 
             box = self.layout.box()
 
@@ -588,11 +588,12 @@ class OBJECT_PT_b3d_textures_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
+        res_modules = get_res_modules()
 
         res_ind = get_current_res_index()
         if res_ind != -1:
-            cur_res_module = mytool.res_modules[res_ind]
+            cur_res_module = res_modules[res_ind]
 
             box = self.layout.box()
 
@@ -641,11 +642,12 @@ class OBJECT_PT_b3d_materials_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
+        res_modules = get_res_modules()
 
         res_ind = get_current_res_index()
         if res_ind != -1:
-            cur_res_module = mytool.res_modules[res_ind]
+            cur_res_module = res_modules[res_ind]
 
             box = self.layout.box()
 
@@ -789,8 +791,7 @@ class OBJECT_PT_b3d_misc_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         self.layout.label(text="Add-on author: aleko2144, LabVaKars")
         self.layout.label(text="vk.com/rnr_mods")

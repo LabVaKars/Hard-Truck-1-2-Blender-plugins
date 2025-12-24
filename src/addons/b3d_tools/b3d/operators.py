@@ -2,6 +2,7 @@ import bpy
 import math
 
 from ..common import (
+    get_block_tool,
     recalc_to_local_coord,
     operators_logger
 )
@@ -50,17 +51,15 @@ from .data_api_utils import (
     get_render_center_object
 )
 
-from .classes import (
-    BlockClassHandler,
-    FieldType
+from .blocktool import (
+    BlockClassHandler
 )
 
-from .class_descr import (
+from .blocktool_defs import (
     Blk009, Blk010,
     Blk020,Blk021,Blk023, Blk030,
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
-    Blk050, Blk051, Blk052,
-    ResBlock
+    Blk050, Blk051, Blk052
 )
 
 
@@ -91,7 +90,10 @@ from ..compatibility import (
     set_empty_size,
     get_cursor_location
 )
-    
+
+from ..common import (
+    get_panel_tool
+)   
 
 #Setup module logger
 log = operators_logger
@@ -105,8 +107,7 @@ class SetParentOperator(bpy.types.Operator):
     bl_label = "Set parent"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         if context.object is None:
             self.report({'INFO'}, "No object selected")
@@ -122,8 +123,7 @@ class SingleAddOperator(bpy.types.Operator):
     bl_label = "Add block to scene"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         block_type = int(mytool.add_block_type_enum)
 
@@ -271,11 +271,11 @@ class HierarchyAddOperator(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
         
         b3d_obj = get_active_object()
 
-        blocktool = bpy.context.scene.block_tool
+        blocktool = get_block_tool()
         current_hier = getattr(mytool, "current_hierarchy_enum")
         lod_level = getattr(mytool, "lod_level_int")
         block_name = getattr(mytool, "block_name_string")
@@ -347,8 +347,7 @@ class CastAddOperator(bpy.types.Operator):
     bl_label = "Cast to B3D"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         cursor_pos = get_cursor_location()
 
@@ -572,8 +571,7 @@ class GetValuesOperator(bpy.types.Operator):
     bl_label = "Get object params"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -593,8 +591,7 @@ class GetPropValueOperator(bpy.types.Operator):
     pname = StringProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -653,8 +650,7 @@ class SetRoomAndModuleOperator(bpy.types.Operator):
     bl_label = "Get current module/room"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         active_obj = get_active_object()
 
@@ -677,8 +673,7 @@ class SetValuesOperator(bpy.types.Operator):
     bl_label = "Save object params"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         block_type = ''
 
@@ -714,8 +709,7 @@ class SetPropValueOperator(bpy.types.Operator):
     pname = StringProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -734,8 +728,7 @@ class ApplyTransformsOperator(bpy.types.Operator):
     bl_description = "Creates copies of objects and arrange them at places(24) specified in connector(18)"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         apply_remove_transforms(self)
 
@@ -747,8 +740,7 @@ class ShowHide2DCollisionsOperator(bpy.types.Operator):
     bl_description = "If all 2D collisions(20) are hidden, shows them. otherwise - hide."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         show_hide_obj_by_type(self, 20)
 
@@ -760,8 +752,7 @@ class ShowHideCollisionsOperator(bpy.types.Operator):
     bl_description = "If all 3d collisions(23) are hidden, shows them. otherwise - hide."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         show_hide_obj_by_type(self, 23)
 
@@ -773,8 +764,7 @@ class ShowHideRoomBordersOperator(bpy.types.Operator):
     bl_description = "If all portals(30) are hidden, shows them. Otherwise - hide."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         show_hide_obj_by_type(self, 30)
 
@@ -786,8 +776,7 @@ class ShowHideGeneratorsOperator(bpy.types.Operator):
     bl_description = "If all generator blocks(40) are hidden, shows them. Otherwise - hide."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         show_hide_obj_by_type(self, 40)
 
@@ -800,8 +789,7 @@ class ShowLODOperator(bpy.types.Operator):
                     "If there is no active object, show LOD of all scene objects."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         objs = context.selected_objects
         if not len(objs):
@@ -820,8 +808,7 @@ class HideLODOperator(bpy.types.Operator):
                     "If there is no active object, hide LOD of all scene objects."
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         objs = context.selected_objects
         if not len(objs):
@@ -843,8 +830,7 @@ class ShowConditionalsOperator(bpy.types.Operator):
     group  = bpy.props.IntProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         objs = context.selected_objects
         if not len(objs):
@@ -867,8 +853,7 @@ class HideConditionalsOperator(bpy.types.Operator):
     group  = bpy.props.IntProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         objs = context.selected_objects
         if not len(objs):
@@ -887,8 +872,7 @@ class ShowHideSphereOperator(bpy.types.Operator):
     bl_description = "Shows/Hides sphere"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         obj = context.object
 
@@ -911,8 +895,7 @@ class SelectSimilarObjectsOperator(bpy.types.Operator):
     bl_description = "Select objects with same parameters"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -933,8 +916,7 @@ class SelectSimilarFacesOperator(bpy.types.Operator):
     bl_description = "Select faces with same parameters"
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
@@ -957,8 +939,7 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
     node_name = bpy.props.StringProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = bpy.data.objects.get(self.node_name)
 
@@ -1082,8 +1063,7 @@ class VisualiseLODTreeOperator(bpy.types.Operator):
     node_name = bpy.props.StringProperty()
 
     def execute(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
+        mytool = get_panel_tool(context)
 
         b3d_obj = bpy.data.objects.get(self.node_name)
 

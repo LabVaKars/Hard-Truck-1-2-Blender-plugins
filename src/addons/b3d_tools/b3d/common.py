@@ -6,7 +6,10 @@ import math
 import time
 from collections import deque
 
-from ..common import common_logger
+from ..common import (
+    get_panel_tool,
+    common_logger
+)
 from ..consts import (
     BLOCK_TYPE,
     EMPTY_NAME
@@ -296,13 +299,6 @@ def exists_col_property_by_name(col_property, value, col_name='value'):
             return True
     return False
 
-def get_material_index_in_res(mat_name, res_module_name):
-    res_modules = bpy.context.scene.my_tool.res_modules
-    cur_module = get_col_property_by_name(res_modules, res_module_name)
-    cur_material_ind = get_col_property_index_by_name(cur_module.materials, mat_name, 'mat_name')
-    if cur_material_ind == -1:
-        cur_material_ind = 1
-    return cur_material_ind
 
 def get_color_img_name(module_name, index):
     return "col_{}_{:03d}".format(module_name, index)
@@ -315,27 +311,9 @@ def get_col_property_index(prop):
     return int(col_index)
 
 def get_current_res_index():
-    mytool = bpy.context.scene.my_tool
+    mytool = get_panel_tool()
     return int(mytool.selected_res_module)
 
-def get_current_res_module():
-    mytool = bpy.context.scene.my_tool
-    res_module = None
-    ind = get_current_res_index()
-    if ind > -1:
-        res_module = mytool.res_modules[ind]
-    return res_module
-
-def get_active_palette_module(res_module):
-    mytool = bpy.context.scene.my_tool
-    if res_module:
-        if len(res_module.palette_colors) > 0:
-            return res_module
-
-        common_res_module = get_col_property_by_name(mytool.res_modules, 'COMMON')
-        if len(common_res_module.palette_colors) > 0:
-            return common_res_module
-    return None
 
 def update_color_preview(res_module, ind):
     module_name = res_module.value

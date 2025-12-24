@@ -8,7 +8,6 @@ from io import BytesIO
 from .common import (
     get_col_property_by_name,
     get_col_property_index_by_name,
-    get_active_palette_module,
     update_color_preview,
     get_color_img_name,
     unmask_bits,
@@ -29,6 +28,9 @@ from ..compatibility import (
 )
 
 from ..common import (
+    get_panel_tool,
+    get_res_tool,
+    get_res_modules,
     importres_logger
 )
 from .imghelp import (
@@ -37,11 +39,14 @@ from .imghelp import (
     parse_plm
 )
 
+from .restool import (
+    get_active_palette_module
+)
+
 log = importres_logger
 
 def import_common_dot_res(self, context, common_res_path):
-    scene = context.scene
-    mytool = scene.my_tool
+    mytool = get_panel_tool(context)
 
     mytool.is_importing = True
 
@@ -57,8 +62,7 @@ def import_common_dot_res(self, context, common_res_path):
     
 def import_multiple_res(self, files, context):
 
-    scene = context.scene
-    mytool = scene.my_tool
+    mytool = get_panel_tool(context)
     user_prefs = get_user_preferences()
     common_res_path = user_prefs.addons['b3d_tools'].preferences.COMMON_RES_Path
 
@@ -81,9 +85,6 @@ def import_multiple_res(self, files, context):
 
 def import_res(file, context, self, filepath):
 
-    scene = context.scene
-    mytool = scene.my_tool
-
     #Initialize palette index list
     row_indexes = bpy.context.scene.palette_row_indexes.prop_list
     col_indexes = bpy.context.scene.palette_col_indexes.prop_list
@@ -99,7 +100,7 @@ def import_res(file, context, self, filepath):
             row_indexes[i].value = i*8
 
 
-    res_modules = getattr(mytool, "res_modules")
+    res_modules = get_res_modules()
     res_basename = os.path.basename(filepath)[:-4] #cut extension
 
     import_resources(filepath, res_modules, self.to_unpack_res, self.textures_format, self.to_convert_txr)
@@ -147,7 +148,6 @@ def create_materials(res_module):
 
 #https://blender.stackexchange.com/questions/118646/add-a-texture-to-an-object-using-python-and-blender-2-8
 def create_material(res_module, mat):
-    mytool = bpy.context.scene.my_tool
 
     texture_list = res_module.textures
     palette_module = get_active_palette_module(res_module)
@@ -161,7 +161,6 @@ def create_material(res_module, mat):
 
 
 def load_materials(res_module):
-    mytool = bpy.context.scene.my_tool
     for mat in res_module.materials:
         material = bpy.data.materials.get(mat.mat_name)
         if material is not None:
