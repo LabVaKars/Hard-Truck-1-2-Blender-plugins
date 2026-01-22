@@ -211,12 +211,12 @@ def import_way(file, context, filepath):
                     
                     cur_obj.location = (points[0])
                     cur_obj[BLOCK_TYPE] = 50
-                    cur_obj[Blk050.Attr1.get_prop()] = attr1
-                    cur_obj[Blk050.Attr2.get_prop()] = attr2
-                    cur_obj[Blk050.Attr3.get_prop()] = attr3
-                    cur_obj[Blk050.Width1.get_prop()] = wdth1
-                    cur_obj[Blk050.Width2.get_prop()] = wdth2
-                    cur_obj[Blk050.Rten.get_prop()] = unk_name
+                    cur_obj[Blk050.Attr1.c_get_prop()] = attr1
+                    cur_obj[Blk050.Attr2.c_get_prop()] = attr2
+                    cur_obj[Blk050.Attr3.c_get_prop()] = attr3
+                    cur_obj[Blk050.Width1.c_get_prop()] = wdth1
+                    cur_obj[Blk050.Width2.c_get_prop()] = wdth2
+                    cur_obj[Blk050.Rten.c_get_prop()] = unk_name
                     cur_obj.parent = curRoom
                     get_context_collection_objects(context).link(cur_obj)
 
@@ -268,14 +268,14 @@ def import_way(file, context, filepath):
                 cur_obj = bpy.data.objects.new(obj_name, None)
                 if object_matrix is not None:
                     cur_obj[BLOCK_TYPE] = 52
-                    cur_obj[Blk052.Flag.get_prop()] = flag
+                    cur_obj[Blk052.Flag.c_get_prop()] = flag
                     set_empty_type(cur_obj, 'ARROWS')
                     for i in range(3):
                         for j in range(3):
                             cur_obj.matrix_world[i][j] = object_matrix[j][i]
                 else:
                     cur_obj[BLOCK_TYPE] = 51
-                    cur_obj[Blk051.Flag.get_prop()] = flag
+                    cur_obj[Blk051.Flag.c_get_prop()] = flag
                     set_empty_type(cur_obj, 'PLAIN_AXES')
                 set_empty_size(cur_obj, 5)
                 cur_obj.location = cur_pos

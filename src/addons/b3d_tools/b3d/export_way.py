@@ -50,13 +50,13 @@ def write_nam(file, type_abbr, name):
 def write_attr(file, block):
     write_type(file, "ATTR")
     file.write(struct.pack('<i', 16))
-    file.write(struct.pack('<i', block.get(Blk050.Attr1.get_prop())))
-    file.write(struct.pack('<d', block.get(Blk050.Attr2.get_prop())))
-    file.write(struct.pack('<i', block.get(Blk050.Attr3.get_prop())))
+    file.write(struct.pack('<i', block.get(Blk050.Attr1.c_get_prop())))
+    file.write(struct.pack('<d', block.get(Blk050.Attr2.c_get_prop())))
+    file.write(struct.pack('<i', block.get(Blk050.Attr3.c_get_prop())))
 
 
 def write_rten(file, block):
-    rten_name = block.get(Blk050.Rten.get_prop())
+    rten_name = block.get(Blk050.Rten.c_get_prop())
     if rten_name is not None and len(rten_name) > 0:
         write_nam(file, "RTEN", rten_name)
 
@@ -64,8 +64,8 @@ def write_rten(file, block):
 def write_wdth(file, block):
     write_type(file, "WDTH")
     file.write(struct.pack('<i', 16))
-    file.write(struct.pack('<d', block.get(Blk050.Width1.get_prop())))
-    file.write(struct.pack('<d', block.get(Blk050.Width2.get_prop())))
+    file.write(struct.pack('<d', block.get(Blk050.Width1.c_get_prop())))
+    file.write(struct.pack('<d', block.get(Blk050.Width2.c_get_prop())))
 
 def write_vdat(file, block):
     write_type(file, "VDAT")
@@ -154,7 +154,7 @@ def export_way(context, op, export_dir):
                         # flag
                         write_type(file, "FLAG")
                         file.write(struct.pack("<i", 4))
-                        file.write(struct.pack("<i", way_obj[Blk051.Flag.get_prop()]))
+                        file.write(struct.pack("<i", way_obj[Blk051.Flag.c_get_prop()]))
                         write_size(file, rnod_write_ms, file.tell() - rnod_ms)
                     elif obj_type == 52:
                         write_type(file, "RNOD")
@@ -167,7 +167,7 @@ def export_way(context, op, export_dir):
                         # flag
                         write_type(file, "FLAG")
                         file.write(struct.pack("<i", 4))
-                        file.write(struct.pack("<i", way_obj[Blk052.Flag.get_prop()]))
+                        file.write(struct.pack("<i", way_obj[Blk052.Flag.c_get_prop()]))
                         write_size(file, rnod_write_ms, file.tell() - rnod_ms)
 
                 write_size(file, grom_write_ms, file.tell() - grom_ms)

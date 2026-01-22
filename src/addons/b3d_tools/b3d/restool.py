@@ -362,10 +362,10 @@ def register():
     for cls in _classes:
         bpy.utils.register_class(cls)
     bpy.utils.register_class(ResSettings)
-    bpy.types.Scene.res_tool = bpy.props.PointerProperty(type=ResSettings)
+    bpy.types.Scene.kotr_res_tool = bpy.props.PointerProperty(type=ResSettings)
 
 def unregister():
-    del bpy.types.Scene.res_tool
+    del bpy.types.Scene.kotr_res_tool
     bpy.utils.unregister_class(ResSettings)
     for cls in _classes[::-1]: #reversed
         bpy.utils.unregister_class(cls)

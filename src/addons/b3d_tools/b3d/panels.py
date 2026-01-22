@@ -22,6 +22,7 @@ from .blocktool import (
 )
 
 from .blocktool_defs import (
+    BlockClassType,
     Pvb008, Pvb035,
     Pfb008, Pfb028, Pfb035
 )
@@ -107,10 +108,7 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
         layout.prop(mytool, "add_block_type_enum")
         layout.prop(mytool, "block_name_string")
 
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-        if zclass is not None:
-            draw_fields_by_type(self, zclass)
+        draw_fields_by_type(self.layout, block_type)
 
         layout.operator("wm.single_add_operator")
 
@@ -141,16 +139,13 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
         lod_level = getattr(mytool, "lod_level_int")
 
         if current_hier == "LOD_9":
-            zclass = BlockClassHandler.get_class_def_by_type(9)
-            draw_fields_by_type(self, zclass)
+            draw_fields_by_type(self.layout, 9)
             layout.operator("wm.hierarchy_add_operator")
         elif current_hier == "LOD_10":
-            zclass = BlockClassHandler.get_class_def_by_type(10)
-            draw_fields_by_type(self, zclass)
+            draw_fields_by_type(self.layout, 10)
             layout.operator("wm.hierarchy_add_operator")
         elif current_hier == "LOD_21":
-            zclass = BlockClassHandler.get_class_def_by_type(21)
-            draw_fields_by_type(self, zclass)
+            draw_fields_by_type(self.layout, 21)
 
 
 class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
@@ -227,11 +222,11 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
                 layout.operator("wm.select_similar_faces_operator")
 
             if block_type == 8:
-                draw_fields_by_type(self, Pfb008)
+                draw_fields_by_type(self.layout, 8, BlockClassType.PER_FACE_BLOCK)
             if block_type == 28:
-                draw_fields_by_type(self, Pfb028)
+                draw_fields_by_type(self.layout, 28, BlockClassType.PER_FACE_BLOCK)
             if block_type == 35:
-                draw_fields_by_type(self, Pfb035)
+                draw_fields_by_type(self.layout, 35, BlockClassType.PER_FACE_BLOCK)
 
 class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pvb_edit_panel"
@@ -270,9 +265,9 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
                 block_type = None
 
             if block_type == 8:
-                draw_fields_by_type(self, Pvb008)
+                draw_fields_by_type(self.layout, 8, BlockClassType.PER_VERTEX_BLOCK)
             if block_type == 35:
-                draw_fields_by_type(self, Pvb035)
+                draw_fields_by_type(self.layout, 35, BlockClassType.PER_VERTEX_BLOCK)
 
             if block_type in [8, 28, 35]:
                 layout.operator("wm.get_vertex_values_operator")
@@ -329,14 +324,14 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
 
                 len_str = str(len(b3d_obj.children))
 
-                zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-                layout.operator("wm.get_block_values_operator")
-                layout.operator("wm.set_block_values_operator")
+                row = layout.row()
+                col = row.column()
+                col.operator("wm.get_block_values_operator")
+                col = row.column()
+                col.operator("wm.set_block_values_operator")
                 layout.operator("wm.select_similar_objects_operator")
 
-                if zclass is not None:
-                    draw_fields_by_type(self, zclass)
+                draw_fields_by_type(self.layout, block_type)
 
 
 class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
@@ -371,11 +366,8 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
             #     block_type = None
 
                 len_str = str(len(b3d_obj.children))
-
-                zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-                if zclass is not None:
-                    draw_fields_by_type(self, zclass, False)
+                
+                draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, False)
 
             # else:
             #     self.layout.label(text="Выбранный объект не имеет типа.")
@@ -452,14 +444,20 @@ class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
         layout.operator("wm.show_hide_generator_operator")
 
         box = layout.box()
-        box.operator("wm.show_lod_operator")
-        box.operator("wm.hide_lod_operator")
+        row = box.row()
+        col = row.column()
+        col.operator("wm.show_lod_operator")
+        col = row.column()
+        col.operator("wm.hide_lod_operator")
 
         box = layout.box()
         box.prop(mytool, "condition_group")
-        oper = box.operator("wm.show_conditional_operator")
+        row = box.row()
+        col = row.column()
+        oper = col.operator("wm.show_conditional_operator")
         oper.group = getattr(mytool, 'condition_group')
-        oper = box.operator("wm.hide_conditional_operator")
+        col = row.column()
+        oper = col.operator("wm.hide_conditional_operator")
         oper.group = getattr(mytool, 'condition_group')
 
 class OBJECT_PT_b3d_res_module_panel(bpy.types.Panel):

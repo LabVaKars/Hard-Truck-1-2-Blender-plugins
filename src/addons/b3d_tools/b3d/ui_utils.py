@@ -11,7 +11,8 @@ from ..common import (
 )
 
 from .blocktool_defs import (
-    FieldType
+    FieldType,
+    BlockClassType
 )
 
 from .blocktool import (
@@ -19,8 +20,7 @@ from .blocktool import (
 )
 
 from .common import (
-    get_level_group,
-    get_class_attributes
+    get_level_group
 )
 from ..compatibility import (
     layout_split
@@ -98,26 +98,29 @@ def draw_common(l_self, obj):
 
     box.operator("wm.set_room_and_module_operator")
 
-def draw_fields_by_type(l_self, zclass, multiple_edit = True):
+def draw_fields_by_type(layout, bnum, btype = BlockClassType.BLOCK, multiple_edit = True):
 
-    attrs_cls = get_class_attributes(zclass)
     boxes = {}
-    for attr_class_name in attrs_cls:
-        attr_class = zclass.__dict__[attr_class_name]
 
-        bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(zclass, multiple_edit)
+    bname, fields = BlockClassHandler.get_block_object(bnum, btype, multiple_edit)
 
-        ftype = attr_class.get_block_type()
-        subtype = attr_class.get_subtype()
-        cur_group_name = attr_class.get_group()
-        prop_text = attr_class.get_name()
-        pname = attr_class.get_prop()
+    for field in fields.values():
+
+        ftype = field.get_attr_type()
+        subtype = field.get_subtype()
+        cur_group_name = field.get_group()
+        prop_text = field.get_name()
+        no_single_edit = field.get_no_single_edit()
+        pname = field.get_prop()
         blocktool = get_block_tool()
-        cur_layout = l_self.layout
+        cur_layout = layout
+
+        if not multiple_edit and no_single_edit:
+            continue # skip no single edit panels
 
         if cur_group_name is not None or len(cur_group_name) > 0:
             if boxes.get(cur_group_name) is None:
-                boxes[cur_group_name] = l_self.layout.box()
+                boxes[cur_group_name] = layout.box()
             cur_layout = boxes[cur_group_name]
 
 
@@ -155,9 +158,7 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                     FieldType.FLOAT
                 ]:
                     if multiple_edit: # getting from panel_tool
-                        attr = getattr(blocktool, bname)
-                        if attr is not None:
-                            col.prop(attr, pname)
+                        col.prop(blk, pname)
                     else:
                         col.prop(bpy.context.object, '["{}"]'.format(pname), text=prop_text)
 
@@ -180,42 +181,17 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
                             else:
                                 col.prop(bpy.context.object, '["{}"]'.format(pname), text=prop_text)
 
+                    else: # no manual entry
+                        col.prop(blk, '{}_enum'.format(pname))
+
                 elif ftype == FieldType.LIST:
 
-                    scn = bpy.context.scene
+                    box.prop(blk, '{}_enum'.format(pname))
+                    box.prop(blk, '{}'.format(pname))
 
-                    rows = 2
-
-                    row = box.row()
-                    props = row.operator("wm.get_prop_value_operator")
-                    props.pname = pname
-                    props = row.operator("wm.set_prop_value_operator")
-                    props.pname = pname
-                    row = box.row()
-                    row.template_list("CUSTOM_UL_items", "", blk, pname, scn, "custom_index", rows=rows)
-
-                    col = row.column(align=True)
-                    props = col.operator("custom.list_action", icon='PLUS', text="")
-                    props.action = 'ADD'
-                    props.bname = bname
-                    props.pname = pname
-                    props.customindex = "custom_index"
-                    props = col.operator("custom.list_action", icon='CANCEL', text="")
-                    props.action = 'REMOVE'
-                    props.bname = bname
-                    props.pname = pname
-                    props.customindex = "custom_index"
-                    col.separator()
-                    props = col.operator("custom.list_action", icon='TRIA_UP', text="")
-                    props.action = 'UP'
-                    props.bname = bname
-                    props.pname = pname
-                    props.customindex = "custom_index"
-                    props = col.operator("custom.list_action", icon='TRIA_DOWN', text="")
-                    props.action = 'DOWN'
-                    props.bname = bname
-                    props.pname = pname
-                    props.customindex = "custom_index"
+                    list_key = getattr(blk, '{}_enum'.format(pname))
+                    if list_key != '?':
+                        draw_fields_by_type(cur_layout, bnum, list_key)
 
                 if multiple_edit:
                     if show_attr:
@@ -277,7 +253,7 @@ def draw_fields_by_type(l_self, zclass, multiple_edit = True):
 
                     else:
 
-                        flag_descriptions = attr_class.get_flag_description()
+                        flag_descriptions = field.get_flag_description()
                         if flag_descriptions is not None:
 
                             for desc in flag_descriptions:

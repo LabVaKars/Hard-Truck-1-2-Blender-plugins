@@ -126,6 +126,11 @@ b14Enum = [
     ('clk', "For collision", "")
 ]
 
+b40PresetList = [
+    ('tgs', "40_TreeGen_short", ""),
+    ('tge', "40_TreeGen_extended", ""),
+]
+
 triggerTypeList = [
     ('loader', "Loader", "Map part loader"),
     ('radar0', "Radar 0", "Event 0"),

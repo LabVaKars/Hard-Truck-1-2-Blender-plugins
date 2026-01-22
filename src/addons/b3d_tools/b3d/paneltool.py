@@ -311,9 +311,9 @@ _classes = [
 def register():
     for cls in _classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.my_tool = bpy.props.PointerProperty(type=PanelSettings)
+    bpy.types.Scene.kotr_panel_tool = bpy.props.PointerProperty(type=PanelSettings)
 
 def unregister():
-    del bpy.types.Scene.my_tool
+    del bpy.types.Scene.kotr_panel_tool
     for cls in _classes[::-1]: #reversed
         bpy.utils.unregister_class(cls)

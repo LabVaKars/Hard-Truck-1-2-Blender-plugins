@@ -3,7 +3,8 @@ import time
 
 from ..consts import (
     BLOCK_TYPE,
-    CACHE_TIME
+    CACHE_TIME,
+    b40PresetList
 )
 
 from .common import (
@@ -24,21 +25,72 @@ log = callbacks_logger
 
 callback_cache = {}
 callback_cache_last_used = {}
+callback_cache_never_expire = set()
+
+def clear_cache(cache_key):
+    global callback_cache
+    global callback_cache_last_used
+    global callback_cache_never_expire
+
+    if cache_key in callback_cache:
+        callback_cache[cache_key] = None
+        callback_cache_last_used[cache_key] = None
+        callback_cache_never_expire.discard(cache_key)
 
 def get_cached(cache_key):
     global callback_cache
     global callback_cache_last_used
-    if callback_cache_last_used.get(cache_key) is not None \
-        and time.perf_counter() - callback_cache_last_used.get(cache_key) < CACHE_TIME:
+    global callback_cache_never_expire
+
+    if cache_key in callback_cache_never_expire:
         return callback_cache.get(cache_key)
+
+    last_used = callback_cache_last_used.get(cache_key)
+    if last_used is None:
+        return None
+
+    if time.perf_counter() - last_used < CACHE_TIME:
+        return callback_cache.get(cache_key)
+
+    # TTL expired → remove entry
+    clear_cache(cache_key)
     return None
     
-def save_cache(cache_key, values):
+def save_cache(cache_key, values, never_expire = False):
     global callback_cache
     global callback_cache_last_used
+    global callback_cache_never_expire
     
-    callback_cache[cache_key] = values
-    callback_cache_last_used[cache_key] = time.perf_counter()
+    if get_cached(cache_key) is None:
+        callback_cache[cache_key] = values
+        if never_expire:
+            callback_cache_never_expire.add(cache_key)
+            callback_cache_last_used.pop(cache_key, None)
+        else:
+            callback_cache_last_used[cache_key] = time.perf_counter()
+
+def presets_callback(bnum):
+    def callback_func(self, context):
+        
+        cache_key = 'presets'
+        
+        enum_properties = get_cached(cache_key)
+        
+        if enum_properties:
+            return enum_properties
+        
+        enum_properties = [("?", "None", "")]
+        presets = None
+        if bnum == 40:
+            presets = b40PresetList
+
+        if presets is not None:
+            enum_properties.extend(presets)
+
+        save_cache(cache_key, enum_properties, True)
+
+        return enum_properties
+    return callback_func
 
 
 def referenceables_callback(self, context):
@@ -110,15 +162,14 @@ def rooms_callback(bname, pname):
         if enum_properties:
             return enum_properties
     
-        enum_properties = []
+        enum_properties = [("?", "None", "")]
 
-        res_module = context.object.path_resolve('["{}"]'.format(pname))
+        res_module = context.object.path_resolve('["{}{}"]'.format(pname[:-1], int(pname[-1])-1))
 
         root_obj = bpy.data.objects.get('{}.b3d'.format(res_module))
         if root_obj:
             rooms = [cn for cn in root_obj.children if cn.get(BLOCK_TYPE) == 19]
 
-            enum_properties = [("?", "None", "")]
             enum_properties.extend([(cn.name, cn.name, "") for i, cn in enumerate(rooms)])
 
             save_cache(cache_key, enum_properties)

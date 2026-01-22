@@ -223,21 +223,21 @@ def create_render_branch_drivers(src_obj, temp_obj, center_obj, shift_z):
     # r driver
     d = drivers['r']
     v1 = d.variables.new()
-    set_variable(v1, 'r', src_obj, '["{}"]'.format(Blk009.Unk_R.get_prop()))
+    set_variable(v1, 'r', src_obj, '["{}"]'.format(Blk009.Unk_R.c_get_prop()))
     d.expression =  '-{}'.format(v1.name)
 
     d = drivers['dx']
     v1 = d.variables.new()
-    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.get_prop()))
+    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.c_get_prop()))
     v2 = d.variables.new()
-    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.get_prop()))
+    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.c_get_prop()))
     d.expression =  '{ax} / sqrt({ax}*{ax} + {ay}*{ay})'.format(ax=v1.name, ay=v2.name) 
 
     d = drivers['dy']
     v1 = d.variables.new()
-    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.get_prop()))
+    set_variable(v1, 'ax', src_obj, '["{}"][0]'.format(Blk009.Unk_XYZ.c_get_prop()))
     v2 = d.variables.new()
-    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.get_prop()))
+    set_variable(v2, 'ay', src_obj, '["{}"][1]'.format(Blk009.Unk_XYZ.c_get_prop()))
     d.expression =  '{ay} / sqrt({ax}*{ax} + {ay}*{ay})'.format(ax=v1.name, ay=v2.name) 
 
     d = drivers['Tx']

@@ -1,6 +1,4 @@
 import struct
-import sys
-from pathlib import Path
 
 import bpy
 from mathutils import Vector
@@ -11,48 +9,15 @@ from math import cos
 from math import sin
 
 from .blocktool_defs import (
-    Blk001,
-    Blk002,
-    # Blk003,
-    Blk004,
-    Blk005,
-    Blk006,
-    Blk007,
-    # Blk008,
-    Blk009,
-    Blk010,
-    Blk011,
-    Blk012,
-    Blk013,
-    Blk014,
-    Blk015,
-    Blk016,
-    Blk017,
-    Blk018,
-    Blk020,
-    Blk021,
-    Blk022,
-    Blk023,
-    Blk024,
-    Blk025,
-    Blk026,
-    Blk027,
-    Blk028,
-    Blk029,
-    Blk030,
-    Blk031,
-    Blk033,
-    Blk034,
-    Blk035,
-    Blk036,
-    Blk037,
-    Blk039,
-    Blk040,
-    Pfb008,
-    Pfb028,
-    Pfb035,
-    Pvb008,
-    Pvb035
+    # block params
+    Blk001,Blk002,Blk004,Blk005,Blk006,Blk007,Blk009,Blk010,
+    Blk011,Blk012,Blk013,Blk014,Blk015,Blk016,Blk017,Blk018,Blk020,
+    Blk021,Blk022,Blk023,Blk024,Blk025,Blk026,Blk027,Blk028,Blk029,Blk030,
+    Blk031,Blk033,Blk034,Blk035,Blk036,Blk037,Blk039,Blk040,
+    # per-face params
+    Pfb008,Pfb028,Pfb035,
+    # per-vertex params
+    Pvb008,Pvb035
 )
 
 from ..consts import (
@@ -79,6 +44,7 @@ from .common import (
     get_single_bounding_sphere,
     write_size,
     ftoi,
+    hex_to_bytes,
     RGBPacker,
     get_used_materials
 )
@@ -182,8 +148,8 @@ def map_meshes_to_parents(mesh_objs):
 
 def extend_with_references(ref_objs, meshes_in_empty):
     for obj in ref_objs:
-        referenceable_name = obj.get(Blk018.Add_Name.get_prop())
-        space_name = obj.get(Blk018.Space_Name.get_prop())
+        referenceable_name = obj.get(Blk018.Add_Name.c_get_prop())
+        space_name = obj.get(Blk018.Space_Name.c_get_prop())
         cur_mesh_list = meshes_in_empty.get(referenceable_name)
         if cur_mesh_list is not None:
 
@@ -260,14 +226,14 @@ def create_border_list(current_module_name):
     borders = {}
 
     border_blocks = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 30 \
-        and (cn.get(Blk030.ResModule1.get_prop()) == current_module_name or cn.get(Blk030.ResModule2.get_prop()) == current_module_name)]
+        and (cn.get(Blk030.ResModule1.c_get_prop()) == current_module_name or cn.get(Blk030.ResModule2.c_get_prop()) == current_module_name)]
 
     for bb in border_blocks:
 
-        module1_name = bb[Blk030.ResModule1.get_prop()]
-        module2_name = bb[Blk030.ResModule2.get_prop()]
-        room1_name = bb[Blk030.RoomName1.get_prop()]
-        room2_name = bb[Blk030.RoomName2.get_prop()]
+        module1_name = bb[Blk030.ResModule1.c_get_prop()]
+        module2_name = bb[Blk030.ResModule2.c_get_prop()]
+        room1_name = bb[Blk030.RoomName1.c_get_prop()]
+        room2_name = bb[Blk030.RoomName2.c_get_prop()]
 
         border1 = '{}:{}'.format(module1_name, room1_name)
         border2 = '{}:{}'.format(module2_name, room2_name)
@@ -445,7 +411,7 @@ def export_b3d(context, op, export_dir):
                     if obj.get(BLOCK_TYPE) in [2, 9, 10]:
                         cur_max_cnt = 2
                     elif obj.get(BLOCK_TYPE) == 21:
-                        cur_max_cnt = obj[Blk021.GroupCnt.get_prop()]
+                        cur_max_cnt = obj[Blk021.GroupCnt.c_get_prop()]
 
                     if is_valid_block(obj):
                         export_block(obj, False, cur_level, cur_max_cnt, [0], extra, file)
@@ -456,7 +422,7 @@ def export_b3d(context, op, export_dir):
                 if obj.get(BLOCK_TYPE) in [2, 9, 10]:
                     cur_max_cnt = 2
                 elif obj.get(BLOCK_TYPE) == 21:
-                    cur_max_cnt = obj[Blk021.GroupCnt.get_prop()]
+                    cur_max_cnt = obj[Blk021.GroupCnt.c_get_prop()]
 
                 if is_valid_block(obj):
                     export_block(obj, False, cur_level, cur_max_cnt, [0], extra, file)
@@ -562,14 +528,14 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 1:
 
-            write_name(block[Blk001.Name1.get_prop()], file)
-            write_name(block[Blk001.Name2.get_prop()], file)
+            write_name(block[Blk001.Name1.c_get_prop()], file)
+            write_name(block[Blk001.Name2.c_get_prop()], file)
 
         elif obj_type == 2:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<3f", *block[Blk002.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk002.Unk_R.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk002.Unk_XYZ.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk002.Unk_R.c_get_prop()]))
 
             child_cnt = 0
             for ch in get_children(block):
@@ -591,8 +557,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 4:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk004.Name1.get_prop()], file)
-            write_name(block[Blk004.Name2.get_prop()], file)
+            write_name(block[Blk004.Name1.c_get_prop()], file)
+            write_name(block[Blk004.Name2.c_get_prop()], file)
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -601,7 +567,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 5:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk005.Name1.get_prop()], file)
+            write_name(block[Blk005.Name1.c_get_prop()], file)
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -610,8 +576,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 6:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk006.Name1.get_prop()], file)
-            write_name(block[Blk006.Name2.get_prop()], file)
+            write_name(block[Blk006.Name1.c_get_prop()], file)
+            write_name(block[Blk006.Name2.c_get_prop()], file)
 
             offset = 0
             all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
@@ -641,7 +607,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 7:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk007.Name1.get_prop()], file)
+            write_name(block[Blk007.Name1.c_get_prop()], file)
 
             offset = 0
             all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
@@ -683,12 +649,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             
             if is_before_2_93():
                 format_flags_attrs = []
-                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.get_prop()).data
+                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.c_get_prop()).data
                 for poly in polygons:
                     val = RGBPacker.unpack_4floats_to_int([0.0, *(colors[poly.loop_indices[0]].color)])
                     format_flags_attrs.append(val)
             else:
-                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.get_prop())
+                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.c_get_prop())
                 format_flags_attrs = format_flags_attrs.data
             # format_flags_attrs = None #temporary
             # if format_flags_attrs is not None:
@@ -748,8 +714,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 9 or obj_type == 22:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<3f", *block[Blk009.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk009.Unk_R.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk009.Unk_XYZ.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk009.Unk_R.c_get_prop()]))
 
             child_cnt = 0
             for ch in get_children(block):
@@ -764,8 +730,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 10:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<3f", *block[Blk010.LOD_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk010.LOD_R.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk010.LOD_XYZ.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk010.LOD_R.c_get_prop()]))
 
             child_cnt = 0
             for ch in get_children(block):
@@ -779,10 +745,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 11:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk011.Unk_R1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk011.Unk_R2.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk011.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk011.Unk_R1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk011.Unk_R2.c_get_prop()]))
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -791,92 +757,74 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 12:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk012.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk012.Unk_R.get_prop()]))
-            file.write(struct.pack("<i", block[Blk012.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk012.Unk_Int2.get_prop()]))
-            item_list = block[Blk012.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<3f", *block[Blk012.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk012.Unk_R.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk012.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk012.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk012.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 13:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<i", block[Blk013.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk013.Unk_Int2.get_prop()]))
-            item_list = block[Blk013.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<i", block[Blk013.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk013.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk013.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 14:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk014.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk014.Unk_R.get_prop()]))
-            file.write(struct.pack("<i", block[Blk014.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk014.Unk_Int2.get_prop()]))
-            item_list = block[Blk014.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<3f", *block[Blk014.Unk_XYZ.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk014.Unk_R.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk014.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk014.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk014.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 15:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<i", block[Blk015.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk015.Unk_Int2.get_prop()]))
-            item_list = block[Blk015.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<i", block[Blk015.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk015.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk015.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 16:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk016.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk016.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<i", block[Blk016.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk016.Unk_Int2.get_prop()]))
-            item_list = block[Blk016.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk016.Unk_Float1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk016.Unk_Float2.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk016.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk016.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk016.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 17:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk017.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk017.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<i", block[Blk017.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk017.Unk_Int2.get_prop()]))
-            item_list = block[Blk017.Unk_List.get_prop()]
-            # file.write(struct.pack("<i", 0)) #Params Count
-            file.write(struct.pack("<i", len(item_list)))
-
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk017.Unk_Float1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk017.Unk_Float2.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk017.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk017.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk017.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 18:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk018.Space_Name.get_prop()], file)
-            write_name(block[Blk018.Add_Name.get_prop()], file)
+            write_name(block[Blk018.Space_Name.c_get_prop()], file)
+            write_name(block[Blk018.Add_Name.c_get_prop()], file)
 
         elif obj_type == 19:
 
@@ -897,14 +845,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                     point_list.append(point.co)
             # file.write(struct.pack("<i", 0)) #Verts Count
             file.write(struct.pack("<i", len(point_list))) #Verts Count
-            file.write(struct.pack("<i", block[Blk020.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk020.Unk_Int2.get_prop()]))
+            file.write(struct.pack("<i", block[Blk020.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk020.Unk_Int2.c_get_prop()]))
 
-            # Unknowns list
-            item_list = block[Blk020.Unk_List.get_prop()]
-            file.write(struct.pack("<i", len(item_list)))
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            hex_string = block[Blk020.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
             # Points list
             for point in point_list:
@@ -916,8 +862,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 21:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<i", block[Blk021.GroupCnt.get_prop()]))
-            file.write(struct.pack("<i", block[Blk021.Unk_Int2.get_prop()]))
+            file.write(struct.pack("<i", block[Blk021.GroupCnt.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk021.Unk_Int2.c_get_prop()]))
 
             child_cnt = 0
             for ch in get_children(block):
@@ -926,19 +872,17 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", child_cnt))
 
             to_process_child = True
-            cur_max_cnt = block[Blk021.GroupCnt.get_prop()]
+            cur_max_cnt = block[Blk021.GroupCnt.c_get_prop()]
 
         elif obj_type == 23:
 
-            file.write(struct.pack("<i", block[Blk023.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk023.Surface.get_prop()]))
+            file.write(struct.pack("<i", block[Blk023.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk023.Surface.c_get_prop()]))
             # file.write(struct.pack("<i", 0)) #Params Count
 
-            # Unknowns list
-            item_list = block[Blk023.Unk_List.get_prop()]
-            file.write(struct.pack("<i", len(item_list)))
-            for item in item_list:
-                file.write(struct.pack("<i", item))
+            hex_string = block[Blk023.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
             # Points list
             mesh = block.data
@@ -978,7 +922,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block.location.y))
             file.write(struct.pack("<f", block.location.z))
 
-            file.write(struct.pack("<i", block[Blk024.Flag.get_prop()]))
+            file.write(struct.pack("<i", block[Blk024.Flag.c_get_prop()]))
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -986,22 +930,22 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
         elif obj_type == 25:
 
-            file.write(struct.pack("<3i", *block[Blk025.Unk_XYZ.get_prop()]))
-            write_name(block[Blk025.Name.get_prop()], file)
-            file.write(struct.pack("<3f", *block[Blk025.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk025.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk025.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk025.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk025.Unk_Float3.get_prop()]))
-            file.write(struct.pack("<f", block[Blk025.Unk_Float4.get_prop()]))
-            file.write(struct.pack("<f", block[Blk025.Unk_Float5.get_prop()]))
+            file.write(struct.pack("<3i", *block[Blk025.Unk_XYZ.c_get_prop()]))
+            write_name(block[Blk025.Name.c_get_prop()], file)
+            file.write(struct.pack("<3f", *block[Blk025.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk025.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk025.Unk_Float1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk025.Unk_Float2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk025.Unk_Float3.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk025.Unk_Float4.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk025.Unk_Float5.c_get_prop()]))
 
         elif obj_type == 26:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ3.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ3.c_get_prop()]))
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -1010,13 +954,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 27:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<i", block[Blk027.Flag.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk027.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<i", block[Blk027.Material.get_prop()]))
+            file.write(struct.pack("<i", block[Blk027.Flag.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk027.Unk_XYZ.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk027.Material.c_get_prop()]))
 
         elif obj_type == 28: #must be 4 coord plane
 
-            # sprite_center = block[Blk028.Sprite_Center.get_prop()]
+            # sprite_center = block[Blk028.Sprite_Center.c_get_prop()]
             sprite_center = 0.125 * sum((Vector(b) for b in block.bound_box), Vector())
             sprite_center = matrix_multiply(block.matrix_world, sprite_center)
 
@@ -1027,12 +971,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             if is_before_2_93():
                 format_flags_attrs = []
-                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.get_prop()).data
+                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.c_get_prop()).data
                 for poly in polygons:
                     val = RGBPacker.unpack_4floats_to_int([0.0, *(colors[poly.loop_indices[0]].color)])
                     format_flags_attrs.append(val)
             else:
-                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.get_prop())
+                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.c_get_prop())
                 format_flags_attrs = format_flags_attrs.data
             # format_flags_attrs = None #temporary
             some_props = get_mesh_props(obj)
@@ -1081,10 +1025,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 29:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<i", block[Blk029.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk029.Unk_Int2.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk029.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk029.Unk_R.get_prop()]))
+            file.write(struct.pack("<i", block[Blk029.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk029.Unk_Int2.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk029.Unk_XYZ.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk029.Unk_R.c_get_prop()]))
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -1094,10 +1038,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             write_mesh_sphere(file, block)
 
-            module1_name = block[Blk030.ResModule1.get_prop()]
-            module2_name = block[Blk030.ResModule2.get_prop()]
-            room1_name = block[Blk030.RoomName1.get_prop()]
-            room2_name = block[Blk030.RoomName2.get_prop()]
+            module1_name = block[Blk030.ResModule1.c_get_prop()]
+            module2_name = block[Blk030.ResModule2.c_get_prop()]
+            room1_name = block[Blk030.RoomName1.c_get_prop()]
+            room2_name = block[Blk030.RoomName2.c_get_prop()]
 
             roomname1 = '{}:{}'.format(module1_name, room1_name)
             roomname2 = '{}:{}'.format(module2_name, room2_name)
@@ -1127,27 +1071,27 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 31:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<i", block[Blk031.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk031.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk031.Unk_R.get_prop()]))
-            file.write(struct.pack("<i", block[Blk031.Unk_Int2.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk031.Unk_XYZ2.get_prop()]))
+            file.write(struct.pack("<i", block[Blk031.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk031.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk031.Unk_R.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk031.Unk_Int2.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk031.Unk_XYZ2.c_get_prop()]))
 
         elif obj_type == 33:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<i", block[Blk033.Use_Lights.get_prop()]))
-            file.write(struct.pack("<i", block[Blk033.Light_Type.get_prop()]))
-            file.write(struct.pack("<i", block[Blk033.Flag.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk033.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk033.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Light_R.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Intens.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Unk_Float3.get_prop()]))
-            file.write(struct.pack("<f", block[Blk033.Unk_Float4.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk033.RGB.get_prop()]))
+            file.write(struct.pack("<i", block[Blk033.Use_Lights.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk033.Light_Type.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk033.Flag.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk033.Unk_XYZ1.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk033.Unk_XYZ2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Unk_Float1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Unk_Float2.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Light_R.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Intens.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Unk_Float3.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk033.Unk_Float4.c_get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk033.RGB.c_get_prop()]))
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -1166,7 +1110,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                 file.write(struct.pack("<f", point.x))
                 file.write(struct.pack("<f", point.y))
                 file.write(struct.pack("<f", point.z))
-                file.write(struct.pack("<i", block[Blk034.UnkInt.get_prop()]))
+                file.write(struct.pack("<i", block[Blk034.UnkInt.c_get_prop()]))
 
         elif obj_type == 35: #TODO: Texture coordinates are absent for moving texture(1)(mat_refl_road)(null))
                             #probably UVMapVert1 on road objects = tp import them too
@@ -1177,10 +1121,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             verts, uvs, normals, polygons, local_verts = l_pass_to_mesh['props']
 
             write_mesh_sphere(file, block)
-            file.write(struct.pack("<i", block[Blk035.MType.get_prop()]))
+            file.write(struct.pack("<i", block[Blk035.MType.c_get_prop()]))
             # file.write(struct.pack("<i", 3))
-            # file.write(struct.pack("<i", block[Blk035.TexNum.get_prop()]))
-            material_name = current_module.materials[block[Blk035.TexNum.get_prop()]].mat_name
+            # file.write(struct.pack("<i", block[Blk035.TexNum.c_get_prop()]))
+            material_name = current_module.materials[block[Blk035.TexNum.c_get_prop()]].mat_name
             l_material_ind = current_materials[material_name]
             file.write(struct.pack("<i", l_material_ind))
             # file.write(struct.pack("<i", 0)) #Polygon count
@@ -1190,12 +1134,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             if is_before_2_93():
                 format_flags_attrs = []
-                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.get_prop()).data
+                colors = mesh.vertex_colors.get(Pfb008.Format_Flags.c_get_prop()).data
                 for poly in polygons:
                     val = RGBPacker.unpack_4floats_to_int([0.0, *(colors[poly.loop_indices[0]].color)])
                     format_flags_attrs.append(val)
             else:
-                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.get_prop())
+                format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.c_get_prop())
                 format_flags_attrs = format_flags_attrs.data
             # format_flags_attrs = None #temporary
 
@@ -1253,11 +1197,11 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 36:
 
             # isSecondUvs = False
-            format_raw = int(block[Blk036.VType.get_prop()])
+            format_raw = int(block[Blk036.VType.c_get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk036.Name1.get_prop()], file)
-            write_name(block[Blk036.Name2.get_prop()], file)
+            write_name(block[Blk036.Name1.c_get_prop()], file)
+            write_name(block[Blk036.Name2.c_get_prop()], file)
 
             offset = 0
             all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
@@ -1317,10 +1261,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 37:
 
             # isSecondUvs = False
-            format_raw = int(block[Blk037.VType.get_prop()])
+            format_raw = int(block[Blk037.VType.c_get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk037.Name1.get_prop()], file)
+            write_name(block[Blk037.Name1.c_get_prop()], file)
 
             offset = 0
             all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
@@ -1378,11 +1322,11 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 39:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            file.write(struct.pack("<i", block[Blk039.Color_R.get_prop()]))
-            file.write(struct.pack("<f", block[Blk039.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk039.Fog_Start.get_prop()]))
-            file.write(struct.pack("<f", block[Blk039.Fog_End.get_prop()]))
-            file.write(struct.pack("<i", block[Blk039.Color_Id.get_prop()]))
+            file.write(struct.pack("<i", block[Blk039.Color_R.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk039.Unk_Float1.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk039.Fog_Start.c_get_prop()]))
+            file.write(struct.pack("<f", block[Blk039.Fog_End.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk039.Color_Id.c_get_prop()]))
             file.write(struct.pack("<i", 0)) #Unknown count
 
             file.write(struct.pack("<i", len(get_children(block))))
@@ -1392,14 +1336,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 40:
 
             write_bound_sphere(file, block.location, get_empty_size(block))
-            write_name(block[Blk040.Name1.get_prop()], file)
-            write_name(block[Blk040.Name2.get_prop()], file)
-            file.write(struct.pack("<i", block[Blk040.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk040.Unk_Int2.get_prop()]))
-            item_list = block[Blk040.Unk_List.get_prop()]
-            file.write(struct.pack("<i", len(item_list)))
-            for item in item_list:
-                file.write(struct.pack("<f", item))
+            write_name(block[Blk040.Name1.c_get_prop()], file)
+            write_name(block[Blk040.Name2.c_get_prop()], file)
+            file.write(struct.pack("<i", block[Blk040.Unk_Int1.c_get_prop()]))
+            file.write(struct.pack("<i", block[Blk040.Unk_Int2.c_get_prop()]))
+            hex_string = block[Blk040.Unk_List.c_get_prop()]
+            file.write(struct.pack("<i", len(hex_string) / 8))
+            file.write(hex_to_bytes(hex_string))
 
         if to_process_child:
             l_extra = extra
@@ -1434,10 +1377,11 @@ def get_mesh_props(obj):
 
     mat = obj.matrix_world
 
+    prop = None
     if obj.get('block_type') == 35:
-        prop = Pfb035.Format_Flags.get_prop()
+        prop = Pfb035.Format_Flags.c_get_prop()
     elif obj.get('block_type') == 8:
-        prop = Pfb008.Format_Flags.get_prop()
+        prop = Pfb008.Format_Flags.c_get_prop()
 
     if obj.get('block_type') in [35, 8]:
 

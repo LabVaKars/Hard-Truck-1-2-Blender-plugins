@@ -5,6 +5,7 @@ from mathutils import Vector
 import math
 import time
 from collections import deque
+from io import BytesIO
 
 from ..common import (
     get_panel_tool,
@@ -192,11 +193,23 @@ def read_cstring(file):
     except TypeError as e:
         log.warning("Error in read_cstring. Nothing to read")
         return ""
+    
+def read_cstrings(stream, align = None):
+    chars = []
+    while True:
+        c = stream.read(1)
+        if c == b'\x00' or c == b'':
+            break
+        chars.append(c)
+    if align is not None and align > 0:
+        to_align = len(chars) % 4
+        chars.extend(['\x00']*to_align)
+    return b''.join(chars).decode('cp1251')
 
-def write_cstring(txt, file):
+def write_cstring(txt, stream):
     if txt[-1] != "\00":
         txt += "\00"
-    file.write(txt.encode("cp1251"))
+    stream.write(txt.encode("cp1251"))
 
 
 def read_res_sections(filepath):
@@ -653,3 +666,9 @@ def ftoi(_float):
 
 def itof(_int):
     return struct.unpack('<f', struct.pack('<i', _int))[0]
+
+def bytes_to_hex(bytestream):
+    return ("".join([hex(b)[2:].zfill(2) for b in bytestream.getvalue()])).upper()
+
+def hex_to_bytes(str):
+    return BytesIO(bytes.fromhex(str))

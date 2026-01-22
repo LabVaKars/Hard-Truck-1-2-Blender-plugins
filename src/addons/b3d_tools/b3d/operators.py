@@ -19,7 +19,6 @@ from .common import (
     get_root_obj,
     get_room_obj,
     is_inside_object,
-    get_class_attributes,
     get_mult_obj_bounding_sphere
 )
 
@@ -39,9 +38,7 @@ from .scripts import (
     get_per_vertex_by_type,
     set_per_vertex_by_type,
     show_hide_sphere,
-    get_obj_by_prop,
-    set_obj_by_prop,
-    create_custom_attribute,
+    create_custom_attribute_c,
     select_similar_objects_by_type,
     select_similar_faces_by_type,
     create_render_branch_materials
@@ -56,6 +53,7 @@ from .blocktool import (
 )
 
 from .blocktool_defs import (
+    BlockClassType,
     Blk009, Blk010,
     Blk020,Blk021,Blk023, Blk030,
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
@@ -133,8 +131,6 @@ class SingleAddOperator(bpy.types.Operator):
 
         object_name = mytool.block_name_string
 
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
         # objects that are located in 0,0,0(technical empties)
         if block_type in [
             111,444,
@@ -158,7 +154,7 @@ class SingleAddOperator(bpy.types.Operator):
             if parent_obj is not None and block_type != 111:
                 b3d_obj.parent = parent_obj
             if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
-                set_objs_by_type(b3d_obj, zclass)
+                set_objs_by_type(b3d_obj, block_type)
             get_context_collection_objects(context).link(b3d_obj)
 
             if block_type in [9,10,21,22]: #objects with subgroups
@@ -167,7 +163,7 @@ class SingleAddOperator(bpy.types.Operator):
                 if block_type in [9, 10]:
                     group_cnt = 2
                 elif block_type == 21:
-                    group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
+                    group_cnt = b3d_obj[Blk021.GroupCnt.c_get_prop()]
 
                 for i in range(group_cnt):
                     group = bpy.data.objects.new("GROUP_{}".format(i), None)
@@ -184,7 +180,7 @@ class SingleAddOperator(bpy.types.Operator):
             if parent_obj is not None and block_type != 111:
                 b3d_obj.parent = parent_obj
             if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
-                set_objs_by_type(b3d_obj, zclass)
+                set_objs_by_type(b3d_obj, block_type)
 
             if block_type in [24, 52]:
                 set_empty_type(b3d_obj, 'ARROWS')
@@ -218,7 +214,7 @@ class SingleAddOperator(bpy.types.Operator):
             if parent_obj is not None and block_type != 111:
                 b3d_obj.parent = parent_obj
             if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
-                set_objs_by_type(b3d_obj, zclass)
+                set_objs_by_type(b3d_obj, block_type)
             get_context_collection_objects(context).link(b3d_obj)
 
         elif block_type == 30:
@@ -254,7 +250,7 @@ class SingleAddOperator(bpy.types.Operator):
             if parent_obj is not None and block_type != 111:
                 b3d_obj.parent = parent_obj
             if block_type not in [111, 444, 0, 3, 8, 19]: # blocks without custom parameters
-                set_objs_by_type(b3d_obj, zclass)
+                set_objs_by_type(b3d_obj, block_type)
 
             b3d_obj.modifiers.new('Portal_node', type='NODES')
             gnode_modifier = b3d_obj.modifiers.get('Portal_node')
@@ -337,7 +333,7 @@ class HierarchyAddOperator(bpy.types.Operator):
                 next_stack = []
 
         elif current_hier == 'LOD_21':
-            group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
+            group_cnt = b3d_obj[Blk021.GroupCnt.c_get_prop()]
             pass
 
         return {'FINISHED'}
@@ -360,15 +356,12 @@ class CastAddOperator(bpy.types.Operator):
             vert_type = int(mytool.vertex_block_enum)
             poly_type = int(mytool.poly_block_enum)
 
-            vertclass = BlockClassHandler.get_class_def_by_type(vert_type)
-            polyclass = BlockClassHandler.get_class_def_by_type(poly_type)
-
             #creating vertex block
             vert_obj = bpy.data.objects.new(consts.EMPTY_NAME, None)
             vert_obj.location=(0.0,0.0,0.0)
             vert_obj[consts.BLOCK_TYPE] = vert_type
             vert_obj.parent = parent_obj
-            set_objs_by_type(vert_obj, vertclass)
+            set_objs_by_type(vert_obj, vert_type)
             get_context_collection_objects(context).link(vert_obj)
 
             # creating poly blocks
@@ -381,13 +374,13 @@ class CastAddOperator(bpy.types.Operator):
                         new_obj[consts.BLOCK_TYPE] = poly_type
                         new_obj.parent = vert_obj
                         if poly_type != 8:
-                            set_objs_by_type(new_obj, polyclass)
+                            set_objs_by_type(new_obj, poly_type)
 
                         formats = [2]*len(new_obj.data.polygons)
                         if poly_type == 8:
-                            create_custom_attribute(new_obj.data, formats, Pfb008, Pfb008.Format_Flags)
+                            create_custom_attribute_c(new_obj.data, formats, Pfb008.Format_Flags)
                         elif poly_type == 35:
-                            create_custom_attribute(new_obj.data, formats, Pfb035, Pfb035.Format_Flags)
+                            create_custom_attribute_c(new_obj.data, formats, Pfb035.Format_Flags)
 
                         get_context_collection_objects(context).link(new_obj)
 
@@ -396,12 +389,12 @@ class CastAddOperator(bpy.types.Operator):
                         poly_obj[consts.BLOCK_TYPE] = poly_type
                         poly_obj.parent = vert_obj
                         if poly_type != 8:
-                            set_objs_by_type(poly_obj, polyclass)
+                            set_objs_by_type(poly_obj, poly_type)
                         formats = [2]*len(poly_obj.data.polygons)
                         if poly_type == 8:
-                            create_custom_attribute(poly_obj.data, formats, Pfb008, Pfb008.Format_Flags)
+                            create_custom_attribute_c(poly_obj.data, formats, Pfb008.Format_Flags)
                         elif poly_type == 35:
-                            create_custom_attribute(poly_obj.data, formats, Pfb035, Pfb035.Format_Flags)
+                            create_custom_attribute_c(poly_obj.data, formats, Pfb035.Format_Flags)
 
                         log.info("Cast existing B3D object: {}.".format(poly_obj.name))
 
@@ -466,10 +459,6 @@ class CastAddOperator(bpy.types.Operator):
                     parent_obj = poly_obj.parent
 
                 block_type = int(cast_type[3:])
-                zclass = None
-                if block_type == 50:
-                    zclass = Blk050
-
                 if poly_obj.type == 'CURVE':
 
                     if to_copy:
@@ -479,7 +468,7 @@ class CastAddOperator(bpy.types.Operator):
                         new_obj.data.bevel_depth = 0.3
                         new_obj.data.bevel_mode = 'ROUND'
                         new_obj.parent = parent_obj
-                        set_objs_by_type(new_obj, zclass)
+                        set_objs_by_type(new_obj, block_type)
                         get_context_collection_objects(context).link(new_obj)
                         log.info("Created new WAY Path: {}.".format(new_obj.name))
                     else:
@@ -487,7 +476,7 @@ class CastAddOperator(bpy.types.Operator):
                         poly_obj.data.bevel_depth = 0.3
                         poly_obj.data.bevel_mode = 'ROUND'
                         poly_obj.parent = parent_obj
-                        set_objs_by_type(poly_obj, zclass)
+                        set_objs_by_type(poly_obj, block_type)
                         log.info("Cast existing object to WAY Path: {}.".format(poly_obj.name))
 
                 else:
@@ -501,14 +490,11 @@ class CastAddOperator(bpy.types.Operator):
                     parent_obj = poly_obj.parent
 
                 block_type = int(cast_type[3:])
-                zclass = None
                 empty_type = 'PLAIN_AXES'
                 
                 if block_type == 51:
-                    zclass = Blk051
                     empty_type = 'PLAIN_AXES'
                 if block_type == 52:
-                    zclass = Blk052
                     empty_type = 'ARROWS'
 
                 if poly_obj.type == 'EMPTY':
@@ -518,14 +504,14 @@ class CastAddOperator(bpy.types.Operator):
                         new_obj[consts.BLOCK_TYPE] = block_type
                         set_empty_type(new_obj, empty_type)
                         new_obj.parent = parent_obj
-                        set_objs_by_type(new_obj, zclass)
+                        set_objs_by_type(new_obj, block_type)
                         get_context_collection_objects(context).link(new_obj)
                         log.info("Created new WAY Path: {}.".format(new_obj.name))
                     else:
                         poly_obj[consts.BLOCK_TYPE] = block_type
                         set_empty_type(poly_obj, empty_type)
                         poly_obj.parent = parent_obj
-                        set_objs_by_type(poly_obj, zclass)
+                        set_objs_by_type(poly_obj, block_type)
                         log.info("Cast existing object to WAY Path: {}.".format(poly_obj.name))
 
                 else:
@@ -568,7 +554,7 @@ class GetFaceValuesOperator(bpy.types.Operator):
 
 class GetValuesOperator(bpy.types.Operator):
     bl_idname = "wm.get_block_values_operator"
-    bl_label = "Get object params"
+    bl_label = "Load params"
 
     def execute(self, context):
         mytool = get_panel_tool(context)
@@ -576,30 +562,7 @@ class GetValuesOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-        if zclass is not None:
-            get_objs_by_type(b3d_obj, zclass)
-
-        return {'FINISHED'}
-
-@make_annotations
-class GetPropValueOperator(bpy.types.Operator):
-    bl_idname = "wm.get_prop_value_operator"
-    bl_label = "Get param value"
-
-    pname = StringProperty()
-
-    def execute(self, context):
-        mytool = get_panel_tool(context)
-
-        b3d_obj = get_active_object()
-        block_type = b3d_obj[consts.BLOCK_TYPE]
-
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-        if zclass is not None:
-            get_obj_by_prop(b3d_obj, zclass, self.pname)
+        get_objs_by_type(b3d_obj, block_type)
 
         return {'FINISHED'}
 
@@ -670,7 +633,7 @@ class SetRoomAndModuleOperator(bpy.types.Operator):
 
 class SetValuesOperator(bpy.types.Operator):
     bl_idname = "wm.set_block_values_operator"
-    bl_label = "Save object params"
+    bl_label = "Save params"
 
     def execute(self, context):
         mytool = get_panel_tool(context)
@@ -694,33 +657,9 @@ class SetValuesOperator(bpy.types.Operator):
 
             b3d_obj[consts.BLOCK_TYPE] = block_type
 
-            zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-            if zclass is not None:
-                set_objs_by_type(b3d_obj, zclass)
+            set_objs_by_type(b3d_obj, block_type)
 
         return {'FINISHED'}
-
-@make_annotations
-class SetPropValueOperator(bpy.types.Operator):
-    bl_idname = "wm.set_prop_value_operator"
-    bl_label = "Save param value"
-
-    pname = StringProperty()
-
-    def execute(self, context):
-        mytool = get_panel_tool(context)
-
-        b3d_obj = get_active_object()
-        block_type = b3d_obj[consts.BLOCK_TYPE]
-
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
-
-        if zclass is not None:
-            set_obj_by_prop(b3d_obj, zclass, self.pname)
-
-        return {'FINISHED'}
-
 
 class ApplyTransformsOperator(bpy.types.Operator):
     bl_idname = "wm.apply_transforms_operator"
@@ -879,8 +818,8 @@ class ShowHideSphereOperator(bpy.types.Operator):
         block_type = obj.get(consts.BLOCK_TYPE)
         if block_type in [10]:
 
-            center_prop = Blk010.LOD_XYZ.get_prop()
-            rad_prop = Blk010.LOD_R.get_prop()
+            center_prop = Blk010.LOD_XYZ.c_get_prop()
+            rad_prop = Blk010.LOD_R.c_get_prop()
 
             show_hide_sphere(obj, center_prop, rad_prop)
 
@@ -900,12 +839,9 @@ class SelectSimilarObjectsOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        zclass = BlockClassHandler.get_class_def_by_type(block_type)
+        select_similar_objects_by_type(block_type)
 
-        if zclass is not None:
-            select_similar_objects_by_type(b3d_obj, zclass)
-
-            self.report({'INFO'}, "Similar object selected")
+        self.report({'INFO'}, "Similar object selected")
 
         return {'FINISHED'}
 
@@ -921,12 +857,9 @@ class SelectSimilarFacesOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        zclass = BlockClassHandler.get_pfb_class_def_by_type(block_type)
+        select_similar_faces_by_type(block_type, BlockClassType.PER_FACE_BLOCK)
 
-        if zclass is not None:
-            select_similar_faces_by_type(b3d_obj, zclass)
-
-            self.report({'INFO'}, "Similar faces selected")
+        self.report({'INFO'}, "Similar faces selected")
 
         return {'FINISHED'}
 
@@ -977,7 +910,7 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
         room = get_room_obj(b3d_obj)
         if room is not None:
             borders = [{'obj':o.name,'transf':o.name} for o in bpy.data.objects if o.get(consts.BLOCK_TYPE) == 30 and 
-                (o.get(Blk030.RoomName1.get_prop()) == room.name or o.get(Blk030.RoomName2.get_prop()) == room.name)]
+                (o.get(Blk030.RoomName1.c_get_prop()) == room.name or o.get(Blk030.RoomName2.c_get_prop()) == room.name)]
 
             bbox_params = get_mult_obj_bounding_sphere(borders)
             location = bbox_params[0]
@@ -1015,8 +948,8 @@ class ApplyRenderTreeChangesOperator(bpy.types.Operator):
         for branch_obj in branches:
             obj_name = branch_obj.name.split("||")[1]
             b3d_obj = bpy.data.objects[obj_name]
-            ax = b3d_obj[Blk009.Unk_XYZ.get_prop()][0]
-            ay = b3d_obj[Blk009.Unk_XYZ.get_prop()][1]
+            ax = b3d_obj[Blk009.Unk_XYZ.c_get_prop()][0]
+            ay = b3d_obj[Blk009.Unk_XYZ.c_get_prop()][1]
             length = math.sqrt(ax**2 + ay**2)
             axn = ax / length
             ayn = ay / length
@@ -1040,10 +973,10 @@ class ApplyRenderTreeChangesOperator(bpy.types.Operator):
 
             new_vec = (Tx/R, Ty/R, 0.0)
 
-            b3d_obj[Blk009.Unk_XYZ.get_prop()][0] = new_vec[0]
-            b3d_obj[Blk009.Unk_XYZ.get_prop()][1] = new_vec[1]
-            b3d_obj[Blk009.Unk_XYZ.get_prop()][2] = new_vec[2]
-            b3d_obj[Blk009.Unk_R.get_prop()] = -R
+            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][0] = new_vec[0]
+            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][1] = new_vec[1]
+            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][2] = new_vec[2]
+            b3d_obj[Blk009.Unk_R.c_get_prop()] = -R
             b3d_obj.update_tag(refresh={'OBJECT'})
 
             branch_obj.location[0] = 0.0
@@ -1116,12 +1049,12 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
             obj_name = branch_obj.name.split("||")[1]
             b3d_obj = bpy.data.objects[obj_name]
 
-            R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.get_prop()]
+            R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.c_get_prop()]
 
-            b3d_obj[Blk010.LOD_XYZ.get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
-            b3d_obj[Blk010.LOD_XYZ.get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
-            b3d_obj[Blk010.LOD_XYZ.get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
-            b3d_obj[Blk010.LOD_R.get_prop()] = R
+            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
+            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
+            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
+            b3d_obj[Blk010.LOD_R.c_get_prop()] = R
             b3d_obj.update_tag(refresh={'OBJECT'})
 
             branch_obj.location[0] = 0.0
@@ -1146,13 +1079,11 @@ _classes = [
     CastAddOperator,
     # getters
     GetValuesOperator,
-    GetPropValueOperator,
     GetFaceValuesOperator,
     GetVertexValuesOperator,
     # setters
     SetRoomAndModuleOperator,
     SetValuesOperator,
-    SetPropValueOperator,
     SetFaceValuesOperator,
     SetVertexValuesOperator,
     # additional options
@@ -1171,7 +1102,7 @@ _classes = [
     VisualiseRenderTreeOperator,
     ApplyRenderTreeChangesOperator,
     VisualiseLODTreeOperator,
-    ApplyLODTreeChangesOperator,
+    ApplyLODTreeChangesOperator
 ]
 
 def register():

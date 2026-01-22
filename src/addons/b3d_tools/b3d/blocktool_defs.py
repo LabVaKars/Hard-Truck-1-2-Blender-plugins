@@ -1,4 +1,4 @@
-import enum
+
 import bpy
 
 from bpy.props import (StringProperty,
@@ -43,11 +43,16 @@ from ..consts import (
 #     }
 # })
 
-class FieldType(enum.Enum):
+class BlockClassType():
+
+    PER_FACE_BLOCK = 'Pfb'
+    PER_VERTEX_BLOCK = 'Pvb'
+    BLOCK = 'Blk'
+
+class FieldType():
     IGNORE = 0
     STRING = 1
     COORD = 2
-    # RAD = 3
     INT = 4
     FLOAT = 5
     ENUM = 6
@@ -67,7 +72,7 @@ class FieldType(enum.Enum):
 # blocktool_defs configuration:
 
 # prop - Required - Key used to save property in Blenders custom properties.
-# group - Optional - Used to determine what elements to group together.
+# ui_group - Optional - Used to determine what elements to group together.
 # type - Required - Type of the field.
 # Type specific configurations
 
@@ -118,122 +123,258 @@ class FieldType(enum.Enum):
 # Custom operators
 # FieldType.SPHERE_EDIT
 
+class BlkBase():
+    bnum = 0
+    btype = BlockClassType.BLOCK
+
+    # --- btype ---
+    @classmethod
+    def c_get_btype(cls):
+        return cls.btype
+
+    # --- bnum ---
+    @classmethod
+    def c_get_bnum(cls):
+        return cls.bnum
+
 class BlkParam():
+    bnum = None                         #Block number
+    btype = None                        #Block type
     prop = None                         #Key under what property is stored in Blender object
-    block_type = ''                     #Block
+    attr_type = ''                      #Attribute type
     name = 'Unknown'                    #Parameter name in UI
     description = 'Unknown parameter'   #Parameter description in UI
     default_value = ''                  #Default value for simple types(int, float)
-    group = ''                          #Used for grouping values in UI
+    ui_group = ''                       #Used for grouping values in UI
+    no_single_edit = False              #Determines if field is shown in "Single block edit"
     # Enum specific keys
     subtype = ''                        #Type for Enumerator values
     callback = ''                       #Callback for dynamic enumerators
     items = None                        #Static enumerator values
+    manual_entry = True                 #If True Enumeration gives an option to enter value manually
     # Flag specific keys
     flag_description = None             #Description for flag values
-    # Subgroup specific keys
-    subgroup = -1                       #Block subgroup index;
-                                        #Subgroup fields are shown/hidden based on specific hardcoded conditions.
-    optional_group = -1                 #Values with same optional_group are considered optional
+
+    def __init__(self, init_empty = False):
+        if not init_empty:
+            cls = type(self)
+            cls_attribs = [name for name in dir(cls) \
+                if not name.startswith("__")\
+                and not callable(getattr(cls, name))
+            ]
+            for attrib in cls_attribs:
+                setattr(self, "_{}".format(attrib), getattr(cls, attrib))
+    
+    # --- btype ---
+    @classmethod
+    def c_get_btype(cls):
+        return cls.btype
+    
+    @classmethod
+    def c_set_btype(cls, value):
+        cls.btype = value
+    
+    def get_btype(self):
+        return self._btype
+
+    def set_btype(self, value):
+        self._btype = value
+    
+    # --- bnum ---
+    @classmethod
+    def c_get_bnum(cls):
+        return cls.bnum
 
     @classmethod
-    def get_prop(cls):
+    def c_set_bnum(cls, value):
+        cls.bnum = value
+
+    def get_bnum(self):
+        return self._bnum
+
+    def set_bnum(self, value):
+        self._bnum = value
+
+    # --- prop ---
+    @classmethod
+    def c_get_prop(cls):
         if cls.prop is not None:
             return cls.prop
         return cls.__name__
-
-    @classmethod
-    def get_block_type(cls):
-        return cls.block_type
-
-    @classmethod
-    def get_name(cls):
-        return cls.name
-
-    @classmethod
-    def get_description(cls):
-        return cls.description
-
-    @classmethod
-    def get_subtype(cls):
-        return cls.subtype
-
-    @classmethod
-    def get_default(cls):
-        return cls.default_value
-
-    @classmethod
-    def get_callback(cls):
-        return cls.callback
-
-    @classmethod
-    def get_items(cls):
-        return cls.items
-
-    @classmethod
-    def get_group(cls):
-        return cls.group
     
-    @classmethod
-    def get_flag_description(cls):
-        return cls.flag_description
+    def get_prop(self):
+        return self._prop
 
-    @classmethod
-    def is_pob(cls): #per object block
-        return cls.__name__[0:3] == 'Blk'
-
-    @classmethod
-    def is_pfb(cls): #per face block
-        return cls.__name__[0:3] == 'Pfb'
-
-    @classmethod
-    def is_pvb(cls): #per vertex block
-        return cls.__name__[0:3] == 'Pvb'
+    def set_prop(self, value):
+        self._prop = value
         
+    # --- attr_type ---
+    @classmethod
+    def c_get_attr_type(cls):
+        return cls.attr_type
+    
+    def get_attr_type(self):
+        return self._attr_type
+
+    def set_attr_type(self, value):
+        self._attr_type = value
+
+    # --- name ---
+    @classmethod
+    def c_get_name(cls):
+        return cls.name
+    
+    def get_name(self):
+        return self._name
+
+    def set_name(self, value):
+        self._name = value
+
+    # --- description ---
+    @classmethod
+    def c_get_description(cls):
+        return cls.description
+    
+    def get_description(self):
+        return self._description
+
+    def set_description(self, value):
+        self._description = value
+
+    # --- subtype ---
+    @classmethod
+    def c_get_subtype(cls):
+        return cls.subtype
+    
+    def get_subtype(self):
+        return self._subtype
+
+    def set_subtype(self, value):
+        self._subtype = value
+
+    # --- default_value ---
+    @classmethod
+    def c_get_default(cls):
+        return cls.default_value
+    
+    def get_default(self):
+        return self._default_value
+
+    def set_default(self, value):
+        self._default_value = value
+
+    # --- callback ---
+    @classmethod
+    def c_get_callback(cls):
+        return cls.callback
+    
+    def get_callback(self):
+        return self._callback
+
+    def set_callback(self, value):
+        self._callback = value
+
+
+    # --- items ---
+    @classmethod
+    def c_get_items(cls):
+        return cls.items
+    
+    def get_items(self):
+        return self._items
+
+    def set_items(self, value):
+        self._items = value
+
+    # --- ui_group ---
+    @classmethod
+    def c_get_group(cls):
+        return cls.ui_group
+    
+    def get_group(self):
+        return self._ui_group
+
+    def set_group(self, value):
+        self._ui_group = value
+    
+    # --- no_single_edit ---
+    @classmethod
+    def c_get_no_single_edit(cls):
+        return cls.no_single_edit
+    
+    def get_no_single_edit(self):
+        return self._no_single_edit
+
+    def set_no_single_edit(self, value):
+        self._no_single_edit = value
+
+        
+    # --- flag_description ---
+    @classmethod
+    def c_get_flag_description(cls):
+        return cls.flag_description
+    
+    def get_flag_description(self):
+        return self._flag_description
+
+    def set_flag_description(self, value):
+        self._flag_description = value
+    
+    # --- manual_entry ---
+    @classmethod
+    def c_get_manual_entry(cls):
+        return cls.manual_entry
+    
+    def get_manual_entry(self):
+        return self._manual_entry
+
+    def set_manual_entry(self, value):
+        self._manual_entry = value
+
 
 class StringParam(BlkParam):
-    block_type = FieldType.STRING
+    attr_type = FieldType.STRING
     default_value = ''
 
 class IntParam(BlkParam):
-    block_type = FieldType.INT
+    attr_type = FieldType.INT
     default_value = 0
 
 class FloatParam(BlkParam):
-    block_type = FieldType.FLOAT
+    attr_type = FieldType.FLOAT
     default_value = 0.0
 
 class CoordParam(BlkParam):
-    block_type = FieldType.COORD
+    attr_type = FieldType.COORD
     default_value = (0.0, 0.0, 0.0)
 
 class EnumParam(BlkParam):
-    block_type = FieldType.ENUM
+    attr_type = FieldType.ENUM
     subtype = FieldType.INT
     items = []
 
 class EnumDynParam(BlkParam):
-    block_type = FieldType.ENUM_DYN
+    attr_type = FieldType.ENUM_DYN
     subtype = FieldType.INT,
     callback = FieldType.SPACE_NAME
     
 class FlagsParam(BlkParam):
-    block_type = FieldType.FLAGS
+    attr_type = FieldType.FLAGS
     default_value = 0
     flag_description = None
 
 class VFormatParam(BlkParam):
-    block_type = FieldType.V_FORMAT #Integer
+    attr_type = FieldType.V_FORMAT #Integer
 
 class SphereEditParam(BlkParam):
-    block_type = FieldType.SPHERE_EDIT
+    attr_type = FieldType.SPHERE_EDIT
 
 class ListParam(BlkParam):
-    block_type = FieldType.LIST
+    attr_type = FieldType.LIST
 
 
 
-class Pvb008():
+class Pvb008(BlkBase):
     pass
     # disabled for now. Reason: 1) hard to edit
     # todo: analyze more
@@ -253,7 +394,7 @@ class Pvb008():
     # }
 
 
-class Pvb035():
+class Pvb035(BlkBase):
     pass
     # disabled for now. Reason: 1) hard to edit
     # todo: analyze more
@@ -273,9 +414,12 @@ class Pvb035():
     # }
 
 
-class Pfb008():
+class Pfb008(BlkBase):
+    bnum = 8
+    btype = BlockClassType.PER_FACE_BLOCK
     class Format_Flags(VFormatParam):
         name = ''
+        prop = 'format_flags'
         default_value = 144
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
@@ -296,9 +440,12 @@ class Pfb008():
     # }
 
 
-class Pfb028():
+class Pfb028(BlkBase):
+    bnum = 28
+    btype = BlockClassType.PER_FACE_BLOCK
     class Format_Flags(VFormatParam):
         name = ''
+        prop = 'format_flags'
         default_value = 144
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
@@ -319,9 +466,12 @@ class Pfb028():
     # }
 
 
-class Pfb035():
+class Pfb035(BlkBase):
+    bnum = 35
+    btype = BlockClassType.PER_FACE_BLOCK
     class Format_Flags(VFormatParam):
         name = ''
+        prop = 'format_flags'
         default_value = 144
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
@@ -345,7 +495,9 @@ class Pfb035():
 
 
 
-class Blk001():
+class Blk001(BlkBase):
+    bnum = 1
+    btype = BlockClassType.PER_FACE_BLOCK
     class Name1(StringParam):
         name = 'Unk. name 1'
         prop = 'string1'
@@ -355,7 +507,8 @@ class Blk001():
         prop = 'string2'
 
 
-class Blk002():
+class Blk002(BlkBase):
+    bnum = 2
     class Unk_XYZ(CoordParam):
         name = 'Unk. name 2'
         prop = 'coord1'
@@ -365,7 +518,8 @@ class Blk002():
         prop = 'coord2'
 
 
-class Blk004():
+class Blk004(BlkBase):
+    bnum = 4
     class Name1(EnumDynParam):
         name = 'Place'
         prop = 'string1'
@@ -378,13 +532,15 @@ class Blk004():
         name = 'Name 2'
 
 
-class Blk005():
+class Blk005(BlkBase):
+    bnum = 5
     class Name1(StringParam):
         name = 'Block name'
         prop = 'string2'
 
 
-class Blk006():
+class Blk006(BlkBase):
+    bnum = 6
     class Name1(StringParam):
         name = 'Name 1'
         prop = 'string1'
@@ -394,43 +550,47 @@ class Blk006():
         prop = 'string2'
 
 
-class Blk007():
+class Blk007(BlkBase):
+    bnum = 7
     class Name1(StringParam):
         name = 'Group name'
         prop = 'string1'
 
-class Blk009():
+class Blk009(BlkBase):
+    bnum = 9
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
-        group = 'b9_group'
+        ui_group = 'b9_group'
 
     class Unk_R(FloatParam):
         name = 'Unk. rad'
         prop = 'float1'
-        group = 'b9_group'
+        ui_group = 'b9_group'
 
 
-class Blk010():
+class Blk010(BlkBase):
+    bnum = 10
     class LOD_XYZ(CoordParam):
         name = 'LOD coord'
         prop = 'coord1'
         description = 'LOD center'
-        group = 'LOD_group'
+        ui_group = 'LOD_group'
 
     class LOD_R(FloatParam):
         name = 'LOD rad'
         prop = 'float1'
         description = 'LOD radius'
-        group = 'LOD_group'
+        ui_group = 'LOD_group'
 
     class Set_LOD(SphereEditParam):
         name = ''
         description = ''
-        group = 'LOD_group'
+        ui_group = 'LOD_group'
 
 
-class Blk011():
+class Blk011(BlkBase):
+    bnum = 11
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
@@ -448,7 +608,8 @@ class Blk011():
         prop = 'float2'
 
 
-class Blk012():
+class Blk012(BlkBase):
+    bnum = 12
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
@@ -468,9 +629,11 @@ class Blk012():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk013():
+class Blk013(BlkBase):
+    bnum = 13
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -481,10 +644,12 @@ class Blk013():
 
     class Unk_List(ListParam):
         name = 'Unk. params'
-        prop = 'list2'
+        prop = 'list1'
+        no_single_edit = True
 
 
-class Blk014():
+class Blk014(BlkBase):
+    bnum = 14
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
@@ -504,9 +669,11 @@ class Blk014():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk015():
+class Blk015(BlkBase):
+    bnum = 15
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -518,9 +685,11 @@ class Blk015():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk016():
+class Blk016(BlkBase):
+    bnum = 16
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord 1'
         prop = 'coord1'
@@ -548,9 +717,11 @@ class Blk016():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk017():
+class Blk017(BlkBase):
+    bnum = 17
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord 1'
         prop = 'coord1'
@@ -578,9 +749,11 @@ class Blk017():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk018():
+class Blk018(BlkBase):
+    bnum = 18
     class Space_Name(EnumDynParam):
         name = 'Place name (24)'
         prop = 'string1'
@@ -598,7 +771,8 @@ class Blk018():
         default_value = '?'
 
 
-class Blk020():
+class Blk020(BlkBase):
+    bnum = 20
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -610,9 +784,11 @@ class Blk020():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk021():
+class Blk021(BlkBase):
+    bnum = 21
     class GroupCnt(IntParam):
         name = 'Group count'
         prop = 'int1'
@@ -622,7 +798,8 @@ class Blk021():
         prop = 'int2'
 
 
-class Blk022():
+class Blk022(BlkBase):
+    bnum = 22
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
@@ -632,7 +809,8 @@ class Blk022():
         prop = 'float1'
 
 
-class Blk023():
+class Blk023(BlkBase):
+    bnum = 23
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -648,9 +826,11 @@ class Blk023():
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
+        no_single_edit = True
 
 
-class Blk024():
+class Blk024(BlkBase):
+    bnum = 24
     class Flag(EnumParam):
         name = 'Show flag'
         prop = 'int1'
@@ -660,7 +840,8 @@ class Blk024():
         default_value = 0
 
 
-class Blk025():
+class Blk025(BlkBase):
+    bnum = 25
     class Unk_XYZ(CoordParam):
         name = 'Unk. coord'
         prop = 'coord1'
@@ -698,7 +879,8 @@ class Blk025():
         prop = 'float5'
 
 
-class Blk026():
+class Blk026(BlkBase):
+    bnum = 26
     class Unk_XYZ1(CoordParam):
         name = 'Unk. coord 1'
         prop = 'coord1'
@@ -712,7 +894,8 @@ class Blk026():
         prop = 'coord3'
 
 
-class Blk027():
+class Blk027(BlkBase):
+    bnum = 27
     class Flag(IntParam):
         name = 'Flag'
         prop = 'int1'
@@ -726,7 +909,8 @@ class Blk027():
         prop = 'int2'
 
 
-class Blk028():
+class Blk028(BlkBase):
+    bnum = 28
     class Sprite_Center(CoordParam):
         name = 'Sprite center coord'
         prop = 'coord1'
@@ -734,7 +918,8 @@ class Blk028():
      #todo: check
 
 
-class Blk029():
+class Blk029(BlkBase):
+    bnum = 29
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -752,14 +937,15 @@ class Blk029():
         prop = 'float1'
 
 
-class Blk030():
+class Blk030(BlkBase):
+    bnum = 30
     class ResModule1(EnumDynParam):
         name = '1. module'
         prop = 'string1'
         subtype = FieldType.STRING
         callback = FieldType.RES_MODULE
         default_value = '?'
-        group = 'resModule1'
+        ui_group = 'resModule1'
 
     class RoomName1(EnumDynParam):
         name = '1. room'
@@ -767,7 +953,7 @@ class Blk030():
         subtype = FieldType.STRING
         callback = FieldType.ROOM
         default_value = '?'
-        group = 'resModule1'
+        ui_group = 'resModule1'
 
     class ResModule2(EnumDynParam):
         name = '2. module'
@@ -775,7 +961,7 @@ class Blk030():
         subtype = FieldType.STRING
         callback = FieldType.RES_MODULE
         default_value = '?'
-        group = 'resModule2'
+        ui_group = 'resModule2'
 
     class RoomName2(EnumDynParam):
         name = '2. room'
@@ -783,10 +969,11 @@ class Blk030():
         subtype = FieldType.STRING
         callback = FieldType.ROOM
         default_value = '?'
-        group = 'resModule2'
+        ui_group = 'resModule2'
 
 
-class Blk031():
+class Blk031(BlkBase):
+    bnum = 31
     class Unk_Int1(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -810,7 +997,8 @@ class Blk031():
     #todo: check
 
 
-class Blk033():
+class Blk033(BlkBase):
+    bnum = 33
     class Use_Lights(IntParam):
         name = 'Use lights'
         prop = 'int1'
@@ -863,13 +1051,15 @@ class Blk033():
         prop = 'coord3'
 
 
-class Blk034():
+class Blk034(BlkBase):
+    bnum = 34
     class UnkInt(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
 
 
-class Blk035():
+class Blk035(BlkBase):
+    bnum = 35
     class MType(IntParam):
         name = 'Unk. 1'
         prop = 'int1'
@@ -881,7 +1071,8 @@ class Blk035():
         callback = FieldType.MATERIAL_IND
         default_value = -1
 
-class Blk036():
+class Blk036(BlkBase):
+    bnum = 36
     class Name1(StringParam):
         name = 'Name 1'
         prop = 'string1'
@@ -898,7 +1089,8 @@ class Blk036():
         default_value = 2
 
 
-class Blk037():
+class Blk037(BlkBase):
+    bnum = 37
     class Name1(StringParam):
         name = 'Name 1'
         prop = 'string1'
@@ -911,7 +1103,8 @@ class Blk037():
         default_value = 2
 
 
-class Blk039():
+class Blk039(BlkBase):
+    bnum = 39
     class Color_R(IntParam):
         name = 'Color rad'
         prop = 'int1'
@@ -933,7 +1126,8 @@ class Blk039():
         prop = 'int2'
 
 
-class Blk040():
+class Blk040(BlkBase):
+    bnum = 40
     class Name1(StringParam):
         name = 'Name 1'
         prop = 'string1'
@@ -952,51 +1146,18 @@ class Blk040():
     class Unk_Int2(IntParam):
         name = 'Unk. 2'
         prop = 'int2'
-
+    
     class Unk_List(ListParam):
         name = 'Unk. params'
         prop = 'list1'
-    
-    class TreeMatIndex(IntParam):
-        name = 'Tree Material'
-        prop = 'int11'
-        subgroup = 1
-
-    class LeftMatIndex(IntParam):
-        name = 'Leaf Material'
-        prop = 'int12'
-        subgroup = 1
-
-    class Unk_Float11(FloatParam):
-        name = 'Unk. F1'
-        prop = 'float11'
-        subgroup = 1
-        optional_group = 1
-        
-    class Unk_Coord11(CoordParam):
-        name = 'Unk. C1'
-        prop = 'coord11'
-        subgroup = 1
-        optional_group = 1
-
-    class Unk_Float12(FloatParam):
-        name = 'Unk. F2'
-        prop = 'float12'
-        subgroup = 1
-        optional_group = 1
-        
-    class Unk_Coord12(CoordParam):
-        name = 'Unk. C1'
-        prop = 'coord12'
-        subgroup = 1
-        optional_group = 1
-
+        no_single_edit = True
 
 # Blk050 - segment
 # Blk051 - unoriented node
 # Blk052 - oriented node
 
-class Blk050():
+class Blk050(BlkBase):
+    bnum = 50
 
     class Attr1(FlagsParam):
         name = 'Segment flags'
@@ -1068,12 +1229,63 @@ class Blk050():
         prop = 'float3'
 
 
-class Blk051():
+class Blk051(BlkBase):
+    bnum = 51
     class Flag(IntParam):
         name = 'Flag'
         prop = 'int1'
 
-class Blk052():
+class Blk052(BlkBase):
+    bnum = 52
     class Flag(IntParam):
         name = 'Flag'
         prop = 'int1'
+
+#Preset definitions
+
+class B40_TreeGenSimple(BlkBase):
+    bnum = 40
+    btype = 'tgs'
+    class TreeMatIndex(IntParam):
+        name = 'Tree Material'
+        prop = 'int1'
+        no_single_edit = True
+
+    class LeafMatIndex(IntParam):
+        name = 'Leaf Material'
+        prop = 'int2'
+        no_single_edit = True
+
+class B40_TreeGenExtended(BlkBase):
+    bnum = 40
+    btype = 'tge'
+    class TreeMatIndex(IntParam):
+        name = 'Tree Material'
+        prop = 'int1'
+        no_single_edit = True
+
+    class LeafMatIndex(IntParam):
+        name = 'Leaf Material'
+        prop = 'int2'
+        no_single_edit = True
+    
+    class Unk_Float21(FloatParam):
+        name = 'Unk. F1'
+        prop = 'float1'
+        no_single_edit = True
+        
+    class Unk_Coord21(CoordParam):
+        name = 'Unk. C1'
+        prop = 'coord1'
+        no_single_edit = True
+    
+    class Unk_Float22(FloatParam):
+        name = 'Unk. F2'
+        prop = 'float2'
+        no_single_edit = True
+        
+    class Unk_Coord22(CoordParam):
+        name = 'Unk. C1'
+        prop = 'coord2'
+        no_single_edit = True
+    
