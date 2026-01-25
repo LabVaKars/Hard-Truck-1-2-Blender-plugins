@@ -11,7 +11,10 @@ from .. import consts
 
 from .data_api_utils import (
     get_portal_visualize_node_group,
-    get_vert_collision_visualize_node_group
+    get_vert_collision_visualize_node_group,
+    get_way_path_visualize_node_group,
+    create_simple_value_driver,
+    create_way_path_flags_driver
 )
 
 from .common import (
@@ -41,7 +44,8 @@ from .scripts import (
     create_custom_attribute_c,
     select_similar_objects_by_type,
     select_similar_faces_by_type,
-    create_render_branch_materials
+    create_render_branch_materials,
+    create_way_path_materials
 )
 
 from .data_api_utils import (
@@ -59,19 +63,6 @@ from .blocktool_defs import (
     Pfb008, Pfb028, Pfb035, Pvb008, Pvb035,
     Blk050, Blk051, Blk052
 )
-
-
-
-
-from bpy.props import (StringProperty,
-                        BoolProperty,
-                        IntProperty,
-                        FloatProperty,
-                        EnumProperty,
-                        PointerProperty,
-                        FloatVectorProperty,
-                        CollectionProperty
-                        )
 
 from ..compatibility import (
     get_ui_region,
@@ -1067,6 +1058,63 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+@make_annotations
+class VisualiseWayPathEnableOperator(bpy.types.Operator):
+    bl_idname = "wm.visualise_way_path_enable_operator"
+    bl_label = "Enable path visuals"
+    bl_description = "Enable way path param visualizations"
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+        create_way_path_materials()
+        material_center = bpy.data.materials.get('WayPathCenter')
+        material_side = bpy.data.materials.get('WayPathSide')
+        material_border = bpy.data.materials.get('WayPathBorder')
+
+        way_list = [o for o in bpy.data.objects if o.get('block_type') == 50]
+
+        for way_obj in way_list:
+            # Adding new modifier
+            gnode_modifier = way_obj.modifiers.get('Way_path_node')
+            if gnode_modifier is None:
+                way_obj.modifiers.new('Way_path_node', type='NODES')
+                gnode_modifier = way_obj.modifiers.get('Way_path_node')
+            
+                # Setting node group
+                gnode_modifier.node_group = get_way_path_visualize_node_group()
+                input_name = gnode_modifier.node_group.inputs[1].identifier
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr2.c_get_prop())
+                input_name = gnode_modifier.node_group.inputs[2].identifier
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width1.c_get_prop())
+                input_name = gnode_modifier.node_group.inputs[3].identifier
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width2.c_get_prop())
+                input_name = gnode_modifier.node_group.inputs[4].identifier
+                create_way_path_flags_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_center
+                gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_border
+                gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_side
+                
+        return {'FINISHED'}
+
+
+@make_annotations
+class VisualiseWayPathDisableOperator(bpy.types.Operator):
+    bl_idname = "wm.visualise_way_path_disable_operator"
+    bl_label = "Disable path visuals"
+    bl_description = "Disable way path param visualizations"
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        way_list = [o for o in bpy.data.objects if o.get('block_type') == 50]
+
+        for way_obj in way_list:
+            gnode_modifier = way_obj.modifiers.get('Way_path_node')
+            if gnode_modifier is not None:
+                way_obj.modifiers.remove(gnode_modifier)
+                
+        return {'FINISHED'}
+
 
 # ------------------------------------------------------------------------
 # register and unregister
@@ -1102,7 +1150,9 @@ _classes = [
     VisualiseRenderTreeOperator,
     ApplyRenderTreeChangesOperator,
     VisualiseLODTreeOperator,
-    ApplyLODTreeChangesOperator
+    ApplyLODTreeChangesOperator,
+    VisualiseWayPathEnableOperator,
+    VisualiseWayPathDisableOperator
 ]
 
 def register():

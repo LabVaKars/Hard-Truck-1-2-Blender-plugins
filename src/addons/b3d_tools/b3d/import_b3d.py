@@ -1172,15 +1172,9 @@ def import_b3d(file, context, self, filepath):
                 bounding_sphere = struct.unpack("<4f",file.read(16))
 
                 verts_count = struct.unpack("i",file.read(4))[0]
-
                 unknown1 = struct.unpack("<i",file.read(4))[0]
-                unknown2 = struct.unpack("<i",file.read(4))[0]
-
+                unknown2 = struct.unpack("<i",file.read(4))[0]                
                 cnt = struct.unpack("i",file.read(4))[0]
-
-                coords = []
-                for i in range(verts_count):
-                    coords.append(struct.unpack("fff",file.read(12)))
 
                 params_raw = []
                 for i in range(cnt):
@@ -1188,6 +1182,11 @@ def import_b3d(file, context, self, filepath):
 
                 hex_string = ("".join([b.hex() for b in params_raw])).upper()
 
+                coords = []
+                for i in range(verts_count):
+                    coords.append(struct.unpack("fff",file.read(12)))
+
+                
                 if not used_blocks[str(block_type)]:
                     continue
 

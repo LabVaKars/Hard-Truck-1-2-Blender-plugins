@@ -45,102 +45,6 @@ def portal_visualize_node_group():
     separate_xyz.name = "Separate XYZ"
     separate_xyz.hide = True
 
-    #node Grid.001
-    grid_001 = portal_visualize.nodes.new("GeometryNodeMeshGrid")
-    grid_001.name = "Grid.001"
-    #Size X
-    grid_001.inputs[0].default_value = 2.0999999046325684
-    #Size Y
-    grid_001.inputs[1].default_value = 1.0
-    #Vertices X
-    grid_001.inputs[2].default_value = 2
-    #Vertices Y
-    grid_001.inputs[3].default_value = 2
-
-    #node Set Position.004
-    set_position_004 = portal_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position_004.name = "Set Position.004"
-    #Position
-    set_position_004.inputs[2].default_value = (0.0, 0.0, 0.0)
-    #Offset
-    set_position_004.inputs[3].default_value = (0.0, 0.0, 0.0)
-
-    #node Index.004
-    index_004 = portal_visualize.nodes.new("GeometryNodeInputIndex")
-    index_004.name = "Index.004"
-
-    #node Compare.004
-    compare_004 = portal_visualize.nodes.new("FunctionNodeCompare")
-    compare_004.name = "Compare.004"
-    compare_004.data_type = 'INT'
-    compare_004.mode = 'ELEMENT'
-    compare_004.operation = 'EQUAL'
-    #B_INT
-    compare_004.inputs[3].default_value = 0
-
-    #node Index.005
-    index_005 = portal_visualize.nodes.new("GeometryNodeInputIndex")
-    index_005.name = "Index.005"
-
-    #node Compare.005
-    compare_005 = portal_visualize.nodes.new("FunctionNodeCompare")
-    compare_005.name = "Compare.005"
-    compare_005.data_type = 'INT'
-    compare_005.mode = 'ELEMENT'
-    compare_005.operation = 'EQUAL'
-    #B_INT
-    compare_005.inputs[3].default_value = 1
-
-    #node Set Position.005
-    set_position_005 = portal_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position_005.name = "Set Position.005"
-    #Position
-    set_position_005.inputs[2].default_value = (0.0, 0.0, 0.0)
-    #Offset
-    set_position_005.inputs[3].default_value = (0.0, 0.0, 0.0)
-
-    #node Index.006
-    index_006 = portal_visualize.nodes.new("GeometryNodeInputIndex")
-    index_006.name = "Index.006"
-
-    #node Set Position.006
-    set_position_006 = portal_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position_006.name = "Set Position.006"
-    #Position
-    set_position_006.inputs[2].default_value = (0.0, 0.0, 0.0)
-    #Offset
-    set_position_006.inputs[3].default_value = (0.0, 0.0, 0.0)
-
-    #node Index.007
-    index_007 = portal_visualize.nodes.new("GeometryNodeInputIndex")
-    index_007.name = "Index.007"
-
-    #node Compare.006
-    compare_006 = portal_visualize.nodes.new("FunctionNodeCompare")
-    compare_006.name = "Compare.006"
-    compare_006.data_type = 'INT'
-    compare_006.mode = 'ELEMENT'
-    compare_006.operation = 'EQUAL'
-    #B_INT
-    compare_006.inputs[3].default_value = 2
-
-    #node Set Position.007
-    set_position_007 = portal_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position_007.name = "Set Position.007"
-    #Position
-    set_position_007.inputs[2].default_value = (0.0, 0.0, 0.0)
-    #Offset
-    set_position_007.inputs[3].default_value = (0.0, 0.0, 0.0)
-
-    #node Compare.007
-    compare_007 = portal_visualize.nodes.new("FunctionNodeCompare")
-    compare_007.name = "Compare.007"
-    compare_007.data_type = 'INT'
-    compare_007.mode = 'ELEMENT'
-    compare_007.operation = 'EQUAL'
-    #B_INT
-    compare_007.inputs[3].default_value = 3
-
     #node Position.001
     position_001 = portal_visualize.nodes.new("GeometryNodeInputPosition")
     position_001.name = "Position.001"
@@ -231,19 +135,6 @@ def portal_visualize_node_group():
     group_input.location = (-740.0, 100.0)
     separate_xyz_001.location = (40.0, 180.0)
     separate_xyz.location = (40.0, 240.0)
-    grid_001.location = (-460.0, -500.0)
-    set_position_004.location = (-240.0, -580.0)
-    index_004.location = (-620.0, -720.0)
-    compare_004.location = (-460.0, -700.0)
-    index_005.location = (-380.0, -880.0)
-    compare_005.location = (-220.0, -860.0)
-    set_position_005.location = (20.0, -720.0)
-    index_006.location = (-160.0, -1080.0)
-    set_position_006.location = (240.0, -920.0)
-    index_007.location = (100.0, -1280.0)
-    compare_006.location = (260.0, -1260.0)
-    set_position_007.location = (500.0, -1120.0)
-    compare_007.location = (0.0, -1060.0)
     position_001.location = (400.0, 0.0)
     index.location = (400.0, -60.0)
     group_output.location = (1140.0, 80.0)
@@ -255,6 +146,25 @@ def portal_visualize_node_group():
     sample_index.location = (-140.0, 60.0)
     combine_xyz_001.location = (220.0, 180.0)
     quadrilateral.location = (400.0, 200.0)
+
+    #Set dimensions
+    resample_curve.width, resample_curve.height = 140.0, 100.0
+    curve_to_points.width, curve_to_points.height = 140.0, 100.0
+    position.width, position.height = 140.0, 100.0
+    group_input.width, group_input.height = 140.0, 100.0
+    separate_xyz_001.width, separate_xyz_001.height = 140.0, 100.0
+    separate_xyz.width, separate_xyz.height = 140.0, 100.0
+    position_001.width, position_001.height = 140.0, 100.0
+    index.width, index.height = 140.0, 100.0
+    group_output.width, group_output.height = 140.0, 100.0
+    sample_index_002.width, sample_index_002.height = 140.0, 100.0
+    grid.width, grid.height = 140.0, 100.0
+    set_position.width, set_position.height = 140.0, 100.0
+    sample_index_001.width, sample_index_001.height = 140.0, 100.0
+    combine_xyz.width, combine_xyz.height = 140.0, 100.0
+    sample_index.width, sample_index.height = 140.0, 100.0
+    combine_xyz_001.width, combine_xyz_001.height = 140.0, 100.0
+    quadrilateral.width, quadrilateral.height = 140.0, 100.0
 
     #initialize portal_visualize links
     #resample_curve.Curve -> curve_to_points.Curve
@@ -283,30 +193,6 @@ def portal_visualize_node_group():
     portal_visualize.links.new(separate_xyz_001.outputs[0], combine_xyz_001.inputs[0])
     #separate_xyz_001.Y -> combine_xyz_001.Y
     portal_visualize.links.new(separate_xyz_001.outputs[1], combine_xyz_001.inputs[1])
-    #grid_001.Mesh -> set_position_004.Geometry
-    portal_visualize.links.new(grid_001.outputs[0], set_position_004.inputs[0])
-    #index_004.Index -> compare_004.A
-    portal_visualize.links.new(index_004.outputs[0], compare_004.inputs[2])
-    #compare_004.Result -> set_position_004.Selection
-    portal_visualize.links.new(compare_004.outputs[0], set_position_004.inputs[1])
-    #index_005.Index -> compare_005.A
-    portal_visualize.links.new(index_005.outputs[0], compare_005.inputs[2])
-    #compare_005.Result -> set_position_005.Selection
-    portal_visualize.links.new(compare_005.outputs[0], set_position_005.inputs[1])
-    #set_position_004.Geometry -> set_position_005.Geometry
-    portal_visualize.links.new(set_position_004.outputs[0], set_position_005.inputs[0])
-    #index_006.Index -> compare_007.A
-    portal_visualize.links.new(index_006.outputs[0], compare_007.inputs[2])
-    #compare_007.Result -> set_position_006.Selection
-    portal_visualize.links.new(compare_007.outputs[0], set_position_006.inputs[1])
-    #set_position_005.Geometry -> set_position_006.Geometry
-    portal_visualize.links.new(set_position_005.outputs[0], set_position_006.inputs[0])
-    #index_007.Index -> compare_006.A
-    portal_visualize.links.new(index_007.outputs[0], compare_006.inputs[2])
-    #compare_006.Result -> set_position_007.Selection
-    portal_visualize.links.new(compare_006.outputs[0], set_position_007.inputs[1])
-    #set_position_006.Geometry -> set_position_007.Geometry
-    portal_visualize.links.new(set_position_006.outputs[0], set_position_007.inputs[0])
     #quadrilateral.Curve -> sample_index_002.Geometry
     portal_visualize.links.new(quadrilateral.outputs[0], sample_index_002.inputs[0])
     #position_001.Position -> sample_index_002.Value

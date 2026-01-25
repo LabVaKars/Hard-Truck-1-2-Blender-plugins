@@ -611,6 +611,23 @@ def hide_conditionals(root, group):
     else:
         process_cond(root, group, True)
 
+def create_way_path_materials():
+    mat_name = 'WayPathCenter'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (1.0, 0.0, 0.0, 1.0))
+
+    mat_name = 'WayPathSide'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (1.0, 0.0, 1.0, 1.0))
+
+    mat_name = 'WayPathBorder'
+    material = bpy.data.materials.get(mat_name)
+    if not material:
+        create_color_material_node(mat_name, (1.0, 1.0, 0.0, 1.0))
+
+
 def create_render_branch_materials(color_cnt):
     def gradient_three(start, mid, end, steps):
 

@@ -443,6 +443,14 @@ class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
         layout.operator("wm.show_hide_room_borders_operator")
         layout.operator("wm.show_hide_generator_operator")
 
+
+        box = layout.box()
+        row = box.row()
+        col = row.column()
+        col.operator("wm.visualise_way_path_enable_operator")
+        col = row.column()
+        col.operator("wm.visualise_way_path_disable_operator")
+        
         box = layout.box()
         row = box.row()
         col = row.column()

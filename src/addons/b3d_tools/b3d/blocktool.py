@@ -127,7 +127,10 @@ class BlockClassHandler():
     @staticmethod
     def get_block_object(bnum, btype = BlockClassType.BLOCK, multiple_edit = True):
         bname = BlockClassHandler.get_mytool_block_name(bnum, btype, multiple_edit)
-        return [bname, BlockClassHandler.block_objects[bname]]
+        if BlockClassHandler.block_objects.get(bname) is not None:
+            return [bname, BlockClassHandler.block_objects[bname]]
+        else:
+            return ['', {}]
 
     @staticmethod
     def create_type_class(bname, fields, multiple_edit = True):

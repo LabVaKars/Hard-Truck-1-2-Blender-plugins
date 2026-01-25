@@ -4,6 +4,7 @@ from .geom_nodes.render_branch_visualize import (render_branch_visualize_node_gr
 from .geom_nodes.lod_branch_visualize import (lod_branch_visualize_node_group)
 from .geom_nodes.portal_visualize import (portal_visualize_node_group)
 from .geom_nodes.vert_collision_visualize import (vert_collision_visualize_node_group)
+from .geom_nodes.way_path_visualize import (way_path_visualize_node_group)
 
 from ..compatibility import (
     get_context_collection_objects,
@@ -35,6 +36,12 @@ def get_portal_visualize_node_group():
 
 def get_vert_collision_visualize_node_group():
     result = bpy.data.node_groups.get('Vert_collision_visualize')
+    if not result:
+        result = vert_collision_visualize_node_group()
+    return result
+
+def get_way_path_visualize_node_group():
+    result = bpy.data.node_groups.get('Way_path_visualize')
     if not result:
         result = vert_collision_visualize_node_group()
     return result
@@ -177,6 +184,18 @@ def create_vector_location_driver(driven_obj, dname, b3d_obj, pname):
 #     modifier = src_obj.modifiers[modif_name]
 #     input_name = modifier.node_group.inputs[input_index].identifier
 #     create_vector_location_driver(src_obj, '["{}"]'.format(input_name), b3d_obj, pname)
+
+def create_way_path_flags_driver(driven_obj, dname, b3d_obj, pname):
+    d = driven_obj.driver_add(dname).driver
+    d.type = 'SCRIPTED'
+    
+    v1 = d.variables.new()
+    v1.type = 'SINGLE_PROP'
+    v1.name = 'flags'
+    v1.targets[0].id = b3d_obj
+    v1.targets[0].data_path = '["{}"]'.format(pname)
+    
+    d.expression =  '({name} & 1 == 1) and ({name} & 2 == 0)'.format(name=v1.name)
 
 
 def create_circle_center_rad_driver(driven_obj, dname, empty_obj):
