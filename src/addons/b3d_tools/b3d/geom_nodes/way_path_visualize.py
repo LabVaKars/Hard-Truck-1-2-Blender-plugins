@@ -22,15 +22,9 @@ def way_path_visualize_node_group():
     #node Reroute.005
     reroute_005 = way_path_visualize.nodes.new("NodeReroute")
     reroute_005.name = "Reroute.005"
-    #node Reroute.007
-    reroute_007 = way_path_visualize.nodes.new("NodeReroute")
-    reroute_007.name = "Reroute.007"
     #node Reroute.008
     reroute_008 = way_path_visualize.nodes.new("NodeReroute")
     reroute_008.name = "Reroute.008"
-    #node Reroute.010
-    reroute_010 = way_path_visualize.nodes.new("NodeReroute")
-    reroute_010.name = "Reroute.010"
     #node Math.012
     math_012 = way_path_visualize.nodes.new("ShaderNodeMath")
     math_012.label = "Step_decimal"
@@ -153,9 +147,6 @@ def way_path_visualize_node_group():
     math_015.operation = 'SUBTRACT'
     math_015.use_clamp = False
 
-    #node Reroute.018
-    reroute_018 = way_path_visualize.nodes.new("NodeReroute")
-    reroute_018.name = "Reroute.018"
     #node Index
     index = way_path_visualize.nodes.new("GeometryNodeInputIndex")
     index.name = "Index"
@@ -274,26 +265,33 @@ def way_path_visualize_node_group():
     #node Reroute.013
     reroute_013 = way_path_visualize.nodes.new("NodeReroute")
     reroute_013.name = "Reroute.013"
-    #node Set Position
-    set_position = way_path_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position.name = "Set Position"
-    #Selection
-    set_position.inputs[1].default_value = True
+    #node Math.001
+    math_001 = way_path_visualize.nodes.new("ShaderNodeMath")
+    math_001.name = "Math.001"
+    math_001.operation = 'MULTIPLY'
+    math_001.use_clamp = False
 
-    #node Set Position.001
-    set_position_001 = way_path_visualize.nodes.new("GeometryNodeSetPosition")
-    set_position_001.name = "Set Position.001"
-    #Selection
-    set_position_001.inputs[1].default_value = True
+    #node Value
+    value = way_path_visualize.nodes.new("ShaderNodeValue")
+    value.label = "Roadside_const"
+    value.name = "Value"
 
+    value.outputs[0].default_value = 20.0
+    #node Reroute.007
+    reroute_007 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_007.name = "Reroute.007"
+    #node Reroute.010
+    reroute_010 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_010.name = "Reroute.010"
+    #node Reroute.018
+    reroute_018 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_018.name = "Reroute.018"
     #node Reroute.030
     reroute_030 = way_path_visualize.nodes.new("NodeReroute")
     reroute_030.name = "Reroute.030"
     #node Set Position.002
     set_position_002 = way_path_visualize.nodes.new("GeometryNodeSetPosition")
     set_position_002.name = "Set Position.002"
-    #Selection
-    set_position_002.inputs[1].default_value = True
 
     #node Set Spline Type
     set_spline_type = way_path_visualize.nodes.new("GeometryNodeCurveSplineType")
@@ -380,9 +378,6 @@ def way_path_visualize_node_group():
     switch_004.name = "Switch.004"
     switch_004.input_type = 'GEOMETRY'
 
-    #node Reroute.020
-    reroute_020 = way_path_visualize.nodes.new("NodeReroute")
-    reroute_020.name = "Reroute.020"
     #node Reroute.028
     reroute_028 = way_path_visualize.nodes.new("NodeReroute")
     reroute_028.name = "Reroute.028"
@@ -474,7 +469,7 @@ def way_path_visualize_node_group():
     #Resolution
     curve_circle.inputs[0].default_value = 3
     #Radius
-    curve_circle.inputs[4].default_value = 0.10000000149011612
+    curve_circle.inputs[4].default_value = 0.30000001192092896
 
     #node Set Spline Type.008
     set_spline_type_008 = way_path_visualize.nodes.new("GeometryNodeCurveSplineType")
@@ -542,21 +537,21 @@ def way_path_visualize_node_group():
     #node Set Position.003
     set_position_003 = way_path_visualize.nodes.new("GeometryNodeSetPosition")
     set_position_003.name = "Set Position.003"
-    #Selection
-    set_position_003.inputs[1].default_value = True
 
-    #node Math.001
-    math_001 = way_path_visualize.nodes.new("ShaderNodeMath")
-    math_001.name = "Math.001"
-    math_001.operation = 'MULTIPLY'
-    math_001.use_clamp = False
+    #node Set Position
+    set_position = way_path_visualize.nodes.new("GeometryNodeSetPosition")
+    set_position.name = "Set Position"
 
-    #node Value
-    value = way_path_visualize.nodes.new("ShaderNodeValue")
-    value.label = "Roadside_const"
-    value.name = "Value"
+    #node Set Position.001
+    set_position_001 = way_path_visualize.nodes.new("GeometryNodeSetPosition")
+    set_position_001.name = "Set Position.001"
 
-    value.outputs[0].default_value = 20.0
+    #node Reroute.034
+    reroute_034 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_034.name = "Reroute.034"
+    #node Reroute.032
+    reroute_032 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_032.name = "Reroute.032"
     #node Group Input
     group_input = way_path_visualize.nodes.new("NodeGroupInput")
     group_input.label = "Roadside_multiplier"
@@ -582,29 +577,54 @@ def way_path_visualize_node_group():
     way_path_visualize.inputs.new('NodeSocketBool', "Is_Bezier")
     way_path_visualize.inputs[4].attribute_domain = 'POINT'
 
+    #input Only_right_lane
+    way_path_visualize.inputs.new('NodeSocketBool', "Only_right_lane")
+    way_path_visualize.inputs[5].attribute_domain = 'POINT'
+
+    #input Only_left_lane
+    way_path_visualize.inputs.new('NodeSocketBool', "Only_left_lane")
+    way_path_visualize.inputs[6].attribute_domain = 'POINT'
+
     #input Center_material
     way_path_visualize.inputs.new('NodeSocketMaterial', "Center_material")
-    way_path_visualize.inputs[5].attribute_domain = 'POINT'
+    way_path_visualize.inputs[7].attribute_domain = 'POINT'
 
     #input Border_material
     way_path_visualize.inputs.new('NodeSocketMaterial', "Border_material")
-    way_path_visualize.inputs[6].attribute_domain = 'POINT'
+    way_path_visualize.inputs[8].attribute_domain = 'POINT'
 
     #input Side_material
     way_path_visualize.inputs.new('NodeSocketMaterial', "Side_material")
-    way_path_visualize.inputs[7].attribute_domain = 'POINT'
+    way_path_visualize.inputs[9].attribute_domain = 'POINT'
 
 
 
+    #node Reroute.031
+    reroute_031 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_031.name = "Reroute.031"
+    #node Reroute.033
+    reroute_033 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_033.name = "Reroute.033"
+    #node Boolean Math.001
+    boolean_math_001 = way_path_visualize.nodes.new("FunctionNodeBooleanMath")
+    boolean_math_001.name = "Boolean Math.001"
+    boolean_math_001.operation = 'IMPLY'
+
+    #node Boolean Math.002
+    boolean_math_002 = way_path_visualize.nodes.new("FunctionNodeBooleanMath")
+    boolean_math_002.name = "Boolean Math.002"
+    boolean_math_002.operation = 'IMPLY'
+
+    #node Reroute.020
+    reroute_020 = way_path_visualize.nodes.new("NodeReroute")
+    reroute_020.name = "Reroute.020"
 
 
     #Set locations
     math_010.location = (-1504.513916015625, -74.47493743896484)
     math_009.location = (-1504.0213623046875, 79.25114440917969)
     reroute_005.location = (-1280.0, -220.0)
-    reroute_007.location = (-1120.0, -100.0)
     reroute_008.location = (-1120.0, -240.0)
-    reroute_010.location = (-1120.0, -400.0)
     math_012.location = (-1020.0, 60.0)
     domain_size.location = (-1260.0, 320.0)
     reroute_012.location = (-1060.0, -700.0)
@@ -626,7 +646,6 @@ def way_path_visualize_node_group():
     separate_xyz_001.location = (-2040.0, -260.0)
     curve_tangent.location = (-2200.0, -320.0)
     math_015.location = (-1020.0, -140.0)
-    reroute_018.location = (-1120.0, -560.0)
     index.location = (-1078.1119384765625, 418.9790344238281)
     compare.location = (-860.0, 520.0)
     boolean_math.location = (-660.0, 520.0)
@@ -651,57 +670,66 @@ def way_path_visualize_node_group():
     reroute_016.location = (-1060.0, 20.0)
     reroute_015.location = (-1100.0, -620.0)
     reroute_013.location = (-1060.0, -720.0)
-    set_position.location = (-235.03012084960938, 119.72059631347656)
-    set_position_001.location = (-233.0858154296875, -36.77120590209961)
-    reroute_030.location = (-80.0, -240.0)
-    set_position_002.location = (-240.0, -320.0)
-    set_spline_type.location = (-20.0, -560.0)
-    set_spline_type_001.location = (-20.0, -500.0)
-    set_spline_type_002.location = (-20.0, -400.0)
-    set_spline_type_003.location = (-20.0, -340.0)
-    set_spline_type_004.location = (-20.0, -240.0)
-    set_spline_type_005.location = (-20.0, -180.0)
-    set_spline_type_009.location = (-20.0, 140.0)
-    reroute_022.location = (240.0, -440.0)
-    switch_003.location = (200.0, -180.0)
-    reroute_023.location = (240.0, -280.0)
-    reroute_024.location = (240.0, -100.0)
-    reroute_025.location = (240.0, 40.0)
-    switch_004.location = (200.0, -20.0)
-    reroute_020.location = (160.0, -700.0)
-    reroute_028.location = (160.0, 120.0)
-    reroute_027.location = (160.0, -60.0)
-    reroute_026.location = (160.0, -200.0)
-    reroute_021.location = (160.0, -360.0)
-    reroute_029.location = (160.0, -520.0)
-    set_material.location = (700.0, 120.0)
-    set_material_001.location = (700.0, -40.0)
-    set_material_004.location = (700.0, -180.0)
-    set_material_002.location = (700.0, -500.0)
-    join_geometry.location = (980.0, -200.0)
-    group_output.location = (1200.0, -200.0)
-    set_material_003.location = (700.0, -340.0)
-    reroute_003.location = (420.0, -440.0)
-    reroute_004.location = (420.0, -600.0)
-    reroute_002.location = (420.0, -280.0)
-    reroute.location = (420.0, 20.0)
-    reroute_001.location = (420.0, -140.0)
-    set_spline_type_007.location = (-20.0, -20.0)
-    curve_circle.location = (200.0, 280.0)
-    set_spline_type_008.location = (-20.0, 80.0)
-    set_spline_type_006.location = (-20.0, -80.0)
-    switch_002.location = (200.0, -340.0)
-    switch_001.location = (200.0, -500.0)
-    switch_005.location = (200.0, 140.0)
-    curve_to_mesh.location = (460.0, 120.0)
-    curve_to_mesh_002.location = (460.0, -180.0)
-    curve_to_mesh_001.location = (460.0, -40.0)
-    curve_to_mesh_003.location = (460.0, -340.0)
-    curve_to_mesh_004.location = (460.0, -500.0)
-    set_position_003.location = (-240.0, -500.0)
     math_001.location = (-1020.0, -320.0)
     value.location = (-1320.0, -440.0)
+    reroute_007.location = (-1120.0, -100.0)
+    reroute_010.location = (-1120.0, -380.0)
+    reroute_018.location = (-1120.0, -560.0)
+    reroute_030.location = (0.0, -240.0)
+    set_position_002.location = (-160.0, -320.0)
+    set_spline_type.location = (60.0, -560.0)
+    set_spline_type_001.location = (60.0, -500.0)
+    set_spline_type_002.location = (60.0, -400.0)
+    set_spline_type_003.location = (60.0, -340.0)
+    set_spline_type_004.location = (60.0, -240.0)
+    set_spline_type_005.location = (60.0, -180.0)
+    set_spline_type_009.location = (60.0, 140.0)
+    reroute_022.location = (320.0, -440.0)
+    switch_003.location = (280.0, -180.0)
+    reroute_023.location = (320.0, -280.0)
+    reroute_024.location = (320.0, -100.0)
+    reroute_025.location = (320.0, 40.0)
+    switch_004.location = (280.0, -20.0)
+    reroute_028.location = (240.0, 120.0)
+    reroute_027.location = (240.0, -60.0)
+    reroute_026.location = (240.0, -200.0)
+    reroute_021.location = (240.0, -360.0)
+    reroute_029.location = (240.0, -520.0)
+    set_material.location = (780.0, 120.0)
+    set_material_001.location = (780.0, -40.0)
+    set_material_004.location = (780.0, -180.0)
+    set_material_002.location = (780.0, -500.0)
+    join_geometry.location = (1060.0, -200.0)
+    group_output.location = (1280.0, -200.0)
+    set_material_003.location = (780.0, -340.0)
+    reroute_003.location = (500.0, -440.0)
+    reroute_004.location = (500.0, -600.0)
+    reroute_002.location = (500.0, -280.0)
+    reroute.location = (500.0, 20.0)
+    reroute_001.location = (500.0, -140.0)
+    set_spline_type_007.location = (60.0, -20.0)
+    curve_circle.location = (280.0, 280.0)
+    set_spline_type_008.location = (60.0, 80.0)
+    set_spline_type_006.location = (60.0, -80.0)
+    switch_002.location = (280.0, -340.0)
+    switch_001.location = (280.0, -500.0)
+    switch_005.location = (280.0, 140.0)
+    curve_to_mesh.location = (540.0, 120.0)
+    curve_to_mesh_002.location = (540.0, -180.0)
+    curve_to_mesh_001.location = (540.0, -40.0)
+    curve_to_mesh_003.location = (540.0, -340.0)
+    curve_to_mesh_004.location = (540.0, -500.0)
+    set_position_003.location = (-160.0, -500.0)
+    set_position.location = (-160.0, 120.0)
+    set_position_001.location = (-160.0, -40.0)
+    reroute_034.location = (-240.0, -300.0)
+    reroute_032.location = (-240.0, -260.0)
     group_input.location = (-1320.0, -540.0)
+    reroute_031.location = (-660.0, -260.0)
+    reroute_033.location = (-480.0, -300.0)
+    boolean_math_001.location = (-800.0, -740.0)
+    boolean_math_002.location = (-620.0, -740.0)
+    reroute_020.location = (240.0, -720.0)
 
     #initialize way_path_visualize links
     #separate_xyz_001.X -> math_006.Value
@@ -848,8 +876,6 @@ def way_path_visualize_node_group():
     way_path_visualize.links.new(reroute_006.outputs[0], set_position.inputs[0])
     #reroute_008.Output -> reroute_007.Input
     way_path_visualize.links.new(reroute_008.outputs[0], reroute_007.inputs[0])
-    #reroute_007.Output -> set_position_001.Geometry
-    way_path_visualize.links.new(reroute_007.outputs[0], set_position_001.inputs[0])
     #reroute_010.Output -> reroute_008.Input
     way_path_visualize.links.new(reroute_010.outputs[0], reroute_008.inputs[0])
     #math_015.Value -> math_016.Value
@@ -859,11 +885,11 @@ def way_path_visualize_node_group():
     #math_007.Value -> math_012.Value
     way_path_visualize.links.new(math_007.outputs[0], math_012.inputs[0])
     #group_input.Center_material -> reroute_009.Input
-    way_path_visualize.links.new(group_input.outputs[5], reroute_009.inputs[0])
+    way_path_visualize.links.new(group_input.outputs[7], reroute_009.inputs[0])
     #group_input.Border_material -> reroute_011.Input
-    way_path_visualize.links.new(group_input.outputs[6], reroute_011.inputs[0])
+    way_path_visualize.links.new(group_input.outputs[8], reroute_011.inputs[0])
     #group_input.Side_material -> reroute_012.Input
-    way_path_visualize.links.new(group_input.outputs[7], reroute_012.inputs[0])
+    way_path_visualize.links.new(group_input.outputs[9], reroute_012.inputs[0])
     #reroute_009.Output -> reroute_014.Input
     way_path_visualize.links.new(reroute_009.outputs[0], reroute_014.inputs[0])
     #reroute_011.Output -> reroute_015.Input
@@ -876,8 +902,6 @@ def way_path_visualize_node_group():
     way_path_visualize.links.new(group_input.outputs[0], reroute_018.inputs[0])
     #reroute_018.Output -> reroute_010.Input
     way_path_visualize.links.new(reroute_018.outputs[0], reroute_010.inputs[0])
-    #reroute_018.Output -> set_position_003.Geometry
-    way_path_visualize.links.new(reroute_018.outputs[0], set_position_003.inputs[0])
     #position.Position -> set_position_001.Position
     way_path_visualize.links.new(position.outputs[0], set_position_001.inputs[2])
     #switch.Output -> vector_math.Vector
@@ -986,4 +1010,32 @@ def way_path_visualize_node_group():
     way_path_visualize.links.new(curve_to_mesh_004.outputs[0], set_material_002.inputs[0])
     #value.Value -> math_001.Value
     way_path_visualize.links.new(value.outputs[0], math_001.inputs[1])
+    #reroute_031.Output -> reroute_032.Input
+    way_path_visualize.links.new(reroute_031.outputs[0], reroute_032.inputs[0])
+    #reroute_007.Output -> set_position_001.Geometry
+    way_path_visualize.links.new(reroute_007.outputs[0], set_position_001.inputs[0])
+    #reroute_018.Output -> set_position_003.Geometry
+    way_path_visualize.links.new(reroute_018.outputs[0], set_position_003.inputs[0])
+    #reroute_032.Output -> set_position_001.Selection
+    way_path_visualize.links.new(reroute_032.outputs[0], set_position_001.inputs[1])
+    #reroute_032.Output -> set_position_003.Selection
+    way_path_visualize.links.new(reroute_032.outputs[0], set_position_003.inputs[1])
+    #boolean_math_001.Boolean -> reroute_031.Input
+    way_path_visualize.links.new(boolean_math_001.outputs[0], reroute_031.inputs[0])
+    #boolean_math_002.Boolean -> reroute_033.Input
+    way_path_visualize.links.new(boolean_math_002.outputs[0], reroute_033.inputs[0])
+    #reroute_033.Output -> reroute_034.Input
+    way_path_visualize.links.new(reroute_033.outputs[0], reroute_034.inputs[0])
+    #reroute_034.Output -> set_position.Selection
+    way_path_visualize.links.new(reroute_034.outputs[0], set_position.inputs[1])
+    #reroute_034.Output -> set_position_002.Selection
+    way_path_visualize.links.new(reroute_034.outputs[0], set_position_002.inputs[1])
+    #group_input.Only_right_lane -> boolean_math_001.Boolean
+    way_path_visualize.links.new(group_input.outputs[5], boolean_math_001.inputs[1])
+    #group_input.Only_left_lane -> boolean_math_001.Boolean
+    way_path_visualize.links.new(group_input.outputs[6], boolean_math_001.inputs[0])
+    #group_input.Only_right_lane -> boolean_math_002.Boolean
+    way_path_visualize.links.new(group_input.outputs[5], boolean_math_002.inputs[0])
+    #group_input.Only_left_lane -> boolean_math_002.Boolean
+    way_path_visualize.links.new(group_input.outputs[6], boolean_math_002.inputs[1])
     return way_path_visualize

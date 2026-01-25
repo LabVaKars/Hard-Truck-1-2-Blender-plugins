@@ -43,7 +43,7 @@ def get_vert_collision_visualize_node_group():
 def get_way_path_visualize_node_group():
     result = bpy.data.node_groups.get('Way_path_visualize')
     if not result:
-        result = vert_collision_visualize_node_group()
+        result = way_path_visualize_node_group()
     return result
 
 def get_render_center_object(name, location, collection = None):
@@ -185,7 +185,7 @@ def create_vector_location_driver(driven_obj, dname, b3d_obj, pname):
 #     input_name = modifier.node_group.inputs[input_index].identifier
 #     create_vector_location_driver(src_obj, '["{}"]'.format(input_name), b3d_obj, pname)
 
-def create_way_path_flags_driver(driven_obj, dname, b3d_obj, pname):
+def create_way_path_type_driver(driven_obj, dname, b3d_obj, pname):
     d = driven_obj.driver_add(dname).driver
     d.type = 'SCRIPTED'
     
@@ -195,7 +195,33 @@ def create_way_path_flags_driver(driven_obj, dname, b3d_obj, pname):
     v1.targets[0].id = b3d_obj
     v1.targets[0].data_path = '["{}"]'.format(pname)
     
-    d.expression =  '({name} & 1 == 1) and ({name} & 2 == 0)'.format(name=v1.name)
+    d.expression =  '(({name} & 1) == 1) and ((({name} & 2) >> 1) == 0)'.format(name=v1.name)
+
+
+def create_way_path_right_lane_driver(driven_obj, dname, b3d_obj, pname):
+    d = driven_obj.driver_add(dname).driver
+    d.type = 'SCRIPTED'
+    
+    v1 = d.variables.new()
+    v1.type = 'SINGLE_PROP'
+    v1.name = 'flags'
+    v1.targets[0].id = b3d_obj
+    v1.targets[0].data_path = '["{}"]'.format(pname)
+    
+    d.expression =  '(({} & 4) >> 2) == 1'.format(v1.name)
+
+
+def create_way_path_left_lane_driver(driven_obj, dname, b3d_obj, pname):
+    d = driven_obj.driver_add(dname).driver
+    d.type = 'SCRIPTED'
+    
+    v1 = d.variables.new()
+    v1.type = 'SINGLE_PROP'
+    v1.name = 'flags'
+    v1.targets[0].id = b3d_obj
+    v1.targets[0].data_path = '["{}"]'.format(pname)
+    
+    d.expression =  '(({} & 8) >> 3) == 1'.format(v1.name)
 
 
 def create_circle_center_rad_driver(driven_obj, dname, empty_obj):

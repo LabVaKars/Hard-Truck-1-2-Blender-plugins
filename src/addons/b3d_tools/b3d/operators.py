@@ -14,7 +14,9 @@ from .data_api_utils import (
     get_vert_collision_visualize_node_group,
     get_way_path_visualize_node_group,
     create_simple_value_driver,
-    create_way_path_flags_driver
+    create_way_path_type_driver,
+    create_way_path_right_lane_driver,
+    create_way_path_left_lane_driver
 )
 
 from .common import (
@@ -1089,10 +1091,14 @@ class VisualiseWayPathEnableOperator(bpy.types.Operator):
                 input_name = gnode_modifier.node_group.inputs[3].identifier
                 create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width2.c_get_prop())
                 input_name = gnode_modifier.node_group.inputs[4].identifier
-                create_way_path_flags_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
-                gnode_modifier[gnode_modifier.node_group.inputs[5].identifier] = material_center
-                gnode_modifier[gnode_modifier.node_group.inputs[6].identifier] = material_border
-                gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_side
+                create_way_path_type_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                input_name = gnode_modifier.node_group.inputs[5].identifier
+                create_way_path_right_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                input_name = gnode_modifier.node_group.inputs[6].identifier
+                create_way_path_left_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_center
+                gnode_modifier[gnode_modifier.node_group.inputs[8].identifier] = material_border
+                gnode_modifier[gnode_modifier.node_group.inputs[9].identifier] = material_side
                 
         return {'FINISHED'}
 
@@ -1111,6 +1117,18 @@ class VisualiseWayPathDisableOperator(bpy.types.Operator):
         for way_obj in way_list:
             gnode_modifier = way_obj.modifiers.get('Way_path_node')
             if gnode_modifier is not None:
+                input_name = gnode_modifier.node_group.inputs[1].identifier
+                gnode_modifier.driver_remove(input_name)
+                input_name = gnode_modifier.node_group.inputs[2].identifier
+                gnode_modifier.driver_remove(input_name)
+                input_name = gnode_modifier.node_group.inputs[3].identifier
+                gnode_modifier.driver_remove(input_name)
+                input_name = gnode_modifier.node_group.inputs[4].identifier
+                gnode_modifier.driver_remove(input_name)
+                input_name = gnode_modifier.node_group.inputs[5].identifier
+                gnode_modifier.driver_remove(input_name)
+                input_name = gnode_modifier.node_group.inputs[6].identifier
+                gnode_modifier.driver_remove(input_name)
                 way_obj.modifiers.remove(gnode_modifier)
                 
         return {'FINISHED'}
