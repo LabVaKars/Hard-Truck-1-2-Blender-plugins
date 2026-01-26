@@ -237,6 +237,19 @@ def remove_transforms():
         space.select_set(True)
     bpy.ops.object.delete()
 
+def show_obj_by_type(self, block_type):
+    objs = [cn for cn in bpy.data.objects if cn.get("block_type") is not None and cn["block_type"]==block_type]
+    for obj in objs:
+        set_object_hidden(obj, False)
+    self.report({'INFO'}, "{} (block {}) objects are shown".format(len(objs), block_type))
+
+def hide_obj_by_type(self, block_type):
+    objs = [cn for cn in bpy.data.objects if cn.get("block_type") is not None and cn["block_type"]==block_type]
+    for obj in objs:
+        set_object_hidden(obj, True)
+    self.report({'INFO'}, "{} (block {}) objects are hidden".format(len(objs), block_type))
+
+
 
 def show_hide_obj_by_type(self, block_type):
     objs = [cn for cn in bpy.data.objects if cn.get("block_type") is not None and cn["block_type"]==block_type]

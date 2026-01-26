@@ -31,6 +31,46 @@ from .common import (
     get_current_res_index
 )
 
+from .operators import (    
+    SetParentOperator,
+    SingleAddOperator,
+    HierarchyAddOperator,
+    CastAddOperator,
+    # getters
+    GetValuesOperator,
+    GetFaceValuesOperator,
+    GetVertexValuesOperator,
+    # setters
+    SetRoomAndModuleOperator,
+    SetValuesOperator,
+    SetFaceValuesOperator,
+    SetVertexValuesOperator,
+    # additional options
+    ApplyTransformsOperator,
+    RemoveTransformsOperator,
+    Show2DCollisionsOperator,
+    Hide2DCollisionsOperator,
+    ShowCollisionsOperator,
+    HideCollisionsOperator,
+    ShowRoomBordersOperator,
+    HideRoomBordersOperator,
+    ShowGeneratorsOperator,
+    HideGeneratorsOperator,
+    ShowLODOperator,
+    HideLODOperator,
+    ShowConditionalsOperator,
+    HideConditionalsOperator,
+    ShowHideSphereOperator,
+    SelectSimilarObjectsOperator,
+    SelectSimilarFacesOperator,
+    VisualiseRenderTreeOperator,
+    ApplyRenderTreeChangesOperator,
+    VisualiseLODTreeOperator,
+    ApplyLODTreeChangesOperator,
+    VisualiseWayPathEnableOperator,
+    VisualiseWayPathDisableOperator
+)
+
 
 from ..common import (
     get_panel_tool,
@@ -110,7 +150,7 @@ class OBJECT_PT_b3d_single_add_panel(bpy.types.Panel):
 
         draw_fields_by_type(self.layout, block_type)
 
-        layout.operator("wm.single_add_operator")
+        layout.operator(SingleAddOperator.bl_idname)
 
 class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_hier_add_panel"
@@ -140,10 +180,10 @@ class OBJECT_PT_b3d_hier_add_panel(bpy.types.Panel):
 
         if current_hier == "LOD_9":
             draw_fields_by_type(self.layout, 9)
-            layout.operator("wm.hierarchy_add_operator")
+            layout.operator(HierarchyAddOperator.bl_idname)
         elif current_hier == "LOD_10":
             draw_fields_by_type(self.layout, 10)
-            layout.operator("wm.hierarchy_add_operator")
+            layout.operator(HierarchyAddOperator.bl_idname)
         elif current_hier == "LOD_21":
             draw_fields_by_type(self.layout, 21)
 
@@ -170,7 +210,7 @@ class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
         c = split.column()
         c.prop(mytool, 'parent_str')
         c = split.column()
-        c.operator("wm.set_parent_operator")
+        c.operator(SetParentOperator.bl_idname)
 
         layout.prop(mytool, "cast_type_enum")
         cast_type = mytool.cast_type_enum
@@ -180,7 +220,7 @@ class OBJECT_PT_b3d_cast_add_panel(bpy.types.Panel):
             box.prop(mytool, "vertex_block_enum")
             box.prop(mytool, "poly_block_enum")
 
-        box.operator("wm.cast_add_operator")
+        box.operator(CastAddOperator.bl_idname)
 
 class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_pfb_edit_panel"
@@ -217,9 +257,9 @@ class OBJECT_PT_b3d_pfb_edit_panel(bpy.types.Panel):
                 block_type = None
 
             if block_type in [8, 28, 35]:
-                layout.operator("wm.get_face_values_operator")
-                layout.operator("wm.set_face_values_operator")
-                layout.operator("wm.select_similar_faces_operator")
+                layout.operator(GetFaceValuesOperator.bl_idname)
+                layout.operator(SetFaceValuesOperator.bl_idname)
+                layout.operator(SelectSimilarFacesOperator.bl_idname)
 
             if block_type == 8:
                 draw_fields_by_type(self.layout, 8, BlockClassType.PER_FACE_BLOCK)
@@ -270,8 +310,8 @@ class OBJECT_PT_b3d_pvb_edit_panel(bpy.types.Panel):
                 draw_fields_by_type(self.layout, 35, BlockClassType.PER_VERTEX_BLOCK)
 
             if block_type in [8, 28, 35]:
-                layout.operator("wm.get_vertex_values_operator")
-                layout.operator("wm.set_vertex_values_operator")
+                layout.operator(GetVertexValuesOperator.bl_idname)
+                layout.operator(SetVertexValuesOperator.bl_idname)
 
 class OBJECT_PT_b3d_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_edit_panel"
@@ -326,10 +366,10 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
 
                 row = layout.row()
                 col = row.column()
-                col.operator("wm.get_block_values_operator")
+                col.operator(GetValuesOperator.bl_idname)
                 col = row.column()
-                col.operator("wm.set_block_values_operator")
-                layout.operator("wm.select_similar_objects_operator")
+                col.operator(SetValuesOperator.bl_idname)
+                layout.operator(SelectSimilarObjectsOperator.bl_idname)
 
                 draw_fields_by_type(self.layout, block_type)
 
@@ -352,30 +392,17 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
         layout = self.layout
         mytool = get_panel_tool(context)
 
-        #for i in range(len(bpy.context.selected_objects)):
-
         b3d_obj = get_active_object()
 
-        # if len(bpy.context.selected_objects):
-        #     for i in range(1):
         if b3d_obj is not None:
 
             if consts.BLOCK_TYPE in b3d_obj:
                 block_type = b3d_obj[consts.BLOCK_TYPE]
-            # else:
-            #     block_type = None
 
                 len_str = str(len(b3d_obj.children))
                 
                 draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, False)
 
-            # else:
-            #     self.layout.label(text="Выбранный объект не имеет типа.")
-            #     self.layout.label(text="Чтобы указать его, нажмите на кнопку сохранения настроек.")
-
-            # layout.operator("wm.del_block_values_operator")
-            # layout.operator("wm.fix_uv_operator")
-            # layout.operator("wm.fix_verts_operator")
 
 class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
     bl_idname = "OBJECT_PT_b3d_hier_edit_panel"
@@ -403,15 +430,15 @@ class OBJECT_PT_b3d_hier_edit_panel(bpy.types.Panel):
         if current_hier == "LOD_9":
             # draw_enum(box, 'render_tree')
             box.prop(mytool, 'render_tree_enum')
-            o = box.operator('wm.visualise_render_tree_operator')
+            o = box.operator(VisualiseRenderTreeOperator.bl_idname)
             o.node_name = getattr(mytool, 'render_tree_enum')
-            box.operator('wm.apply_render_tree_changes_operator')
+            box.operator(ApplyRenderTreeChangesOperator.bl_idname)
         elif current_hier == "LOD_10":
             # draw_enum(box, 'LOD')
             box.prop(mytool, 'LOD_enum')
-            o = box.operator('wm.visualise_lod_tree_operator')
+            o = box.operator(VisualiseLODTreeOperator.bl_idname)
             o.node_name = getattr(mytool, 'LOD_enum')
-            box.operator('wm.apply_lod_tree_changes_operator')
+            box.operator(ApplyLODTreeChangesOperator.bl_idname)
         elif current_hier == "LOD_21":
             # draw_enum(box, 'event')
             box.prop(mytool, 'event_enum')
@@ -433,39 +460,80 @@ class OBJECT_PT_b3d_func_panel(bpy.types.Panel):
         layout = self.layout
         mytool = get_panel_tool(context)
 
-
-        # layout.prop(mytool, "mirror_type_enum")
-
-        # layout.operator("wm.mirror_objects_operator")
-        layout.operator("wm.apply_transforms_operator")
-        layout.operator("wm.show_hide_collisions_operator")
-        layout.operator("wm.show_hide_2d_collisions_operator")
-        layout.operator("wm.show_hide_room_borders_operator")
-        layout.operator("wm.show_hide_generator_operator")
-
+        box = layout.box()
+        row = box.row()
+        row.label(text="Object transforms")
+        row = box.row()
+        col = row.column()
+        col.operator(ApplyTransformsOperator.bl_idname)
+        col = row.column()
+        col.operator(RemoveTransformsOperator.bl_idname)
 
         box = layout.box()
         row = box.row()
+        row.label(text="Collisions")
+        row = box.row()
         col = row.column()
-        col.operator("wm.visualise_way_path_enable_operator")
+        col.operator(ShowCollisionsOperator.bl_idname)
         col = row.column()
-        col.operator("wm.visualise_way_path_disable_operator")
+        col.operator(HideCollisionsOperator.bl_idname)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="2D collisions")
+        row = box.row()
+        col = row.column()
+        col.operator(Show2DCollisionsOperator.bl_idname)
+        col = row.column()
+        col.operator(Hide2DCollisionsOperator.bl_idname)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Room borders")
+        row = box.row()
+        col = row.column()
+        col.operator(ShowRoomBordersOperator.bl_idname)
+        col = row.column()
+        col.operator(HideRoomBordersOperator.bl_idname)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Generators")
+        row = box.row()
+        col = row.column()
+        col.operator(ShowGeneratorsOperator.bl_idname)
+        col = row.column()
+        col.operator(HideGeneratorsOperator.bl_idname)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Way path visualization")
+        row = box.row()
+        col = row.column()
+        col.operator(VisualiseWayPathEnableOperator.bl_idname)
+        col = row.column()
+        col.operator(VisualiseWayPathDisableOperator.bl_idname)
         
         box = layout.box()
         row = box.row()
-        col = row.column()
-        col.operator("wm.show_lod_operator")
-        col = row.column()
-        col.operator("wm.hide_lod_operator")
-
-        box = layout.box()
-        box.prop(mytool, "condition_group")
+        row.label(text="LOD")
         row = box.row()
         col = row.column()
-        oper = col.operator("wm.show_conditional_operator")
+        col.operator(ShowLODOperator.bl_idname)
+        col = row.column()
+        col.operator(HideLODOperator.bl_idname)
+
+        box = layout.box()
+        row = box.row()
+        row.label(text="Events")
+        row = box.row()
+        row.prop(mytool, "condition_group")
+        row = box.row()
+        col = row.column()
+        oper = col.operator(ShowConditionalsOperator.bl_idname)
         oper.group = getattr(mytool, 'condition_group')
         col = row.column()
-        oper = col.operator("wm.hide_conditional_operator")
+        oper = col.operator(HideConditionalsOperator.bl_idname)
         oper.group = getattr(mytool, 'condition_group')
 
 class OBJECT_PT_b3d_res_module_panel(bpy.types.Panel):

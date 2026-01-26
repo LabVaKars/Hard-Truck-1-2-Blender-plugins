@@ -31,11 +31,15 @@ from .scripts import (
     show_hide_render_tree_branch,
     show_hide_lod_tree_branch,
     apply_remove_transforms,
+    apply_transforms,
+    remove_transforms,
     hide_lod,
     show_lod,
     show_conditionals,
     hide_conditionals,
     show_hide_obj_by_type,
+    show_obj_by_type,
+    hide_obj_by_type,
     get_objs_by_type,
     set_objs_by_type,
     get_per_face_by_type,
@@ -656,64 +660,127 @@ class SetValuesOperator(bpy.types.Operator):
 
 class ApplyTransformsOperator(bpy.types.Operator):
     bl_idname = "wm.apply_transforms_operator"
-    bl_label = "Arrange/Remove objects"
+    bl_label = "Apply"
     bl_description = "Creates copies of objects and arrange them at places(24) specified in connector(18)"
 
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        apply_remove_transforms(self)
+        apply_transforms()
+        self.report({'INFO'}, "Transforms applied")
 
         return {'FINISHED'}
 
-class ShowHide2DCollisionsOperator(bpy.types.Operator):
-    bl_idname = "wm.show_hide_2d_collisions_operator"
-    bl_label = "Show/Hide 2D collisions"
+class RemoveTransformsOperator(bpy.types.Operator):
+    bl_idname = "wm.remove_transforms_operator"
+    bl_label = "Remove"
+    bl_description = "Creates copies of objects and arrange them at places(24) specified in connector(18)"
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        remove_transforms()
+        self.report({'INFO'}, "Transforms removed")
+
+        return {'FINISHED'}
+
+
+class Show2DCollisionsOperator(bpy.types.Operator):
+    bl_idname = "wm.show_2d_collisions_operator"
+    bl_label = "Show"
     bl_description = "If all 2D collisions(20) are hidden, shows them. otherwise - hide."
 
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_hide_obj_by_type(self, 20)
+        show_obj_by_type(self, 20)
 
         return {'FINISHED'}
 
-class ShowHideCollisionsOperator(bpy.types.Operator):
-    bl_idname = "wm.show_hide_collisions_operator"
-    bl_label = "Show/Hide collisions"
+class Hide2DCollisionsOperator(bpy.types.Operator):
+    bl_idname = "wm.hide_2d_collisions_operator"
+    bl_label = "Hide"
+    bl_description = "If all 2D collisions(20) are hidden, shows them. otherwise - hide."
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        hide_obj_by_type(self, 20)
+
+        return {'FINISHED'}
+
+class ShowCollisionsOperator(bpy.types.Operator):
+    bl_idname = "wm.show_collisions_operator"
+    bl_label = "Show"
     bl_description = "If all 3d collisions(23) are hidden, shows them. otherwise - hide."
 
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_hide_obj_by_type(self, 23)
+        show_obj_by_type(self, 23)
 
         return {'FINISHED'}
 
-class ShowHideRoomBordersOperator(bpy.types.Operator):
-    bl_idname = "wm.show_hide_room_borders_operator"
-    bl_label = "Show/Hide portals"
+class HideCollisionsOperator(bpy.types.Operator):
+    bl_idname = "wm.hide_collisions_operator"
+    bl_label = "Hide"
+    bl_description = "If all 3d collisions(23) are hidden, shows them. otherwise - hide."
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        hide_obj_by_type(self, 23)
+
+        return {'FINISHED'}
+
+class ShowRoomBordersOperator(bpy.types.Operator):
+    bl_idname = "wm.show_room_borders_operator"
+    bl_label = "Show"
     bl_description = "If all portals(30) are hidden, shows them. Otherwise - hide."
 
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_hide_obj_by_type(self, 30)
+        show_obj_by_type(self, 30)
 
         return {'FINISHED'}
 
-class ShowHideGeneratorsOperator(bpy.types.Operator):
-    bl_idname = "wm.show_hide_generator_operator"
-    bl_label = "Show/Hide generator blocks"
+class HideRoomBordersOperator(bpy.types.Operator):
+    bl_idname = "wm.hide_room_borders_operator"
+    bl_label = "Hide"
+    bl_description = "If all portals(30) are hidden, shows them. Otherwise - hide."
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        hide_obj_by_type(self, 30)
+
+        return {'FINISHED'}
+
+class ShowGeneratorsOperator(bpy.types.Operator):
+    bl_idname = "wm.show_generator_operator"
+    bl_label = "Show"
     bl_description = "If all generator blocks(40) are hidden, shows them. Otherwise - hide."
 
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_hide_obj_by_type(self, 40)
+        show_obj_by_type(self, 40)
 
         return {'FINISHED'}
 
+class HideGeneratorsOperator(bpy.types.Operator):
+    bl_idname = "wm.hide_generator_operator"
+    bl_label = "Hide"
+    bl_description = "If all generator blocks(40) are hidden, shows them. Otherwise - hide."
+
+    def execute(self, context):
+        mytool = get_panel_tool(context)
+
+        hide_obj_by_type(self, 40)
+
+        return {'FINISHED'}
+    
 class ShowLODOperator(bpy.types.Operator):
     bl_idname = "wm.show_lod_operator"
     bl_label = "Show LOD"
@@ -1063,7 +1130,7 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
 @make_annotations
 class VisualiseWayPathEnableOperator(bpy.types.Operator):
     bl_idname = "wm.visualise_way_path_enable_operator"
-    bl_label = "Enable path visuals"
+    bl_label = "Enable"
     bl_description = "Enable way path param visualizations"
 
     def execute(self, context):
@@ -1106,7 +1173,7 @@ class VisualiseWayPathEnableOperator(bpy.types.Operator):
 @make_annotations
 class VisualiseWayPathDisableOperator(bpy.types.Operator):
     bl_idname = "wm.visualise_way_path_disable_operator"
-    bl_label = "Disable path visuals"
+    bl_label = "Disable"
     bl_description = "Disable way path param visualizations"
 
     def execute(self, context):
@@ -1154,10 +1221,15 @@ _classes = [
     SetVertexValuesOperator,
     # additional options
     ApplyTransformsOperator,
-    ShowHide2DCollisionsOperator,
-    ShowHideCollisionsOperator,
-    ShowHideRoomBordersOperator,
-    ShowHideGeneratorsOperator,
+    RemoveTransformsOperator,
+    Show2DCollisionsOperator,
+    Hide2DCollisionsOperator,
+    ShowCollisionsOperator,
+    HideCollisionsOperator,
+    ShowRoomBordersOperator,
+    HideRoomBordersOperator,
+    ShowGeneratorsOperator,
+    HideGeneratorsOperator,
     ShowLODOperator,
     HideLODOperator,
     ShowConditionalsOperator,
