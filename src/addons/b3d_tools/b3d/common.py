@@ -671,4 +671,4 @@ def bytes_to_hex(bytestream):
     return ("".join([hex(b)[2:].zfill(2) for b in bytestream.getvalue()])).upper()
 
 def hex_to_bytes(str):
-    return BytesIO(bytes.fromhex(str))
+    return bytes.fromhex(str)

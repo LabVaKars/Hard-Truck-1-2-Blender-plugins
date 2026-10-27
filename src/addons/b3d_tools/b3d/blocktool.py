@@ -20,6 +20,7 @@ from ..compatibility import (
 )
 
 from .blocktool_defs import (
+    BlkParam,
     FieldType,
     BlockClassType,
     # block params
@@ -377,14 +378,12 @@ class BlockClassHandler():
 
         
         for bclass in [bc for bc in BlockClassHandler.preset_classes if bc is not None]:
-            fields = {attr_cls.c_get_prop():attr_cls() for attr_name, attr_cls in bclass.__dict__.items() if not attr_name.startswith('__') and isinstance(attr_cls, type)}
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
             bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
             btype = BlockClassHandler.get_block_type_from_bclass(bclass)
             
             for field_name, field in fields.items():
-                field.c_set_bnum(bnum)
-                field.c_set_btype(btype)
                 field.set_bnum(bnum)
                 field.set_btype(btype)
                 #rename preset props to avoid name collisions
@@ -392,80 +391,72 @@ class BlockClassHandler():
 
             bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
-            attributes['__annotations__'][bname] = PointerProperty(type=gen_class)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
             BlockClassHandler.block_objects[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
 
         for bclass in [bc for bc in BlockClassHandler.block_classes if bc is not None]:
-            fields = {attr_cls.c_get_prop():attr_cls() for attr_name, attr_cls in bclass.__dict__.items() if not attr_name.startswith('__') and isinstance(attr_cls, type)}
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
             bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
             btype = BlockClassHandler.get_block_type_from_bclass(bclass)
             
             for field_name, field in fields.items():
-                field.c_set_bnum(bnum)
-                field.c_set_btype(btype)
                 field.set_bnum(bnum)
                 field.set_btype(btype)
 
             bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
-            attributes['__annotations__'][bname] = PointerProperty(type=gen_class)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
             BlockClassHandler.block_objects[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.block_classes if bc is not None]:
-            fields = {attr_cls.c_get_prop():attr_cls() for attr_name, attr_cls in bclass.__dict__.items() if not attr_name.startswith('__') and isinstance(attr_cls, type)}
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
             bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
             btype = BlockClassHandler.get_block_type_from_bclass(bclass)
             
             for field_name, field in fields.items():
-                field.c_set_bnum(bnum)
-                field.c_set_btype(btype)
                 field.set_bnum(bnum)
                 field.set_btype(btype)
 
             bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, False)
             gen_class = BlockClassHandler.create_type_class(bname, fields, False)
-            attributes['__annotations__'][bname] = PointerProperty(type=gen_class)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
             BlockClassHandler.block_objects[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.per_face_block_classes if bc is not None]:
-            fields = {attr_cls.c_get_prop():attr_cls() for attr_name, attr_cls in bclass.__dict__.items() if not attr_name.startswith('__') and isinstance(attr_cls, type)}
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
             bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
             btype = BlockClassHandler.get_block_type_from_bclass(bclass)
             
             for field_name, field in fields.items():
-                field.c_set_bnum(bnum)
-                field.c_set_btype(btype)
                 field.set_bnum(bnum)
                 field.set_btype(btype)
 
             bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
-            attributes['__annotations__'][bname] = PointerProperty(type=gen_class)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
             BlockClassHandler.block_objects[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.per_vertex_block_classes if bc is not None]:
-            fields = {attr_cls.c_get_prop():attr_cls() for attr_name, attr_cls in bclass.__dict__.items() if not attr_name.startswith('__') and isinstance(attr_cls, type)}
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
 
             bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
             btype = BlockClassHandler.get_block_type_from_bclass(bclass)
             
             for field_name, field in fields.items():
-                field.c_set_bnum(bnum)
-                field.c_set_btype(btype)
                 field.set_bnum(bnum)
                 field.set_btype(btype)
             
             bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
-            attributes['__annotations__'][bname] = PointerProperty(type=gen_class)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
             BlockClassHandler.block_objects[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 

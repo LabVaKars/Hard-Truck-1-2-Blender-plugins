@@ -422,8 +422,8 @@ def palette_to_colors(palette, indexes, trc):
             a = 255
         else:
             a = 0
-        # colors.extend([r, g, b, a])
-        colors.extend([b, g, r, a])
+        colors.extend([r, g, b, a])
+        # colors.extend([b, g, r, a])
     return colors
 
 def compress_msk(pixels):

@@ -160,7 +160,7 @@ class SingleAddOperator(bpy.types.Operator):
                 if block_type in [9, 10]:
                     group_cnt = 2
                 elif block_type == 21:
-                    group_cnt = b3d_obj[Blk021.GroupCnt.c_get_prop()]
+                    group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
 
                 for i in range(group_cnt):
                     group = bpy.data.objects.new("GROUP_{}".format(i), None)
@@ -330,7 +330,7 @@ class HierarchyAddOperator(bpy.types.Operator):
                 next_stack = []
 
         elif current_hier == 'LOD_21':
-            group_cnt = b3d_obj[Blk021.GroupCnt.c_get_prop()]
+            group_cnt = b3d_obj[Blk021.GroupCnt.get_prop()]
             pass
 
         return {'FINISHED'}
@@ -462,7 +462,7 @@ class CastAddOperator(bpy.types.Operator):
                         new_obj = poly_obj.copy()
                         new_obj.data = poly_obj.data.copy()
                         new_obj[consts.BLOCK_TYPE] = block_type
-                        new_obj.data.bevel_depth = 0.3
+                        # new_obj.data.bevel_depth = 0.3
                         new_obj.data.bevel_mode = 'ROUND'
                         new_obj.parent = parent_obj
                         set_objs_by_type(new_obj, block_type)
@@ -470,7 +470,7 @@ class CastAddOperator(bpy.types.Operator):
                         log.info("Created new WAY Path: {}.".format(new_obj.name))
                     else:
                         poly_obj[consts.BLOCK_TYPE] = block_type
-                        poly_obj.data.bevel_depth = 0.3
+                        # poly_obj.data.bevel_depth = 0.3
                         poly_obj.data.bevel_mode = 'ROUND'
                         poly_obj.parent = parent_obj
                         set_objs_by_type(poly_obj, block_type)
@@ -878,8 +878,8 @@ class ShowHideSphereOperator(bpy.types.Operator):
         block_type = obj.get(consts.BLOCK_TYPE)
         if block_type in [10]:
 
-            center_prop = Blk010.LOD_XYZ.c_get_prop()
-            rad_prop = Blk010.LOD_R.c_get_prop()
+            center_prop = Blk010.LOD_XYZ.get_prop()
+            rad_prop = Blk010.LOD_R.get_prop()
 
             show_hide_sphere(obj, center_prop, rad_prop)
 
@@ -970,7 +970,7 @@ class VisualiseRenderTreeOperator(bpy.types.Operator):
         room = get_room_obj(b3d_obj)
         if room is not None:
             borders = [{'obj':o.name,'transf':o.name} for o in bpy.data.objects if o.get(consts.BLOCK_TYPE) == 30 and 
-                (o.get(Blk030.RoomName1.c_get_prop()) == room.name or o.get(Blk030.RoomName2.c_get_prop()) == room.name)]
+                (o.get(Blk030.RoomName1.get_prop()) == room.name or o.get(Blk030.RoomName2.get_prop()) == room.name)]
 
             bbox_params = get_mult_obj_bounding_sphere(borders)
             location = bbox_params[0]
@@ -1008,8 +1008,8 @@ class ApplyRenderTreeChangesOperator(bpy.types.Operator):
         for branch_obj in branches:
             obj_name = branch_obj.name.split("||")[1]
             b3d_obj = bpy.data.objects[obj_name]
-            ax = b3d_obj[Blk009.Unk_XYZ.c_get_prop()][0]
-            ay = b3d_obj[Blk009.Unk_XYZ.c_get_prop()][1]
+            ax = b3d_obj[Blk009.Unk_XYZ.get_prop()][0]
+            ay = b3d_obj[Blk009.Unk_XYZ.get_prop()][1]
             length = math.sqrt(ax**2 + ay**2)
             axn = ax / length
             ayn = ay / length
@@ -1033,10 +1033,10 @@ class ApplyRenderTreeChangesOperator(bpy.types.Operator):
 
             new_vec = (Tx/R, Ty/R, 0.0)
 
-            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][0] = new_vec[0]
-            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][1] = new_vec[1]
-            b3d_obj[Blk009.Unk_XYZ.c_get_prop()][2] = new_vec[2]
-            b3d_obj[Blk009.Unk_R.c_get_prop()] = -R
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][0] = new_vec[0]
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][1] = new_vec[1]
+            b3d_obj[Blk009.Unk_XYZ.get_prop()][2] = new_vec[2]
+            b3d_obj[Blk009.Unk_R.get_prop()] = -R
             b3d_obj.update_tag(refresh={'OBJECT'})
 
             branch_obj.location[0] = 0.0
@@ -1109,12 +1109,12 @@ class ApplyLODTreeChangesOperator(bpy.types.Operator):
             obj_name = branch_obj.name.split("||")[1]
             b3d_obj = bpy.data.objects[obj_name]
 
-            R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.c_get_prop()]
+            R = (branch_obj.scale[0] + branch_obj.scale[1] + branch_obj.scale[2]) / 3 * b3d_obj[Blk010.LOD_R.get_prop()]
 
-            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
-            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
-            b3d_obj[Blk010.LOD_XYZ.c_get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
-            b3d_obj[Blk010.LOD_R.c_get_prop()] = R
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][0] = branch_obj.delta_location[0] + branch_obj.location[0]
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][1] = branch_obj.delta_location[1] + branch_obj.location[1]
+            b3d_obj[Blk010.LOD_XYZ.get_prop()][2] = branch_obj.delta_location[2] + branch_obj.location[2]
+            b3d_obj[Blk010.LOD_R.get_prop()] = R
             b3d_obj.update_tag(refresh={'OBJECT'})
 
             branch_obj.location[0] = 0.0
@@ -1152,17 +1152,17 @@ class VisualiseWayPathEnableOperator(bpy.types.Operator):
                 # Setting node group
                 gnode_modifier.node_group = get_way_path_visualize_node_group()
                 input_name = gnode_modifier.node_group.inputs[1].identifier
-                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr2.c_get_prop())
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr2.get_prop())
                 input_name = gnode_modifier.node_group.inputs[2].identifier
-                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width1.c_get_prop())
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width1.get_prop())
                 input_name = gnode_modifier.node_group.inputs[3].identifier
-                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width2.c_get_prop())
+                create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Width2.get_prop())
                 input_name = gnode_modifier.node_group.inputs[4].identifier
-                create_way_path_type_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                create_way_path_type_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.get_prop())
                 input_name = gnode_modifier.node_group.inputs[5].identifier
-                create_way_path_right_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                create_way_path_right_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.get_prop())
                 input_name = gnode_modifier.node_group.inputs[6].identifier
-                create_way_path_left_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.c_get_prop())
+                create_way_path_left_lane_driver(gnode_modifier, '["{}"]'.format(input_name), way_obj, Blk050.Attr1.get_prop())
                 gnode_modifier[gnode_modifier.node_group.inputs[7].identifier] = material_center
                 gnode_modifier[gnode_modifier.node_group.inputs[8].identifier] = material_border
                 gnode_modifier[gnode_modifier.node_group.inputs[9].identifier] = material_side
@@ -1220,27 +1220,39 @@ _classes = [
     SetFaceValuesOperator,
     SetVertexValuesOperator,
     # additional options
+    ## Apply transforms
     ApplyTransformsOperator,
     RemoveTransformsOperator,
+    ## Show/Hide 2D collisions
     Show2DCollisionsOperator,
     Hide2DCollisionsOperator,
+    ## Show/Hide 3D collisions
     ShowCollisionsOperator,
     HideCollisionsOperator,
+    ## Show/Hide room borders
     ShowRoomBordersOperator,
     HideRoomBordersOperator,
+    ## Show/Hide generators
     ShowGeneratorsOperator,
     HideGeneratorsOperator,
+    ## Show/Hide LOD
     ShowLODOperator,
     HideLODOperator,
+    ## Show/Hide conditionals
     ShowConditionalsOperator,
     HideConditionalsOperator,
+    ## Show/Hide sphere (currently unused)
     ShowHideSphereOperator,
+    ## Select 'similar' operators 
     SelectSimilarObjectsOperator,
     SelectSimilarFacesOperator,
+    ## Render Tree(9) visualize operators
     VisualiseRenderTreeOperator,
     ApplyRenderTreeChangesOperator,
+    ## LOD(10) visualize operators
     VisualiseLODTreeOperator,
     ApplyLODTreeChangesOperator,
+    ## WAY-Path visualize operators
     VisualiseWayPathEnableOperator,
     VisualiseWayPathDisableOperator
 ]

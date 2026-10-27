@@ -76,7 +76,12 @@ collisionTypeList = [
     ('16', "ice (no tire marks)", "")
 ]
 
-
+vVertexTypeList = [
+    ('6', '6(Simple + Spaced)', "Simple + Spaced"),
+    ('7', '7(Simple)', "Simple"),
+    ('36', '36(Extended + Spaced)', "Extended + Spaced"),
+    ('37', '37(Extended)', "Extended")
+]
 
 vTypeList = [
     ('0', '0(No normals)', "No normals"),

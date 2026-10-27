@@ -1,15 +1,17 @@
 
 import bpy
+from dataclasses import dataclass
+import typing
 
-from bpy.props import (StringProperty,
-                        BoolProperty,
-                        IntProperty,
-                        FloatProperty,
-                        EnumProperty,
-                        PointerProperty,
-                        FloatVectorProperty,
-                        CollectionProperty
-                        )
+# from bpy.props import (StringProperty,
+#                         BoolProperty,
+#                         IntProperty,
+#                         FloatProperty,
+#                         EnumProperty,
+#                         PointerProperty,
+#                         FloatVectorProperty,
+#                         CollectionProperty
+#                         )
 
 
 from ..consts import (
@@ -18,6 +20,7 @@ from ..consts import (
     b24FlagList,
     b33LightTypes,
     vTypeList,
+    vVertexTypeList,
     BLOCK_TYPE,
     LEVEL_GROUP
 )
@@ -124,8 +127,8 @@ class FieldType():
 # FieldType.SPHERE_EDIT
 
 class BlkBase():
-    bnum = 0
-    btype = BlockClassType.BLOCK
+    bnum = 0                            #Block number
+    btype = BlockClassType.BLOCK        #Block type
 
     # --- btype ---
     @classmethod
@@ -137,240 +140,182 @@ class BlkBase():
     def c_get_bnum(cls):
         return cls.bnum
 
+@dataclass
 class BlkParam():
-    bnum = None                         #Block number
-    btype = None                        #Block type
-    prop = None                         #Key under what property is stored in Blender object
-    attr_type = ''                      #Attribute type
-    name = 'Unknown'                    #Parameter name in UI
-    description = 'Unknown parameter'   #Parameter description in UI
-    default_value = ''                  #Default value for simple types(int, float)
-    ui_group = ''                       #Used for grouping values in UI
-    no_single_edit = False              #Determines if field is shown in "Single block edit"
+    bnum: typing.Any = None                         #Block number - is copied from BlkBase
+    btype: typing.Any = None                        #Block type - is copied from BlkBase
+    prop: typing.Any = None                         #Key under what property is stored in Blender object
+    attr_type: typing.Any = ''                      #Attribute type
+    name: typing.Any = 'Unknown'                    #Parameter name in UI
+    description: typing.Any = 'Unknown parameter'   #Parameter description in UI
+    default_value: typing.Any = ''                  #Default value for simple types(int, float)
+    ui_group: typing.Any = ''                       #Used for grouping values in UI
+    no_single_edit: typing.Any = False              #Determines if field is shown in "Single block edit"
     # Enum specific keys
-    subtype = ''                        #Type for Enumerator values
-    callback = ''                       #Callback for dynamic enumerators
-    items = None                        #Static enumerator values
-    manual_entry = True                 #If True Enumeration gives an option to enter value manually
+    subtype: typing.Any = ''                        #Type for Enumerator values
+    callback: typing.Any = ''                       #Callback for dynamic enumerators
+    items: typing.Any = None                        #Static enumerator values
+    manual_entry: typing.Any = True                 #If True Enumeration gives an option to enter value manually
     # Flag specific keys
-    flag_description = None             #Description for flag values
+    flag_description: typing.Any = None             #Description for flag values
 
-    def __init__(self, init_empty = False):
-        if not init_empty:
-            cls = type(self)
-            cls_attribs = [name for name in dir(cls) \
-                if not name.startswith("__")\
-                and not callable(getattr(cls, name))
-            ]
-            for attrib in cls_attribs:
-                setattr(self, "_{}".format(attrib), getattr(cls, attrib))
+    # def __init__(self, init_empty = False):
+    #     if not init_empty:
+    #         cls = type(self)
+    #         cls_attribs = [name for name in dir(cls) \
+    #             if not name.startswith("__")\
+    #             and not callable(getattr(cls, name))
+    #         ]
+    #         for attrib in cls_attribs:
+    #             setattr(self, "_{}".format(attrib), getattr(cls, attrib))
     
     # --- btype ---
-    @classmethod
-    def c_get_btype(cls):
-        return cls.btype
-    
-    @classmethod
-    def c_set_btype(cls, value):
-        cls.btype = value
-    
     def get_btype(self):
-        return self._btype
+        return self.btype
 
     def set_btype(self, value):
-        self._btype = value
+        self.btype = value
     
     # --- bnum ---
-    @classmethod
-    def c_get_bnum(cls):
-        return cls.bnum
-
-    @classmethod
-    def c_set_bnum(cls, value):
-        cls.bnum = value
-
     def get_bnum(self):
-        return self._bnum
+        return self.bnum
 
     def set_bnum(self, value):
-        self._bnum = value
+        self.bnum = value
 
-    # --- prop ---
-    @classmethod
-    def c_get_prop(cls):
-        if cls.prop is not None:
-            return cls.prop
-        return cls.__name__
-    
+    # --- prop ---    
     def get_prop(self):
-        return self._prop
+        return self.prop
 
     def set_prop(self, value):
-        self._prop = value
+        self.prop = value
         
     # --- attr_type ---
-    @classmethod
-    def c_get_attr_type(cls):
-        return cls.attr_type
-    
     def get_attr_type(self):
-        return self._attr_type
+        return self.attr_type
 
     def set_attr_type(self, value):
-        self._attr_type = value
+        self.attr_type = value
 
     # --- name ---
-    @classmethod
-    def c_get_name(cls):
-        return cls.name
-    
     def get_name(self):
-        return self._name
+        return self.name
 
     def set_name(self, value):
-        self._name = value
+        self.name = value
 
     # --- description ---
-    @classmethod
-    def c_get_description(cls):
-        return cls.description
-    
     def get_description(self):
-        return self._description
+        return self.description
 
     def set_description(self, value):
-        self._description = value
+        self.description = value
 
     # --- subtype ---
-    @classmethod
-    def c_get_subtype(cls):
-        return cls.subtype
-    
     def get_subtype(self):
-        return self._subtype
+        return self.subtype
 
     def set_subtype(self, value):
-        self._subtype = value
+        self.subtype = value
 
     # --- default_value ---
-    @classmethod
-    def c_get_default(cls):
-        return cls.default_value
-    
     def get_default(self):
-        return self._default_value
+        return self.default_value
 
     def set_default(self, value):
-        self._default_value = value
+        self.default_value = value
 
     # --- callback ---
-    @classmethod
-    def c_get_callback(cls):
-        return cls.callback
-    
     def get_callback(self):
-        return self._callback
+        return self.callback
 
     def set_callback(self, value):
-        self._callback = value
-
+        self.callback = value
 
     # --- items ---
-    @classmethod
-    def c_get_items(cls):
-        return cls.items
-    
     def get_items(self):
-        return self._items
+        return self.items
 
     def set_items(self, value):
-        self._items = value
+        self.items = value
 
     # --- ui_group ---
-    @classmethod
-    def c_get_group(cls):
-        return cls.ui_group
-    
     def get_group(self):
-        return self._ui_group
+        return self.ui_group
 
     def set_group(self, value):
-        self._ui_group = value
+        self.ui_group = value
     
     # --- no_single_edit ---
-    @classmethod
-    def c_get_no_single_edit(cls):
-        return cls.no_single_edit
-    
     def get_no_single_edit(self):
-        return self._no_single_edit
+        return self.no_single_edit
 
     def set_no_single_edit(self, value):
-        self._no_single_edit = value
+        self.no_single_edit = value
 
-        
     # --- flag_description ---
-    @classmethod
-    def c_get_flag_description(cls):
-        return cls.flag_description
-    
     def get_flag_description(self):
-        return self._flag_description
+        return self.flag_description
 
     def set_flag_description(self, value):
-        self._flag_description = value
+        self.flag_description = value
     
     # --- manual_entry ---
-    @classmethod
-    def c_get_manual_entry(cls):
-        return cls.manual_entry
-    
     def get_manual_entry(self):
-        return self._manual_entry
+        return self.manual_entry
 
     def set_manual_entry(self, value):
-        self._manual_entry = value
+        self.manual_entry = value
 
-
+@dataclass
 class StringParam(BlkParam):
-    attr_type = FieldType.STRING
-    default_value = ''
+    attr_type: typing.Any = FieldType.STRING
+    default_value: typing.Any = ''
 
+@dataclass
 class IntParam(BlkParam):
-    attr_type = FieldType.INT
-    default_value = 0
+    attr_type: typing.Any = FieldType.INT
+    default_value: typing.Any = 0
 
+@dataclass
 class FloatParam(BlkParam):
-    attr_type = FieldType.FLOAT
-    default_value = 0.0
+    attr_type: typing.Any = FieldType.FLOAT
+    default_value: typing.Any = 0.0
 
+@dataclass
 class CoordParam(BlkParam):
-    attr_type = FieldType.COORD
-    default_value = (0.0, 0.0, 0.0)
+    attr_type: typing.Any = FieldType.COORD
+    default_value: typing.Any = (0.0, 0.0, 0.0)
 
+@dataclass
 class EnumParam(BlkParam):
-    attr_type = FieldType.ENUM
-    subtype = FieldType.INT
-    items = []
+    attr_type: typing.Any = FieldType.ENUM
+    subtype: typing.Any = FieldType.INT
+    items: typing.Any = ()
 
+@dataclass
 class EnumDynParam(BlkParam):
-    attr_type = FieldType.ENUM_DYN
-    subtype = FieldType.INT,
-    callback = FieldType.SPACE_NAME
+    attr_type: typing.Any = FieldType.ENUM_DYN
+    subtype: typing.Any = FieldType.INT,
+    callback: typing.Any = FieldType.SPACE_NAME
     
+@dataclass
 class FlagsParam(BlkParam):
-    attr_type = FieldType.FLAGS
-    default_value = 0
-    flag_description = None
+    attr_type: typing.Any = FieldType.FLAGS
+    default_value: typing.Any = 0
+    flag_description: typing.Any = None
 
+@dataclass
 class VFormatParam(BlkParam):
-    attr_type = FieldType.V_FORMAT #Integer
+    attr_type: typing.Any = FieldType.V_FORMAT #Integer
 
+@dataclass
 class SphereEditParam(BlkParam):
-    attr_type = FieldType.SPHERE_EDIT
+    attr_type: typing.Any = FieldType.SPHERE_EDIT
 
+@dataclass
 class ListParam(BlkParam):
-    attr_type = FieldType.LIST
+    attr_type: typing.Any = FieldType.LIST
 
 
 
@@ -417,10 +362,12 @@ class Pvb035(BlkBase):
 class Pfb008(BlkBase):
     bnum = 8
     btype = BlockClassType.PER_FACE_BLOCK
-    class Format_Flags(VFormatParam):
-        name = ''
-        prop = 'format_flags'
+    
+    Format_Flags = VFormatParam(
+        name = '',
+        prop = 'format_flags',
         default_value = 144
+    )
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -443,10 +390,12 @@ class Pfb008(BlkBase):
 class Pfb028(BlkBase):
     bnum = 28
     btype = BlockClassType.PER_FACE_BLOCK
-    class Format_Flags(VFormatParam):
-        name = ''
-        prop = 'format_flags'
+
+    Format_Flags = VFormatParam(
+        name = '',
+        prop = 'format_flags',
         default_value = 144
+    )
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -469,10 +418,12 @@ class Pfb028(BlkBase):
 class Pfb035(BlkBase):
     bnum = 35
     btype = BlockClassType.PER_FACE_BLOCK
-    class Format_Flags(VFormatParam):
-        name = ''
-        prop = 'format_flags'
+    
+    Format_Flags = VFormatParam(
+        name = '',
+        prop = 'format_flags',
         default_value = 144
+    )
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -492,666 +443,783 @@ class Pfb035(BlkBase):
     # }
 
 
+class VertexParams(BlkBase):
 
+    BlockSwitch = EnumParam(
+        name = 'Block type',
+        prop = BLOCK_TYPE,
+        subtype = FieldType.INT,
+        items = vVertexTypeList,
+        default_value = 37
+    )
 
+    GroupName = StringParam(
+        name = 'Group name',
+        prop = 'string1'
+    )
+
+    CollisionName = StringParam(
+        name = 'Collision name',
+        prop = 'string2'
+    )
+
+    VType = EnumParam(
+        name = 'Vertex type',
+        prop = 'int1',
+        subtype = FieldType.INT,
+        items = vTypeList,
+        default_value = 3
+    )
 
 class Blk001(BlkBase):
     bnum = 1
     btype = BlockClassType.PER_FACE_BLOCK
-    class Name1(StringParam):
-        name = 'Unk. name 1'
+    
+    Name1 = StringParam(
+        name = 'Unk. name 1',
         prop = 'string1'
+    )
 
-    class Name2(StringParam):
-        name = 'Unk. name 2'
+    Name2 = StringParam(
+        name = 'Unk. name 2',
         prop = 'string2'
+    )
 
 
 class Blk002(BlkBase):
     bnum = 2
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. name 2'
-        prop = 'coord1'
 
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
+    Unk_XYZ = CoordParam(
+        name = 'Unk. name 2',
+        prop = 'coord1'
+    )
+
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
         prop = 'coord2'
+    )
 
 
 class Blk004(BlkBase):
     bnum = 4
-    class Name1(EnumDynParam):
-        name = 'Place'
-        prop = 'string1'
-        subtype = FieldType.STRING
-        callback = FieldType.SPACE_NAME
-        default_value = '?'
 
-    class Name2(StringParam):
+    Name1 = EnumDynParam(
+        name = 'Place',
+        prop = 'string1',
+        subtype = FieldType.STRING,
+        callback = FieldType.SPACE_NAME,
+        default_value = '?'
+    )
+
+    Name2 = StringParam(
+        name = 'Collision Name',
         prop = 'string2'
-        name = 'Name 2'
+    )
 
 
 class Blk005(BlkBase):
     bnum = 5
-    class Name1(StringParam):
-        name = 'Block name'
+    Name1 = StringParam(
+        name = 'Collision Name',
         prop = 'string2'
+    )
 
 
 class Blk006(BlkBase):
     bnum = 6
-    class Name1(StringParam):
-        name = 'Name 1'
-        prop = 'string1'
-
-    class Name2(StringParam):
-        name = 'Name 2'
-        prop = 'string2'
+    GroupName = VertexParams.GroupName
+    CollisionName = VertexParams.CollisionName
 
 
 class Blk007(BlkBase):
     bnum = 7
-    class Name1(StringParam):
-        name = 'Group name'
-        prop = 'string1'
+    CollisionName = VertexParams.CollisionName
+
 
 class Blk009(BlkBase):
     bnum = 9
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
-        prop = 'coord1'
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
+        prop = 'coord1',
         ui_group = 'b9_group'
+    )
 
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
-        prop = 'float1'
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
+        prop = 'float1',
         ui_group = 'b9_group'
+    )
 
 
 class Blk010(BlkBase):
     bnum = 10
-    class LOD_XYZ(CoordParam):
-        name = 'LOD coord'
-        prop = 'coord1'
-        description = 'LOD center'
+    LOD_XYZ = CoordParam(
+        name = 'LOD coord',
+        prop = 'coord1',
+        description = 'LOD center',
         ui_group = 'LOD_group'
+    )
 
-    class LOD_R(FloatParam):
-        name = 'LOD rad'
-        prop = 'float1'
-        description = 'LOD radius'
+    LOD_R = FloatParam(
+        name = 'LOD rad',
+        prop = 'float1',
+        description = 'LOD radius',
         ui_group = 'LOD_group'
+    )
 
-    class Set_LOD(SphereEditParam):
-        name = ''
-        description = ''
+    Set_LOD = SphereEditParam(
+        name = '',
+        description = '',
         ui_group = 'LOD_group'
-
+    )
+    
 
 class Blk011(BlkBase):
     bnum = 11
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord'
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord2'
-
-    class Unk_R1(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R1 = FloatParam(
+        name = 'Unk. rad',
         prop = 'float1'
-
-    class Unk_R2(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R2 = FloatParam(
+        name = 'Unk. rad',
         prop = 'float2'
-
+    )
+    
 
 class Blk012(BlkBase):
     bnum = 12
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord'
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
         prop = 'float1'
-
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk013(BlkBase):
     bnum = 13
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk014(BlkBase):
     bnum = 14
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
         prop = 'float2'
-
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk015(BlkBase):
     bnum = 15
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk016(BlkBase):
     bnum = 16
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord 1',
         prop = 'coord1'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord 2',
         prop = 'coord2'
-
-    class Unk_Float1(IntParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Float1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Float2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Float2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_Int1(IntParam):
-        name = 'Unk. 3'
+    )
+    
+    Unk_Int1 = IntParam(
+        name = 'Unk. 3',
         prop = 'int3'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 4'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 4',
         prop = 'int4'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk017(BlkBase):
     bnum = 17
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord 1',
         prop = 'coord1'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord 2',
         prop = 'coord2'
-
-    class Unk_Float1(IntParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Float1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Float2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Float2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_Int1(IntParam):
-        name = 'Unk. 3'
+    )
+    
+    Unk_Int1 = IntParam(
+        name = 'Unk. 3',
         prop = 'int3'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 4'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 4',
         prop = 'int4'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk018(BlkBase):
     bnum = 18
-    class Space_Name(EnumDynParam):
-        name = 'Place name (24)'
-        prop = 'string1'
-        description = 'Name of location block(24)'
-        subtype = FieldType.STRING
-        callback = FieldType.SPACE_NAME
+    Space_Name = EnumDynParam(
+        name = 'Place name (24)',
+        prop = 'string1',
+        description = 'Name of location block(24)',
+        subtype = FieldType.STRING,
+        callback = FieldType.SPACE_NAME,
         default_value = '?'
-
-    class Add_Name(EnumDynParam):
-        name = 'Transfer block name'
-        prop = 'string2'
-        description = 'Name of block to be relocated'
-        subtype = FieldType.STRING
-        callback = FieldType.REFERENCEABLE
+    )
+    
+    Add_Name = EnumDynParam(
+        name = 'Transfer block name',
+        prop = 'string2',
+        description = 'Name of block to be relocated',
+        subtype = FieldType.STRING,
+        callback = FieldType.REFERENCEABLE,
         default_value = '?'
-
+    )
+    
 
 class Blk020(BlkBase):
     bnum = 20
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk021(BlkBase):
     bnum = 21
-    class GroupCnt(IntParam):
-        name = 'Group count'
+    GroupCnt = IntParam(
+        name = 'Group count',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
+    )
+    
 
 class Blk022(BlkBase):
     bnum = 22
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
         prop = 'float1'
-
+    )
+    
 
 class Blk023(BlkBase):
     bnum = 23
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Surface(EnumParam):
-        name = 'Surface type'
-        prop = 'int2'
-        subtype = FieldType.INT
-        items = collisionTypeList
-        description = 'Value from surface classificator'
+    )
+    
+    Surface = EnumParam(
+        name = 'Surface type',
+        prop = 'int2',
+        subtype = FieldType.INT,
+        items = collisionTypeList,
+        description = 'Value from surface classificator',
         default_value = 0
-
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    )
+    
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 
 class Blk024(BlkBase):
     bnum = 24
-    class Flag(EnumParam):
-        name = 'Show flag'
-        prop = 'int1'
-        subtype = FieldType.INT
-        items = b24FlagList
-        description = 'Value from block24 classificator'
+    Flag = EnumParam(
+        name = 'Show flag',
+        prop = 'int1',
+        subtype = FieldType.INT,
+        items = b24FlagList,
+        description = 'Value from block24 classificator',
         default_value = 0
-
+    )
+    
 
 class Blk025(BlkBase):
     bnum = 25
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Name(StringParam):
-        name = 'Unk. name 1'
+    )
+    
+    Name = StringParam(
+        name = 'Unk. name 1',
         prop = 'string1'
-
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+    )
+    
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord 1',
         prop = 'coord2'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord 2',
         prop = 'coord3'
-
-    class Unk_Float1(FloatParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Float1 = FloatParam(
+        name = 'Unk. 1',
         prop = 'float1'
-
-    class Unk_Float2(FloatParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Float2 = FloatParam(
+        name = 'Unk. 2',
         prop = 'float2'
-
-    class Unk_Float3(FloatParam):
-        name = 'Unk. 3'
+    )
+    
+    Unk_Float3 = FloatParam(
+        name = 'Unk. 3',
         prop = 'float3'
-
-    class Unk_Float4(FloatParam):
-        name = 'Unk. 4'
+    )
+    
+    Unk_Float4 = FloatParam(
+        name = 'Unk. 4',
         prop = 'float4'
-
-    class Unk_Float5(FloatParam):
-        name = 'Unk. 5'
+    )
+    
+    Unk_Float5 = FloatParam(
+        name = 'Unk. 5',
         prop = 'float5'
-
+    )
+    
 
 class Blk026(BlkBase):
     bnum = 26
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord 1',
         prop = 'coord1'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord 2',
         prop = 'coord2'
-
-    class Unk_XYZ3(CoordParam):
-        name = 'Unk. coord 3'
+    )
+    
+    Unk_XYZ3 = CoordParam(
+        name = 'Unk. coord 3',
         prop = 'coord3'
-
+    )
+    
 
 class Blk027(BlkBase):
     bnum = 27
-    class Flag(IntParam):
-        name = 'Flag'
+    Flag = IntParam(
+        name = 'Flag',
         prop = 'int1'
-
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
+    )
+    
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Material(IntParam):
-        name = 'Material'
+    )
+    
+    Material = IntParam(
+        name = 'Material',
         prop = 'int2'
-
+    )
+    
 
 class Blk028(BlkBase):
     bnum = 28
-    class Sprite_Center(CoordParam):
-        name = 'Sprite center coord'
-        prop = 'coord1'
+    Sprite_Center = CoordParam(
+        name = 'Sprite center coord',
+        prop = 'coord1',
         description = 'Sprite center coordinates'
      #todo: check
+    )
+        
 
 
 class Blk029(BlkBase):
     bnum = 29
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_XYZ(CoordParam):
-        name = 'Unk. coord'
+    )
+    
+    Unk_XYZ = CoordParam(
+        name = 'Unk. coord',
         prop = 'coord1'
-
-    class Unk_R(FloatParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R = FloatParam(
+        name = 'Unk. rad',
         prop = 'float1'
-
+    )
+    
 
 class Blk030(BlkBase):
     bnum = 30
-    class ResModule1(EnumDynParam):
-        name = '1. module'
-        prop = 'string1'
-        subtype = FieldType.STRING
-        callback = FieldType.RES_MODULE
-        default_value = '?'
+    ResModule1 = EnumDynParam(
+        name = '1. module',
+        prop = 'string1',
+        subtype = FieldType.STRING,
+        callback = FieldType.RES_MODULE,
+        default_value = '?',
         ui_group = 'resModule1'
-
-    class RoomName1(EnumDynParam):
-        name = '1. room'
-        prop = 'string2'
-        subtype = FieldType.STRING
-        callback = FieldType.ROOM
-        default_value = '?'
+    )
+    
+    RoomName1 = EnumDynParam(
+        name = '1. room',
+        prop = 'string2',
+        subtype = FieldType.STRING,
+        callback = FieldType.ROOM,
+        default_value = '?',
         ui_group = 'resModule1'
-
-    class ResModule2(EnumDynParam):
-        name = '2. module'
-        prop = 'string3'
-        subtype = FieldType.STRING
-        callback = FieldType.RES_MODULE
-        default_value = '?'
+    )
+    
+    ResModule2 = EnumDynParam(
+        name = '2. module',
+        prop = 'string3',
+        subtype = FieldType.STRING,
+        callback = FieldType.RES_MODULE,
+        default_value = '?',
         ui_group = 'resModule2'
-
-    class RoomName2(EnumDynParam):
-        name = '2. room'
-        prop = 'string4'
-        subtype = FieldType.STRING
-        callback = FieldType.ROOM
-        default_value = '?'
+    )
+    
+    RoomName2 = EnumDynParam(
+        name = '2. room',
+        prop = 'string4',
+        subtype = FieldType.STRING,
+        callback = FieldType.ROOM,
+        default_value = '?',
         ui_group = 'resModule2'
-
+    )
+    
 
 class Blk031(BlkBase):
     bnum = 31
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class Unk_XYZ1(CoordParam):
-        name = 'Unk. coord 1'
+    )
+    
+    Unk_XYZ1 = CoordParam(
+        name = 'Unk. coord 1',
         prop = 'coord1'
-
-    class Unk_R(CoordParam):
-        name = 'Unk. rad'
+    )
+    
+    Unk_R = CoordParam(
+        name = 'Unk. rad',
         prop = 'coord2'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
         prop = 'int2'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Unk. coord 2'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Unk. coord 2',
         prop = 'coord3'
-
+    )
+    
     #todo: check
 
 
 class Blk033(BlkBase):
     bnum = 33
-    class Use_Lights(IntParam):
-        name = 'Use lights'
+    Use_Lights = IntParam(
+        name = 'Use lights',
         prop = 'int1'
-
-    class Light_Type(IntParam):
-        name = 'Light variable'
+    )
+    
+    Light_Type = IntParam(
+        name = 'Light variable',
         prop = 'int2'
-
-    class Flag(EnumParam):
-        name = 'Light type'
-        prop = 'int3'
-        subtype = FieldType.INT
-        items = b33LightTypes
+    )
+    
+    Flag = EnumParam(
+        name = 'Light type',
+        prop = 'int3',
+        subtype = FieldType.INT,
+        items = b33LightTypes,
         default_value = 1
-
-    class Unk_XYZ1(CoordParam):
-        name = 'Light location'
+    )
+    
+    Unk_XYZ1 = CoordParam(
+        name = 'Light location',
         prop = 'coord1'
-
-    class Unk_XYZ2(CoordParam):
-        name = 'Light direction'
+    )
+    
+    Unk_XYZ2 = CoordParam(
+        name = 'Light direction',
         prop = 'coord2'
-
-    class Unk_Float1(FloatParam):
-        name = 'Light falloff'
+    )
+    
+    Unk_Float1 = FloatParam(
+        name = 'Light falloff',
         prop = 'float1'
-
-    class Unk_Float2(FloatParam):
-        name = 'Light attenuation 0'
+    )
+    
+    Unk_Float2 = FloatParam(
+        name = 'Light attenuation 0',
         prop = 'float2'
-
-    class Light_R(FloatParam):
-        name = 'Light attenuation 1'
+    )
+    
+    Light_R = FloatParam(
+        name = 'Light attenuation 1',
         prop = 'float3'
-
-    class Intens(FloatParam):
-        name = 'Light attenuation 2'
+    )
+    
+    Intens = FloatParam(
+        name = 'Light attenuation 2',
         prop = 'float4'
-
-    class Unk_Float3(FloatParam):
-        name = 'Light phi'
+    )
+    
+    Unk_Float3 = FloatParam(
+        name = 'Light phi',
         prop = 'float5'
-
-    class Unk_Float4(FloatParam):
-        name = 'Light theta'
+    )
+    
+    Unk_Float4 = FloatParam(
+        name = 'Light theta',
         prop = 'float6'
-
-    class RGB(CoordParam):
-        name = 'RGB'
+    )
+    
+    RGB = CoordParam(
+        name = 'RGB',
         prop = 'coord3'
-
+    )
+    
 
 class Blk034(BlkBase):
     bnum = 34
-    class UnkInt(IntParam):
-        name = 'Unk. 1'
+    UnkInt = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
+    )
+    
 
 class Blk035(BlkBase):
     bnum = 35
-    class MType(IntParam):
-        name = 'Unk. 1'
+    MType = IntParam(
+        name = 'Unk. 1',
         prop = 'int1'
-
-    class TexNum(EnumDynParam):
-        name = 'Material'
-        prop = 'int2'
-        subtype = FieldType.INT
-        callback = FieldType.MATERIAL_IND
+    )
+    
+    TexNum = EnumDynParam(
+        name = 'Material',
+        prop = 'int2',
+        subtype = FieldType.INT,
+        callback = FieldType.MATERIAL_IND,
         default_value = -1
-
+    )
+    
 class Blk036(BlkBase):
     bnum = 36
-    class Name1(StringParam):
-        name = 'Name 1'
-        prop = 'string1'
-
-    class Name2(StringParam):
-        name = 'Name 2'
-        prop = 'string2'
-
-    class VType(EnumParam):
-        name = 'Vertex type'
-        prop = 'int1'
-        subtype = FieldType.INT
-        items = vTypeList
-        default_value = 2
-
+    GroupName = VertexParams.GroupName
+    CollisionName = VertexParams.CollisionName
+    VType = VertexParams.VType
+    
 
 class Blk037(BlkBase):
     bnum = 37
-    class Name1(StringParam):
-        name = 'Name 1'
-        prop = 'string1'
-
-    class VType(EnumParam):
-        name = 'Vertex type'
-        prop = 'int1'
-        subtype = FieldType.INT
-        items = vTypeList
-        default_value = 2
-
+    CollisionName = VertexParams.CollisionName
+    VType = VertexParams.VType
+    
 
 class Blk039(BlkBase):
     bnum = 39
-    class Color_R(IntParam):
-        name = 'Color rad'
+    Color_R = IntParam(
+        name = 'Color rad',
         prop = 'int1'
-
-    class Unk_Float1(FloatParam):
-        name = 'Unk. 1'
+    )
+    
+    Unk_Float1 = FloatParam(
+        name = 'Unk. 1',
         prop = 'float1'
-
-    class Fog_Start(FloatParam):
-        name = 'Fog Start'
+    )
+    
+    Fog_Start = FloatParam(
+        name = 'Fog Start',
         prop = 'float2'
-
-    class Fog_End(FloatParam):
-        name = 'Fog End'
+    )
+    
+    Fog_End = FloatParam(
+        name = 'Fog End',
         prop = 'float3'
-
-    class Color_Id(IntParam):
-        name = 'Color Id'
+    )
+    
+    Color_Id = IntParam(
+        name = 'Color Id',
         prop = 'int2'
-
+    )
+    
 
 class Blk040(BlkBase):
     bnum = 40
-    class Name1(StringParam):
-        name = 'Name 1'
+    Name1 = StringParam(
+        name = 'Name 1',
         prop = 'string1'
-
-    class Name2(EnumParam):
-        name = 'Generator type'
-        prop = 'string2'
-        subtype = FieldType.STRING
-        items = generatorTypeList
-        default_value = '$$TreeGenerator'
-
-    class Unk_Int1(IntParam):
-        name = 'Unk. 1'
-        prop = 'int1'
-
-    class Unk_Int2(IntParam):
-        name = 'Unk. 2'
-        prop = 'int2'
+    )
     
-    class Unk_List(ListParam):
-        name = 'Unk. params'
-        prop = 'list1'
+    Name2 = EnumParam(
+        name = 'Generator type',
+        prop = 'string2',
+        subtype = FieldType.STRING,
+        items = generatorTypeList,
+        default_value = '$$TreeGenerator'
+    )
+    
+    Unk_Int1 = IntParam(
+        name = 'Unk. 1',
+        prop = 'int1'
+    )
+    
+    Unk_Int2 = IntParam(
+        name = 'Unk. 2',
+        prop = 'int2'
+    )
+        
+    Unk_List = ListParam(
+        name = 'Unk. params',
+        prop = 'list1',
         no_single_edit = True
-
+    )
+    
 # Blk050 - segment
 # Blk051 - unoriented node
 # Blk052 - oriented node
@@ -1159,11 +1227,11 @@ class Blk040(BlkBase):
 class Blk050(BlkBase):
     bnum = 50
 
-    class Attr1(FlagsParam):
-        name = 'Segment flags'
-        prop = 'int1'
-        description = 'Segment flags as integer'
-        default_value = 1
+    Attr1 = FlagsParam(
+        name = 'Segment flags',
+        prop = 'int1',
+        description = 'Segment flags as integer',
+        default_value = 1,
         flag_description = [{
             "name": "Use curved path",
             "key": "is_curve",
@@ -1207,85 +1275,101 @@ class Blk050(BlkBase):
             "default_value": False,
             "bit_index": 6
         }]
-
-    class Attr2(FloatParam):
-        name = 'Extend multiplier'
+    )
+    
+    Attr2 = FloatParam(
+        name = 'Extend multiplier',
         prop = 'float1'
-
-    class Attr3(IntParam):
-        name = 'Lane Count?'
+    )
+    
+    Attr3 = IntParam(
+        name = 'Lane Count?',
         prop = 'int2'
-
-    class Rten(StringParam):
-        name = 'Unk. name'
+    )
+    
+    Rten = StringParam(
+        name = 'Unk. name',
         prop = 'string1'
-
-    class Width1(FloatParam):
-        name = 'Starting width'
+    )
+    
+    Width1 = FloatParam(
+        name = 'Starting width',
         prop = 'float2'
-
-    class Width2(FloatParam):
-        name = 'Ending width'
+    )
+    
+    Width2 = FloatParam(
+        name = 'Ending width',
         prop = 'float3'
-
+    )
+    
 
 class Blk051(BlkBase):
     bnum = 51
-    class Flag(IntParam):
-        name = 'Flag'
+    Flag = IntParam(
+        name = 'Flag',
         prop = 'int1'
-
+    )
+    
 class Blk052(BlkBase):
     bnum = 52
-    class Flag(IntParam):
-        name = 'Flag'
+    Flag = IntParam(
+        name = 'Flag',
         prop = 'int1'
-
+    )
+    
 #Preset definitions
 
 class B40_TreeGenSimple(BlkBase):
     bnum = 40
     btype = 'tgs'
-    class TreeMatIndex(IntParam):
-        name = 'Tree Material'
-        prop = 'int1'
+    TreeMatIndex = IntParam(
+        name = 'Tree Material',
+        prop = 'int1',
         no_single_edit = True
-
-    class LeafMatIndex(IntParam):
-        name = 'Leaf Material'
-        prop = 'int2'
+    )
+    
+    LeafMatIndex = IntParam(
+        name = 'Leaf Material',
+        prop = 'int2',
         no_single_edit = True
-
+    )
+    
 class B40_TreeGenExtended(BlkBase):
     bnum = 40
     btype = 'tge'
-    class TreeMatIndex(IntParam):
-        name = 'Tree Material'
-        prop = 'int1'
+    TreeMatIndex = IntParam(
+        name = 'Tree Material',
+        prop = 'int1',
         no_single_edit = True
-
-    class LeafMatIndex(IntParam):
-        name = 'Leaf Material'
-        prop = 'int2'
-        no_single_edit = True
+    )
     
-    class Unk_Float21(FloatParam):
-        name = 'Unk. F1'
-        prop = 'float1'
+    LeafMatIndex = IntParam(
+        name = 'Leaf Material',
+        prop = 'int2',
         no_single_edit = True
+    )
+    
+    Unk_Float21 = FloatParam(
+        name = 'Unk. F1',
+        prop = 'float1',
+        no_single_edit = True
+    )
         
-    class Unk_Coord21(CoordParam):
-        name = 'Unk. C1'
-        prop = 'coord1'
+    Unk_Coord21 = CoordParam(
+        name = 'Unk. C1',
+        prop = 'coord1',
         no_single_edit = True
+    )
     
-    class Unk_Float22(FloatParam):
-        name = 'Unk. F2'
-        prop = 'float2'
+    Unk_Float22 = FloatParam(
+        name = 'Unk. F2',
+        prop = 'float2',
         no_single_edit = True
+    )
         
-    class Unk_Coord22(CoordParam):
-        name = 'Unk. C1'
-        prop = 'coord2'
+    Unk_Coord22 = CoordParam(
+        name = 'Unk. C1',
+        prop = 'coord2',
         no_single_edit = True
-    
+    )
+        

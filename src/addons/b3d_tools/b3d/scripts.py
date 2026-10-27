@@ -150,8 +150,8 @@ def apply_transform(root):
         # log.debug(prev_space_copy)
 
         if block[BLOCK_TYPE] == 18:
-            obj_name = block[Blk018.Add_Name.c_get_prop()]
-            space_name = block[Blk018.Space_Name.c_get_prop()]
+            obj_name = block[Blk018.Add_Name.get_prop()]
+            space_name = block[Blk018.Space_Name.get_prop()]
 
             dest_obj = bpy.data.objects.get(obj_name)
 
@@ -288,8 +288,8 @@ def get_hierarchy_roots(root):
     ref_set = set()
     for cn in blocks18:
         #out refs
-        if bpy.data.objects.get(cn.get(Blk018.Add_Name.c_get_prop())) is not None:
-            ref_set.add(cn.get(Blk018.Add_Name.c_get_prop()))
+        if bpy.data.objects.get(cn.get(Blk018.Add_Name.get_prop())) is not None:
+            ref_set.add(cn.get(Blk018.Add_Name.get_prop()))
 
         #in refs
         temp = cn
@@ -313,7 +313,7 @@ def get_hierarchy_roots(root):
     for r in referenceables:
         references = [cn for cn in get_all_children(bpy.data.objects.get(r)) if cn[BLOCK_TYPE] is not None and cn[BLOCK_TYPE] == 18]
         for ref_obj in references:
-            no_dub_graph[r].add(ref_obj[Blk018.Add_Name.c_get_prop()])
+            no_dub_graph[r].add(ref_obj[Blk018.Add_Name.get_prop()])
 
     for r in referenceables:
         graph[r] = list(no_dub_graph[r])
@@ -486,7 +486,7 @@ def process_lod(root, state, explevel = 0, curlevel = -1):
         block, clevel, is_active = stack.pop()
 
         if block[BLOCK_TYPE] == 18:
-            ref_obj = bpy.data.objects.get(block[Blk018.Add_Name.c_get_prop()])
+            ref_obj = bpy.data.objects.get(block[Blk018.Add_Name.get_prop()])
             if ref_obj is not None:
                 stack.append([ref_obj, clevel, is_active])
                 if is_active:
@@ -561,7 +561,7 @@ def process_cond(root, group, state):
         l_group = group
 
         if block[BLOCK_TYPE] == 18:
-            ref_obj = bpy.data.objects.get(block[Blk018.Add_Name.c_get_prop()])
+            ref_obj = bpy.data.objects.get(block[Blk018.Add_Name.get_prop()])
             if ref_obj is not None:
                 stack.append([ref_obj, clevel+1, glevel, group_max, is_active])
                 if is_active:
@@ -570,7 +570,7 @@ def process_cond(root, group, state):
         if block[BLOCK_TYPE] == 21:
             glevel += 1
             clevel = 1
-            group_max = block[Blk021.GroupCnt.c_get_prop()]
+            group_max = block[Blk021.GroupCnt.get_prop()]
             if l_group > group_max-1:
                 l_group = group_max-1
 
@@ -759,7 +759,7 @@ def show_hide_render_tree_branch(src_obj, collection, render_center_object, shif
         
         # Assigning input values
         input_name = gnode_modifier.node_group.inputs[0].identifier
-        create_vector_location_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk009.Unk_XYZ.c_get_prop())
+        create_vector_location_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk009.Unk_XYZ.get_prop())
         input_name = gnode_modifier.node_group.inputs[1].identifier
         create_circle_center_rad_driver(gnode_modifier, '["{}"]'.format(input_name), render_center_object)
         gnode_modifier[gnode_modifier.node_group.inputs[2].identifier] = material_text
@@ -783,7 +783,7 @@ def show_hide_lod_tree_branch(src_obj, collection, material):
         
         collection.objects.link(temp_obj)
         
-        create_vector_location_driver(temp_obj, 'delta_location', src_obj, Blk010.LOD_XYZ.c_get_prop())
+        create_vector_location_driver(temp_obj, 'delta_location', src_obj, Blk010.LOD_XYZ.get_prop())
 
         # Adding new modifier
         temp_obj.modifiers.new('LOD_branch_node', type='NODES')
@@ -794,7 +794,7 @@ def show_hide_lod_tree_branch(src_obj, collection, material):
         
         # Assigning input values
         input_name = gnode_modifier.node_group.inputs[0].identifier
-        create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk010.LOD_R.c_get_prop())
+        create_simple_value_driver(gnode_modifier, '["{}"]'.format(input_name), src_obj, Blk010.LOD_R.get_prop())
         gnode_modifier[gnode_modifier.node_group.inputs[1].identifier] = material
 
 
@@ -879,7 +879,7 @@ def get_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
                 elif field.get_attr_type() == FieldType.LIST:
                     
                     params_raw = b3d_obj[pname]
-                    params_bytes = hex_to_bytes(params_raw)
+                    params_bytes = BytesIO(hex_to_bytes(params_raw))
                     
                     list_key = getattr(blk, '{}_enum'.format(pname))
                     if list_key != '?':
@@ -1311,9 +1311,9 @@ def create_per_face_vc(mesh, values, pobj):
 
 def create_custom_attribute_c(mesh, values, zobj):
 
-    btype = zobj.c_get_btype()
-    bnum = zobj.c_get_bnum()
-    pname = zobj.c_get_prop()
+    btype = zobj.get_btype()
+    bnum = zobj.get_bnum()
+    pname = zobj.get_prop()
     create_custom_attribute(mesh, values, bnum, btype, pname)
 
 def create_custom_attribute(mesh, values, bnum, btype, pname):
