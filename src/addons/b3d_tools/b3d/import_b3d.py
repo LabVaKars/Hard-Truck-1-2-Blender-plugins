@@ -21,7 +21,13 @@ from .blocktool_defs import (
     # per-face params
     Pfb008,Pfb028,Pfb035,
     # per-vertex params
-    Pvb008,Pvb035
+    Pvb008,Pvb035,
+    # other
+    VertexFields, FaceFields
+)
+
+from .blocktool import (
+    BlockClassHandler
 )
 
 from ..consts import (
@@ -468,6 +474,13 @@ def import_b3d(file, context, self, filepath):
 
             t1 = time.perf_counter()
 
+            b3d_init = None
+            if block_type in [6,7,36,37]:
+                b3d_init = BlockClassHandler.get_object_initializer_by_class(VertexFields)
+            elif block_type in [8,35]:
+                b3d_init = BlockClassHandler.get_object_initializer_by_class(FaceFields)
+            else:
+                b3d_init = BlockClassHandler.get_block_class(block_type)
             
             if used_blocks[str(block_type)]:
                 
@@ -628,6 +641,7 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj[Blk006.GroupName.get_prop()] = name1
                 b3d_obj[Blk006.CollisionName.get_prop()] = name2
@@ -664,6 +678,7 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj[Blk007.CollisionName.get_prop()] = group_name
 
@@ -846,6 +861,7 @@ def import_b3d(file, context, self, filepath):
                 #Create Object
 
                 b3d_obj = bpy.data.objects.new(obj_name, b3d_mesh)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj.location = bounding_sphere[0:3]
                 b3d_obj.parent = parent_obj
@@ -1962,10 +1978,11 @@ def import_b3d(file, context, self, filepath):
 
 
                 b3d_obj = bpy.data.objects.new(obj_name, b3d_mesh)
+                b3d_init(b3d_obj)
                 b3d_obj.parent = parent_obj
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj.location = bounding_sphere[0:3]
-                b3d_obj[Blk035.MType.get_prop()] = m_type
+                b3d_obj[Blk035.FaceType.get_prop()] = m_type
                 b3d_obj[Blk035.TexNum.get_prop()] = texnum
                 # b3d_obj['FType'] = 0
                 # try:
@@ -2024,10 +2041,11 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj[Blk036.GroupName.get_prop()] = name1
                 b3d_obj[Blk036.CollisionName.get_prop()] = name2
-                b3d_obj[Blk036.VType.get_prop()] = format_raw
+                b3d_obj[Blk036.VertexType.get_prop()] = format_raw
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -2087,9 +2105,10 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None) #create empty
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj[Blk037.CollisionName.get_prop()] = group_name
-                b3d_obj[Blk037.VType.get_prop()] = format_raw
+                b3d_obj[Blk037.VertexType.get_prop()] = format_raw
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)

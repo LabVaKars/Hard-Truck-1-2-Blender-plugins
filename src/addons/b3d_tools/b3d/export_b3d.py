@@ -1121,7 +1121,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             verts, uvs, normals, polygons, local_verts = l_pass_to_mesh['props']
 
             write_mesh_sphere(file, block)
-            file.write(struct.pack("<i", block[Blk035.MType.get_prop()]))
+            file.write(struct.pack("<i", block[Blk035.FaceType.get_prop()]))
             # file.write(struct.pack("<i", 3))
             # file.write(struct.pack("<i", block[Blk035.TexNum.get_prop()]))
             material_name = current_module.materials[block[Blk035.TexNum.get_prop()]].mat_name
@@ -1197,7 +1197,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 36:
 
             # isSecondUvs = False
-            format_raw = int(block[Blk036.VType.get_prop()])
+            format_raw = int(block[Blk036.VertexType.get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk036.GroupName.get_prop()], file)
@@ -1261,7 +1261,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 37:
 
             # isSecondUvs = False
-            format_raw = int(block[Blk037.VType.get_prop()])
+            format_raw = int(block[Blk037.VertexType.get_prop()])
             normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk037.CollisionName.get_prop()], file)

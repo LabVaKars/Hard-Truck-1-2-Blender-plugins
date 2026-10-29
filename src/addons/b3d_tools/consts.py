@@ -83,6 +83,12 @@ vVertexTypeList = [
     ('37', '37(Extended)', "Extended")
 ]
 
+vFaceTypeList = [
+    ('8', '8(Simple)', "Simple"),
+    ('35', '35(Extended)', "Extended")
+]
+
+
 vTypeList = [
     ('0', '0(No normals)', "No normals"),
     ('1', '1(With normals)', "With normals"),

@@ -102,7 +102,7 @@ def draw_fields_by_type(layout, bnum, btype = BlockClassType.BLOCK, multiple_edi
 
     boxes = {}
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype, multiple_edit)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype, multiple_edit)
 
     for field in fields.values():
 

@@ -20,12 +20,14 @@ from ..compatibility import (
 )
 
 from .blocktool_defs import (
+    BlkBase,
+    BlkGroupBase,
     BlkParam,
     FieldType,
     BlockClassType,
     # block params
-    Blk001,Blk002,Blk004,Blk005,Blk006,Blk007,Blk009,Blk010,
-    Blk011,Blk012,Blk013,Blk014,Blk015,Blk016,Blk017,Blk018,Blk020,
+    Blk001,Blk002,Blk003,Blk004,Blk005,Blk006,Blk007,Blk008,Blk009,Blk010,
+    Blk011,Blk012,Blk013,Blk014,Blk015,Blk016,Blk017,Blk018,Blk019,Blk020,
     Blk021,Blk022,Blk023,Blk024,Blk025,Blk026,Blk027,Blk028,Blk029,Blk030,
     Blk031,Blk033,Blk034,Blk035,Blk036,Blk037,Blk039,Blk040,
     # per-face params
@@ -35,7 +37,9 @@ from .blocktool_defs import (
     # way objs
     Blk050,Blk051,Blk052,
     # presets
-    B40_TreeGenSimple, B40_TreeGenExtended
+    B40_TreeGenSimple, B40_TreeGenExtended,
+    # other
+    GrpVertex, GrpFace
 )
 
 from .callbacks import (
@@ -59,6 +63,14 @@ def set_cust_obj_value(subtype, bname, pname):
         elif subtype == FieldType.STRING:
             result = str(result)
 
+        # print(getattr(bpy.context.object, '["{}"]'.format(pname)))
+        # if getattr(bpy.context.object, '["{}"]'.format(pname)) is None:
+        #     setattr(
+        #         bpy.context.object,
+        #         '["{}"]'.format(pname),
+        #         ''
+        #     )
+
         setattr(
             bpy.context.object,
             '["{}"]'.format(pname),
@@ -73,6 +85,7 @@ class BlockClassPrefix():
     PER_VERTEX_BLOCK = 'per_vertex_block'
     BLOCK = 'block'
     SINGLE_BLOCK = 'single_block'
+    GROUP = 'group'
 
 
 class BlockClassHandler():
@@ -82,8 +95,8 @@ class BlockClassHandler():
     ]
 
     block_classes = [
-        None, Blk001, Blk002, None, Blk004, Blk005, Blk006, Blk007, None, Blk009,
-        Blk010, Blk011, Blk012, Blk013, Blk014, Blk015, Blk016, Blk017, Blk018, None,
+        None, Blk001, Blk002, Blk003, Blk004, Blk005, Blk006, Blk007, Blk008, Blk009,
+        Blk010, Blk011, Blk012, Blk013, Blk014, Blk015, Blk016, Blk017, Blk018, Blk019,
         Blk020, Blk021, Blk022, Blk023, Blk024, Blk025, Blk026, Blk027, Blk028, Blk029,
         Blk030, Blk031, None, Blk033, Blk034, Blk035, Blk036, Blk037, None, Blk039,
         Blk040, None, None, None, None, None, None, None, None, None,
@@ -102,6 +115,10 @@ class BlockClassHandler():
         None, None, None, None, None, None, None, None, None, None,
         None, None, None, None, None, None, None, None, None, None,
         None, None, None, None, None, Pvb035, None, None, None, None
+    ]
+
+    block_group_classes = [
+        None, GrpVertex, GrpFace
     ]
 
 
@@ -126,12 +143,36 @@ class BlockClassHandler():
         return cls.c_get_btype() == BlockClassType.PER_VERTEX_BLOCK
 
     @staticmethod
-    def get_block_object(bnum, btype = BlockClassType.BLOCK, multiple_edit = True):
-        bname = BlockClassHandler.get_mytool_block_name(bnum, btype, multiple_edit)
-        if BlockClassHandler.block_objects.get(bname) is not None:
-            return [bname, BlockClassHandler.block_objects[bname]]
+    def get_block_fields(bnum, btype = BlockClassType.BLOCK, multiple_edit = True):
+        if btype == BlockClassType.GROUP:
+            bclass = BlockClassHandler.get_block_class(bnum, BlockClassType.BLOCK)
+            bgnum = bclass.c_get_bgnum()
+            bname = BlockClassHandler.get_mytool_block_name(bgnum, BlockClassType.GROUP, multiple_edit)
+        else:
+            bname = BlockClassHandler.get_mytool_block_name(bnum, btype, multiple_edit)
+        if BlockClassHandler.block_fields.get(bname) is not None:
+            return [bname, BlockClassHandler.block_fields[bname]]
         else:
             return ['', {}]
+
+    @staticmethod
+    def get_block_class(bnum, btype = BlockClassType.BLOCK):
+        if btype == BlockClassType.BLOCK:
+            return BlockClassHandler.block_classes[bnum]
+        elif btype == BlockClassType.PER_FACE_BLOCK:
+            return BlockClassHandler.per_face_block_classes[bnum]
+        elif btype == BlockClassType.PER_VERTEX_BLOCK:
+            return BlockClassHandler.per_vertex_block_classes[bnum]
+        elif btype == BlockClassType.GROUP:
+            return BlockClassHandler.block_group_classes[bnum]
+
+        
+    # @staticmethod
+    # def get_block_group_fields(bnum, btype = BlockClassType.GROUP):
+    #     bclass = BlockClassHandler.get_block_class(bnum, btype)
+    #     bgnum = bclass.c_get_bgnum()
+    #     return BlockClassHandler.get_block_fields(bgnum)
+
 
     @staticmethod
     def create_type_class(bname, fields, multiple_edit = True):
@@ -368,7 +409,7 @@ class BlockClassHandler():
     @staticmethod
     def create_block_properties():
 
-        BlockClassHandler.block_objects = {}
+        BlockClassHandler.block_fields = {}
 
         BlockClassHandler.blender_block_classes = []
 
@@ -380,8 +421,8 @@ class BlockClassHandler():
         for bclass in [bc for bc in BlockClassHandler.preset_classes if bc is not None]:
             fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
-            bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
-            btype = BlockClassHandler.get_block_type_from_bclass(bclass)
+            bnum = bclass.c_get_bnum()
+            btype = bclass.c_get_btype()
             
             for field_name, field in fields.items():
                 field.set_bnum(bnum)
@@ -389,75 +430,90 @@ class BlockClassHandler():
                 #rename preset props to avoid name collisions
                 field.set_prop("{}_{}".format(btype, field.get_prop()))
 
-            bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
             attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
-            BlockClassHandler.block_objects[bname] = fields
-            BlockClassHandler.blender_block_classes.append(gen_class)
-
-
-        for bclass in [bc for bc in BlockClassHandler.block_classes if bc is not None]:
-            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
-            
-            bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
-            btype = BlockClassHandler.get_block_type_from_bclass(bclass)
-            
-            for field_name, field in fields.items():
-                field.set_bnum(bnum)
-                field.set_btype(btype)
-
-            bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
-            gen_class = BlockClassHandler.create_type_class(bname, fields)
-            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
-            BlockClassHandler.block_objects[bname] = fields
+            BlockClassHandler.block_fields[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.block_classes if bc is not None]:
             fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
-            bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
-            btype = BlockClassHandler.get_block_type_from_bclass(bclass)
+            bnum = bclass.c_get_bnum()
+            btype = bclass.c_get_btype()
             
             for field_name, field in fields.items():
                 field.set_bnum(bnum)
                 field.set_btype(btype)
 
-            bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, False)
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
+            gen_class = BlockClassHandler.create_type_class(bname, fields)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
+            BlockClassHandler.block_fields[bname] = fields
+            BlockClassHandler.blender_block_classes.append(gen_class)
+
+        for bclass in [bc for bc in BlockClassHandler.block_classes if bc is not None]:
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
+            
+            bnum = bclass.c_get_bnum()
+            btype = bclass.c_get_btype()
+            
+            for field_name, field in fields.items():
+                field.set_bnum(bnum)
+                field.set_btype(btype)
+
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, False)
             gen_class = BlockClassHandler.create_type_class(bname, fields, False)
             attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
-            BlockClassHandler.block_objects[bname] = fields
+            BlockClassHandler.block_fields[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.per_face_block_classes if bc is not None]:
             fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
             
-            bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
-            btype = BlockClassHandler.get_block_type_from_bclass(bclass)
+            bnum = bclass.c_get_bnum()
+            btype = bclass.c_get_btype()
             
             for field_name, field in fields.items():
                 field.set_bnum(bnum)
                 field.set_btype(btype)
 
-            bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
             attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
-            BlockClassHandler.block_objects[bname] = fields
+            BlockClassHandler.block_fields[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         for bclass in [bc for bc in BlockClassHandler.per_vertex_block_classes if bc is not None]:
             fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
 
-            bnum = BlockClassHandler.get_block_num_from_bclass(bclass)
-            btype = BlockClassHandler.get_block_type_from_bclass(bclass)
+            bnum = bclass.c_get_bnum()
+            btype = bclass.c_get_btype()
             
             for field_name, field in fields.items():
                 field.set_bnum(bnum)
                 field.set_btype(btype)
             
-            bname, bnum = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
             gen_class = BlockClassHandler.create_type_class(bname, fields)
             attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
-            BlockClassHandler.block_objects[bname] = fields
+            BlockClassHandler.block_fields[bname] = fields
+            BlockClassHandler.blender_block_classes.append(gen_class)
+
+        for bclass in [bc for bc in BlockClassHandler.block_group_classes if bc is not None]:
+            fields = {attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}
+
+            # bgnum = bclass.c_get_bgnum()
+            # bgtype = bclass.c_get_bgtype()
+            
+            # for field_name, field in fields.items():
+            #     field.set_bnum(bnum)
+            #     field.set_btype(btype)
+                        
+            bname = BlockClassHandler.get_mytool_block_name_by_class(bclass, True)
+            gen_class = BlockClassHandler.create_type_class(bname, fields)
+            attributes['__annotations__'][bname] = bpy.props.PointerProperty(type=gen_class)
+            BlockClassHandler.block_fields[bname] = fields
             BlockClassHandler.blender_block_classes.append(gen_class)
 
         if is_before_2_80():
@@ -466,23 +522,41 @@ class BlockClassHandler():
         return type("BlockSettings", (bpy.types.PropertyGroup,), attributes)
 
     @staticmethod
-    def get_mytool_block_name_by_class(bclass, multiple_edit = True):
-        bname = ''
-        btype = bclass.c_get_btype()
-        bnum = bclass.c_get_bnum()
-        if btype == BlockClassType.BLOCK:
-            if multiple_edit:
-                bname = '{}_{}'.format(BlockClassPrefix.BLOCK, bnum)
-            else:
-                bname = '{}_{}'.format(BlockClassPrefix.SINGLE_BLOCK, bnum)
-        elif btype == BlockClassType.PER_FACE_BLOCK:
-            bname = '{}_{}'.format(BlockClassPrefix.PER_FACE_BLOCK, bnum)
-        elif btype == BlockClassType.PER_VERTEX_BLOCK:
-            bname = '{}_{}'.format(BlockClassPrefix.PER_VERTEX_BLOCK, bnum)
-        else:
-            bname = '{}_{}'.format(btype, bnum)
+    def get_object_initializer_by_class(bclass):
+        def initializer(b3d_obj):
+            for field_name, field in ({attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}).items():
+                b3d_obj[field_name] = field.get_default()
+        
+        return initializer 
+        bname, fields = BlockClassHandler.get_block_fields(bclass.c_get_bnum(), bclass.c_get_btype())
 
-        return [bname, bnum]
+
+    @staticmethod
+    def get_mytool_block_name_by_class(bclass, multiple_edit = True):
+        
+        bname = ''
+        
+        if issubclass(bclass, BlkBase):
+
+            btype = bclass.c_get_btype()
+            bnum = bclass.c_get_bnum()
+            if btype == BlockClassType.BLOCK:
+                if multiple_edit:
+                    bname = '{}_{}'.format(BlockClassPrefix.BLOCK, bnum)
+                else:
+                    bname = '{}_{}'.format(BlockClassPrefix.SINGLE_BLOCK, bnum)
+            elif btype == BlockClassType.PER_FACE_BLOCK:
+                bname = '{}_{}'.format(BlockClassPrefix.PER_FACE_BLOCK, bnum)
+            elif btype == BlockClassType.PER_VERTEX_BLOCK:
+                bname = '{}_{}'.format(BlockClassPrefix.PER_VERTEX_BLOCK, bnum)
+            else:
+                bname = '{}_{}'.format(btype, bnum)
+
+        if issubclass(bclass, BlkGroupBase):
+            bgnum = bclass.c_get_bgnum()
+            bname = '{}_{}'.format(BlockClassPrefix.GROUP, bgnum)
+
+        return bname
 
     @staticmethod
     def get_mytool_block_name(bnum, btype = BlockClassType.BLOCK, multiple_edit = False):
@@ -496,9 +570,10 @@ class BlockClassHandler():
             bname = '{}_{}'.format(BlockClassPrefix.PER_FACE_BLOCK, bnum)
         elif btype == BlockClassType.PER_VERTEX_BLOCK:
             bname = '{}_{}'.format(BlockClassPrefix.PER_VERTEX_BLOCK, bnum)
+        elif btype == BlockClassType.GROUP:
+            bname = '{}_{}'.format(BlockClassPrefix.GROUP, bnum)
         else:
             bname = '{}_{}'.format(btype, bnum)
-
 
         return bname
 

@@ -21,6 +21,7 @@ from ..consts import (
     b33LightTypes,
     vTypeList,
     vVertexTypeList,
+    vFaceTypeList,
     BLOCK_TYPE,
     LEVEL_GROUP
 )
@@ -51,6 +52,13 @@ class BlockClassType():
     PER_FACE_BLOCK = 'Pfb'
     PER_VERTEX_BLOCK = 'Pvb'
     BLOCK = 'Blk'
+    GROUP = 'Grp'
+
+class GroupType():
+    NO_GROUP = 0
+    VERTEX = 1
+    FACE = 2
+    CONTAINER = 3
 
 class FieldType():
     IGNORE = 0
@@ -126,8 +134,37 @@ class FieldType():
 # Custom operators
 # FieldType.SPHERE_EDIT
 
+
+class BlkGroupBase():
+    bnum_list = (0)                             #Block numbers
+    # enum_items = (('','',''))                 #Block enum items
+    bgnum = GroupType.NO_GROUP                  #Block group num
+    bgtype = BlockClassType.GROUP               #Block group type
+
+    # --- bgtype ---
+    @classmethod
+    def c_get_bgtype(cls):
+        return cls.bgtype
+    
+    # --- bgnum ---
+    @classmethod
+    def c_get_bgnum(cls):
+        return cls.bgnum
+
+    # --- bnum_list ---
+    @classmethod
+    def c_get_bnum_list(cls):
+        return cls.bnum_list
+
+    # --- bnum_list ---
+    @classmethod
+    def c_is_in_block_group(cls, bnum):
+        return bnum in cls.bnum_list
+
+
 class BlkBase():
     bnum = 0                            #Block number
+    bgnum = 0                           #Block group
     btype = BlockClassType.BLOCK        #Block type
 
     # --- btype ---
@@ -140,6 +177,11 @@ class BlkBase():
     def c_get_bnum(cls):
         return cls.bnum
 
+    # --- bnum ---
+    @classmethod
+    def c_get_bgnum(cls):
+        return cls.bgnum
+    
 @dataclass
 class BlkParam():
     bnum: typing.Any = None                         #Block number - is copied from BlkBase
@@ -442,19 +484,20 @@ class Pfb035(BlkBase):
     #     'default': 0
     # }
 
+# class VertexBlockSwitch(BlkBase):
 
-class VertexParams(BlkBase):
+#     BlockSwitch = EnumParam(
+#         name = 'Block type',
+#         prop = BLOCK_TYPE,
+#         subtype = FieldType.BLOCK,
+#         items = vVertexTypeList,
+#         default_value = 37
+#     )
 
-    BlockSwitch = EnumParam(
-        name = 'Block type',
-        prop = BLOCK_TYPE,
-        subtype = FieldType.INT,
-        items = vVertexTypeList,
-        default_value = 37
-    )
 
-    GroupName = StringParam(
-        name = 'Group name',
+class VertexFields(BlkBase):
+    SpaceName = StringParam(
+        name = 'Space name',
         prop = 'string1'
     )
 
@@ -463,13 +506,53 @@ class VertexParams(BlkBase):
         prop = 'string2'
     )
 
-    VType = EnumParam(
+    VertexType = EnumParam(
         name = 'Vertex type',
         prop = 'int1',
         subtype = FieldType.INT,
         items = vTypeList,
         default_value = 3
     )
+
+
+class GrpVertex(BlkGroupBase):
+    bgnum = GroupType.VERTEX
+    
+    Block_type = EnumParam(
+        name = 'Block type',
+        prop = 'block_type',
+        subtype = FieldType.INT,
+        items = vVertexTypeList,
+        default_value = 0
+    )
+
+class FaceFields(BlkBase):
+    
+    FaceType = IntParam(
+        name = 'Face type',
+        prop = 'int1'
+    )
+    
+    TexNum = EnumDynParam(
+        name = 'Material',
+        prop = 'int2',
+        subtype = FieldType.INT,
+        callback = FieldType.MATERIAL_IND,
+        default_value = -1
+    )
+
+class GrpFace(BlkGroupBase):
+    bgnum = GroupType.FACE
+    
+    Block_type = EnumParam(
+        name = 'Block type',
+        prop = 'block_type',
+        subtype = FieldType.INT,
+        items = vFaceTypeList,
+        default_value = 0
+    )
+
+    
 
 class Blk001(BlkBase):
     bnum = 1
@@ -500,6 +583,10 @@ class Blk002(BlkBase):
     )
 
 
+class Blk003(BlkBase):
+    bnum = 3
+
+
 class Blk004(BlkBase):
     bnum = 4
 
@@ -527,14 +614,19 @@ class Blk005(BlkBase):
 
 class Blk006(BlkBase):
     bnum = 6
-    GroupName = VertexParams.GroupName
-    CollisionName = VertexParams.CollisionName
+    bgnum = GroupType.VERTEX
+    SpaceName = VertexFields.SpaceName
+    CollisionName = VertexFields.CollisionName
 
 
 class Blk007(BlkBase):
     bnum = 7
-    CollisionName = VertexParams.CollisionName
+    bgnum = GroupType.VERTEX
+    CollisionName = VertexFields.CollisionName
 
+class Blk008(BlkBase):
+    bnum = 8
+    bgnum = GroupType.FACE
 
 class Blk009(BlkBase):
     bnum = 9
@@ -790,7 +882,11 @@ class Blk018(BlkBase):
         callback = FieldType.REFERENCEABLE,
         default_value = '?'
     )
+
     
+class Blk019(BlkBase):
+    bnum = 19
+
 
 class Blk020(BlkBase):
     bnum = 20
@@ -1135,30 +1231,24 @@ class Blk034(BlkBase):
 
 class Blk035(BlkBase):
     bnum = 35
-    MType = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
-    
-    TexNum = EnumDynParam(
-        name = 'Material',
-        prop = 'int2',
-        subtype = FieldType.INT,
-        callback = FieldType.MATERIAL_IND,
-        default_value = -1
-    )
+    bgnum = GroupType.FACE
+    FaceType = FaceFields.FaceType
+    TexNum = FaceFields.TexNum
+
     
 class Blk036(BlkBase):
     bnum = 36
-    GroupName = VertexParams.GroupName
-    CollisionName = VertexParams.CollisionName
-    VType = VertexParams.VType
+    bgnum = GroupType.VERTEX
+    SpaceName = VertexFields.SpaceName
+    CollisionName = VertexFields.CollisionName
+    VertexType = VertexFields.VertexType
     
 
 class Blk037(BlkBase):
     bnum = 37
-    CollisionName = VertexParams.CollisionName
-    VType = VertexParams.VType
+    bgnum = GroupType.VERTEX
+    CollisionName = VertexFields.CollisionName
+    VertexType = VertexFields.VertexType
     
 
 class Blk039(BlkBase):

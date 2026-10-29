@@ -359,6 +359,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
 
             if consts.BLOCK_TYPE in b3d_obj:
                 block_type = b3d_obj[consts.BLOCK_TYPE]
+
             # else:
             #     block_type = None
 
@@ -370,8 +371,10 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
                 col = row.column()
                 col.operator(SetValuesOperator.bl_idname)
                 layout.operator(SelectSimilarObjectsOperator.bl_idname)
+                
+                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP)
 
-                draw_fields_by_type(self.layout, block_type)
+                draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, True)
 
 
 class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
@@ -400,6 +403,8 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
                 block_type = b3d_obj[consts.BLOCK_TYPE]
 
                 len_str = str(len(b3d_obj.children))
+                
+                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP)
                 
                 draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, False)
 

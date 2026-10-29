@@ -340,7 +340,7 @@ def get_hierarchy_roots(root):
 
 def select_similar_objects_by_type(bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     b3d_objects = [obj for obj in bpy.data.objects if "block_type" in obj.keys() and obj['block_type'] == bnum]
 
@@ -395,7 +395,7 @@ def select_similar_objects_by_type(bnum, btype = BlockClassType.BLOCK):
 
 def select_similar_faces_by_type(bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
     b3d_faces = [face for obj in bpy.context.selected_objects 
@@ -834,7 +834,7 @@ def show_hide_sphere(src_obj, center_prop, rad_prop):
 
 def get_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
     params_bytes = None
 
     blocktool = get_block_tool()
@@ -883,7 +883,7 @@ def get_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
                     
                     list_key = getattr(blk, '{}_enum'.format(pname))
                     if list_key != '?':
-                        preset_name, preset_fields = BlockClassHandler.get_block_object(bnum, list_key)
+                        preset_name, preset_fields = BlockClassHandler.get_block_fields(bnum, list_key)
                         for pfield_name, pfield_obj in preset_fields.items():
                             pvalue = ''
                             if pfield_obj.get_attr_type() == FieldType.INT:
@@ -916,7 +916,7 @@ def get_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
 
 def set_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
     
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     blocktool = get_block_tool()
     for field in fields.values():
@@ -957,7 +957,7 @@ def set_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
                     params_bytes = BytesIO()
                     list_key = getattr(blk, '{}_enum'.format(pname))
                     if list_key != '?':
-                        preset_name, preset_fields = BlockClassHandler.get_block_object(bnum, list_key)
+                        preset_name, preset_fields = BlockClassHandler.get_block_fields(bnum, list_key)
                         preset_blk = getattr(blocktool, preset_name) if getattr(blocktool, preset_name) else None
                         for pfield_name, pfield_obj in preset_fields.items():
                             bytevalue = None
@@ -1013,7 +1013,7 @@ def get_per_face_by_type(mesh, bnum, btype = BlockClassType.BLOCK, poly_arr = No
 
 def get_per_face_attr(mesh, bnum, btype = BlockClassType.BLOCK, poly_arr = None, pname = None, only_result = False):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     polygons = poly_arr
     if polygons is None:
@@ -1032,7 +1032,7 @@ def get_per_face_attr(mesh, bnum, btype = BlockClassType.BLOCK, poly_arr = None,
 
 def get_per_face_vc(mesh, bnum, btype = BlockClassType.BLOCK, poly_arr = None, pname = None, only_result = False):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     polygons = poly_arr
     if polygons is None:
@@ -1056,7 +1056,7 @@ def set_per_face_by_type(mesh, bnum, btype = BlockClassType.BLOCK):
 
 def set_per_face_attr(mesh, bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
     polygons = get_polygons_by_selected_vertices(mesh)
@@ -1071,7 +1071,7 @@ def set_per_face_attr(mesh, bnum, btype = BlockClassType.BLOCK):
 
 def set_per_face_vc(mesh, bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
     polygons = get_polygons_by_selected_vertices(mesh)
@@ -1092,7 +1092,7 @@ def get_per_vertex_by_type(mesh, bnum, btype = BlockClassType.BLOCK):
 
 def get_per_vertex_attr(mesh, bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
     vertices = get_selected_vertices(mesh)
@@ -1111,7 +1111,7 @@ def set_per_vertex_by_type(mesh, bnum, btype = BlockClassType.BLOCK):
 
 def set_per_vertex_attr(mesh, bnum, btype = BlockClassType.BLOCK):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
     vertices = get_selected_vertices(mesh)
@@ -1318,7 +1318,7 @@ def create_custom_attribute_c(mesh, values, zobj):
 
 def create_custom_attribute(mesh, values, bnum, btype, pname):
 
-    bname, fields = BlockClassHandler.get_block_object(bnum, btype)
+    bname, fields = BlockClassHandler.get_block_fields(bnum, btype)
 
     obj = fields[pname]
 
