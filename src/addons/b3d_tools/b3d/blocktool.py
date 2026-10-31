@@ -38,8 +38,8 @@ from .blocktool_defs import (
     Blk050,Blk051,Blk052,
     # presets
     B40_TreeGenSimple, B40_TreeGenExtended,
-    # other
-    GrpVertex, GrpFace
+    # groups
+    GrpVertex, GrpFace, GrpContainer, GrpCircleTrigger, GrpCylinderTrigger
 )
 
 from .callbacks import (
@@ -118,7 +118,7 @@ class BlockClassHandler():
     ]
 
     block_group_classes = [
-        None, GrpVertex, GrpFace
+        None, GrpVertex, GrpFace, GrpContainer, GrpCircleTrigger, GrpCylinderTrigger
     ]
 
 
@@ -196,7 +196,7 @@ class BlockClassHandler():
 
 
             if field.get_attr_type() == FieldType.STRING \
-            or field.get_attr_type() == FieldType.COORD \
+            or field.get_attr_type() == FieldType.VECTOR \
             or field.get_attr_type() == FieldType.FLOAT \
             or field.get_attr_type() == FieldType.INT \
             or field.get_attr_type() == FieldType.LIST:
@@ -209,7 +209,7 @@ class BlockClassHandler():
                         maxlen = 32
                     )
 
-                elif field.get_attr_type() == FieldType.COORD and multiple_edit:
+                elif field.get_attr_type() == FieldType.VECTOR and multiple_edit:
                     prop = FloatVectorProperty(
                         name = field.get_name(),
                         description = field.get_description(),

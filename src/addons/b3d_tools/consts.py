@@ -88,6 +88,22 @@ vFaceTypeList = [
     ('35', '35(Extended)', "Extended")
 ]
 
+vContainerTypeList = [
+    ('3', '3(Ordered)', "Ordered"),
+    ('4', '4(Simple + Spaced)', "Simple + Spaced"),
+    ('5', '5(Simple)', "Simple")
+]
+
+vCircleTriggerTypeList = [
+    ('14', '14(Circle Trigger)', "Circle Trigger"),
+    ('15', '15(Circle Trigger reversed)', "Circle Trigger reversed")
+]
+
+vCylinderTriggerTypeList = [
+    ('16', '16(Cylinder Trigger)', "Cylinder Trigger"),
+    ('17', '17(Cylinder Trigger reversed)', "Cylinder Trigger reversed")
+]
+
 
 vTypeList = [
     ('0', '0(No normals)', "No normals"),
@@ -120,8 +136,8 @@ mTypeList = [
 ]
 
 b24FlagList = [
-    ('0', "0", "Attached object won't be shown"),
-    ('1', "1", "Attached object will be shown")
+    ('0', "0", "Absolute position"),
+    ('1', "1", "Relative position")
 ]
 
 b33LightTypes = [

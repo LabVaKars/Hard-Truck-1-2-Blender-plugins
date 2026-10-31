@@ -372,7 +372,7 @@ class OBJECT_PT_b3d_pob_edit_panel(bpy.types.Panel):
                 col.operator(SetValuesOperator.bl_idname)
                 layout.operator(SelectSimilarObjectsOperator.bl_idname)
                 
-                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP)
+                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP, True)
 
                 draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, True)
 
@@ -404,7 +404,7 @@ class OBJECT_PT_b3d_pob_single_edit_panel(bpy.types.Panel):
 
                 len_str = str(len(b3d_obj.children))
                 
-                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP)
+                draw_fields_by_type(self.layout, block_type, BlockClassType.GROUP, False)
                 
                 draw_fields_by_type(self.layout, block_type, BlockClassType.BLOCK, False)
 

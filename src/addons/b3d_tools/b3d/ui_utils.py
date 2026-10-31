@@ -132,7 +132,7 @@ def draw_fields_by_type(layout, bnum, btype = BlockClassType.BLOCK, multiple_edi
                 props = col.operator("wm.show_hide_sphere_operator")
 
         elif ftype == FieldType.STRING \
-        or ftype == FieldType.COORD \
+        or ftype == FieldType.VECTOR \
         or ftype == FieldType.INT \
         or ftype == FieldType.FLOAT \
         or ftype == FieldType.ENUM \
@@ -153,7 +153,7 @@ def draw_fields_by_type(layout, bnum, btype = BlockClassType.BLOCK, multiple_edi
                 col = box.column()
                 if ftype in [
                     FieldType.STRING,
-                    FieldType.COORD,
+                    FieldType.VECTOR,
                     FieldType.INT,
                     FieldType.FLOAT
                 ]:

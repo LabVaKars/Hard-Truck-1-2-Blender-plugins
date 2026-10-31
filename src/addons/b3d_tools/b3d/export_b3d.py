@@ -557,8 +557,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 4:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk004.Name1.get_prop()], file)
-            write_name(block[Blk004.Name2.get_prop()], file)
+            write_name(block[Blk004.SpaceName.get_prop()], file)
+            write_name(block[Blk004.CollisionName.get_prop()], file)
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -567,7 +567,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
         elif obj_type == 5:
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
-            write_name(block[Blk005.Name1.get_prop()], file)
+            write_name(block[Blk004.CollisionName.get_prop()], file)
 
             file.write(struct.pack("<i", len(get_children(block))))
 
@@ -761,7 +761,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk012.Unk_R.get_prop()]))
             file.write(struct.pack("<i", block[Blk012.Unk_Int1.get_prop()]))
             file.write(struct.pack("<i", block[Blk012.Unk_Int2.get_prop()]))
-            hex_string = block[Blk012.Unk_List.get_prop()]
+            hex_string = block[Blk012.Colis_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
@@ -770,53 +770,55 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
             file.write(struct.pack("<i", block[Blk013.Unk_Int1.get_prop()]))
             file.write(struct.pack("<i", block[Blk013.Unk_Int2.get_prop()]))
-            hex_string = block[Blk013.Unk_List.get_prop()]
+            hex_string = block[Blk013.Trigger_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 14:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk014.Unk_XYZ.get_prop()]))
-            file.write(struct.pack("<f", block[Blk014.Unk_R.get_prop()]))
-            file.write(struct.pack("<i", block[Blk014.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk014.Unk_Int2.get_prop()]))
-            hex_string = block[Blk014.Unk_List.get_prop()]
+            file.write(struct.pack("<3f", *block[Blk014.Center.get_prop()]))
+            file.write(struct.pack("<f", block[Blk014.Radius.get_prop()]))
+            file.write(struct.pack("<i", block[Blk014.Trigger_Type.get_prop()]))
+            file.write(struct.pack("<i", block[Blk014.Trigger_ID.get_prop()]))
+            hex_string = block[Blk014.Trigger_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 15:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<i", block[Blk015.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk015.Unk_Int2.get_prop()]))
-            hex_string = block[Blk015.Unk_List.get_prop()]
+            file.write(struct.pack("<3f", *block[Blk015.Center.get_prop()]))
+            file.write(struct.pack("<f", block[Blk015.Radius.get_prop()]))
+            file.write(struct.pack("<i", block[Blk015.Trigger_Type.get_prop()]))
+            file.write(struct.pack("<i", block[Blk015.Trigger_ID.get_prop()]))
+            hex_string = block[Blk015.Trigger_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 16:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk016.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk016.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk016.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<i", block[Blk016.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk016.Unk_Int2.get_prop()]))
-            hex_string = block[Blk016.Unk_List.get_prop()]
+            file.write(struct.pack("<3f", *block[Blk016.Center.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk016.Axis.get_prop()]))
+            file.write(struct.pack("<f", block[Blk016.Half_Length.get_prop()]))
+            file.write(struct.pack("<f", block[Blk016.Radius.get_prop()]))
+            file.write(struct.pack("<i", block[Blk016.Trigger_Type.get_prop()]))
+            file.write(struct.pack("<i", block[Blk016.Trigger_ID.get_prop()]))
+            hex_string = block[Blk016.Trigger_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
         elif obj_type == 17:
 
             write_bound_sphere(file, (0.0,0.0,0.0), 0.0)
-            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ1.get_prop()]))
-            file.write(struct.pack("<3f", *block[Blk017.Unk_XYZ2.get_prop()]))
-            file.write(struct.pack("<f", block[Blk017.Unk_Float1.get_prop()]))
-            file.write(struct.pack("<f", block[Blk017.Unk_Float2.get_prop()]))
-            file.write(struct.pack("<i", block[Blk017.Unk_Int1.get_prop()]))
-            file.write(struct.pack("<i", block[Blk017.Unk_Int2.get_prop()]))
-            hex_string = block[Blk017.Unk_List.get_prop()]
+            file.write(struct.pack("<3f", *block[Blk017.Center.get_prop()]))
+            file.write(struct.pack("<3f", *block[Blk017.Axis.get_prop()]))
+            file.write(struct.pack("<f", block[Blk017.Half_Length.get_prop()]))
+            file.write(struct.pack("<f", block[Blk017.Radius.get_prop()]))
+            file.write(struct.pack("<i", block[Blk017.Trigger_Type.get_prop()]))
+            file.write(struct.pack("<i", block[Blk017.Trigger_ID.get_prop()]))
+            hex_string = block[Blk017.Trigger_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
@@ -848,7 +850,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", block[Blk020.Unk_Int1.get_prop()]))
             file.write(struct.pack("<i", block[Blk020.Unk_Int2.get_prop()]))
 
-            hex_string = block[Blk020.Unk_List.get_prop()]
+            hex_string = block[Blk020.Colis_Plane.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3)) # / 8
             file.write(hex_to_bytes(hex_string))
 
@@ -880,7 +882,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", block[Blk023.Surface.get_prop()]))
             # file.write(struct.pack("<i", 0)) #Params Count
 
-            hex_string = block[Blk023.Unk_List.get_prop()]
+            hex_string = block[Blk023.ColisWall_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 
@@ -1340,7 +1342,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_name(block[Blk040.Name2.get_prop()], file)
             file.write(struct.pack("<i", block[Blk040.Unk_Int1.get_prop()]))
             file.write(struct.pack("<i", block[Blk040.Unk_Int2.get_prop()]))
-            hex_string = block[Blk040.Unk_List.get_prop()]
+            hex_string = block[Blk040.Gen_Params.get_prop()]
             file.write(struct.pack("<i", len(hex_string) >> 3))
             file.write(hex_to_bytes(hex_string))
 

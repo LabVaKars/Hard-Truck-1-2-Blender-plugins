@@ -890,7 +890,7 @@ def get_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
                                 pvalue = struct.unpack("<i", params_bytes.read(4))[0]
                             elif pfield_obj.get_attr_type() == FieldType.FLOAT:
                                 pvalue = struct.unpack("<f", params_bytes.read(4))[0]
-                            elif pfield_obj.get_attr_type() == FieldType.COORD:
+                            elif pfield_obj.get_attr_type() == FieldType.VECTOR:
                                 pvalue = struct.unpack("<fff", params_bytes.read(12))
                             elif pfield_obj.get_attr_type() == FieldType.STRING:
                                 pvalue = read_cstrings(params_bytes, 4)
@@ -948,7 +948,7 @@ def set_objs_by_type(b3d_obj, bnum, btype = BlockClassType.BLOCK):
                     elif field.get_subtype() == FieldType.FLOAT:
                         b3d_obj[pname] = float(getattr(blk, pname))
 
-                elif field.get_attr_type() == FieldType.COORD:
+                elif field.get_attr_type() == FieldType.VECTOR:
                     xyz = getattr(blk, pname)
                     b3d_obj[pname] = (xyz[0],xyz[1],xyz[2])
 
@@ -1142,7 +1142,7 @@ def get_from_attributes(field, bname, attr_object, only_result = False):
             if not only_result:
                 blk[pname] = value
 
-        elif field.get_attr_type() == FieldType.COORD:
+        elif field.get_attr_type() == FieldType.VECTOR:
             value = getattr(attr_object, "vector")
             
             if not only_result:
@@ -1186,7 +1186,7 @@ def set_from_attributes(field, bname, attr_object):
         elif field.get_attr_type() == FieldType.INT:
             attr_object.value = blk[pname]
 
-        elif field.get_attr_type() == FieldType.COORD:
+        elif field.get_attr_type() == FieldType.VECTOR:
             attr_object.vector = blk[pname]
 
         elif field.get_attr_type() == FieldType.V_FORMAT:
@@ -1338,7 +1338,7 @@ def create_custom_attribute(mesh, values, bnum, btype, pname):
     if obj.get_attr_type() == FieldType.FLOAT:
         ztype = 'FLOAT'
         
-    elif obj.get_attr_type() == FieldType.COORD:
+    elif obj.get_attr_type() == FieldType.VECTOR:
         ztype = 'FLOAT_VECTOR'
         attr_type = "vector"
 

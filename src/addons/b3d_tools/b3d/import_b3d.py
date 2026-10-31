@@ -23,7 +23,7 @@ from .blocktool_defs import (
     # per-vertex params
     Pvb008,Pvb035,
     # other
-    VertexFields, FaceFields
+    VertexFields, FaceFields, ContainerFields, CircleTriggerFields, CylinderTriggerFields
 )
 
 from .blocktool import (
@@ -475,10 +475,16 @@ def import_b3d(file, context, self, filepath):
             t1 = time.perf_counter()
 
             b3d_init = None
-            if block_type in [6,7,36,37]:
+            if block_type in VertexFields.bnum_list:
                 b3d_init = BlockClassHandler.get_object_initializer_by_class(VertexFields)
-            elif block_type in [8,35]:
+            elif block_type in FaceFields.bnum_list:
                 b3d_init = BlockClassHandler.get_object_initializer_by_class(FaceFields)
+            elif block_type in ContainerFields.bnum_list:
+                b3d_init = BlockClassHandler.get_object_initializer_by_class(ContainerFields)
+            elif block_type in CircleTriggerFields.bnum_list:
+                b3d_init = BlockClassHandler.get_object_initializer_by_class(CircleTriggerFields)
+            elif block_type in CylinderTriggerFields.bnum_list:
+                b3d_init = BlockClassHandler.get_object_initializer_by_class(CylinderTriggerFields)
             else:
                 b3d_init = BlockClassHandler.get_block_class(block_type)
             
@@ -574,6 +580,7 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
 
                 b3d_obj.parent = parent_obj
@@ -592,9 +599,10 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk004.Name1.get_prop()] = name1
-                b3d_obj[Blk004.Name2.get_prop()] = name2
+                b3d_obj[Blk004.SpaceName.get_prop()] = name1
+                b3d_obj[Blk004.CollisionName.get_prop()] = name2
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -611,8 +619,9 @@ def import_b3d(file, context, self, filepath):
                 if not used_blocks[str(block_type)]:
                     continue
                 b3d_obj = bpy.data.objects.new(obj_name, None) #create empty
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk005.Name1.get_prop()] = name
+                b3d_obj[Blk004.CollisionName.get_prop()] = name
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -979,8 +988,8 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj[Blk012.Unk_R.get_prop()] = unknown_sphere[3]
                 b3d_obj[Blk012.Unk_Int1.get_prop()] = unknown1
                 b3d_obj[Blk012.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk012.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk012.Unk_List.get_prop()] = hex_string
+                b3d_obj['{}_enum'.format(Blk012.Colis_Params.get_prop())] = '?'
+                b3d_obj[Blk012.Colis_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -1006,8 +1015,8 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj[Blk013.Unk_Int1.get_prop()] = unknown1
                 b3d_obj[Blk013.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk013.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk013.Unk_List.get_prop()] = hex_string
+                b3d_obj['{}_enum'.format(Blk013.Trigger_Params.get_prop())] = '?'
+                b3d_obj[Blk013.Trigger_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -1031,13 +1040,14 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk014.Unk_XYZ.get_prop()] = unknown_sphere[0:3]
-                b3d_obj[Blk014.Unk_R.get_prop()] = unknown_sphere[3]
-                b3d_obj[Blk014.Unk_Int1.get_prop()] = unknown1
-                b3d_obj[Blk014.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk014.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk014.Unk_List.get_prop()] = hex_string
+                b3d_obj[Blk014.Center.get_prop()] = unknown_sphere[0:3]
+                b3d_obj[Blk014.Radius.get_prop()] = unknown_sphere[3]
+                b3d_obj[Blk014.Trigger_Type.get_prop()] = unknown1
+                b3d_obj[Blk014.Trigger_ID.get_prop()] = unknown2
+                b3d_obj['{}_enum'.format(Blk014.Trigger_Params.get_prop())] = '?'
+                b3d_obj[Blk014.Trigger_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -1047,6 +1057,7 @@ def import_b3d(file, context, self, filepath):
             elif (block_type == 15):
 
                 bounding_sphere = struct.unpack("<4f",file.read(16))
+                unknown_sphere = struct.unpack("<4f",file.read(16))
                 unknown1 = struct.unpack("<i",file.read(4))[0]
                 unknown2 = struct.unpack("<i",file.read(4))[0]
                 cnt = struct.unpack("<i",file.read(4))[0]
@@ -1060,11 +1071,14 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk015.Unk_Int1.get_prop()] = unknown1
-                b3d_obj[Blk015.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk015.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk015.Unk_List.get_prop()] = hex_string
+                b3d_obj[Blk015.Center.get_prop()] = unknown_sphere[0:3]
+                b3d_obj[Blk015.Radius.get_prop()] = unknown_sphere[3]
+                b3d_obj[Blk015.Trigger_Type.get_prop()] = unknown1
+                b3d_obj[Blk015.Trigger_ID.get_prop()] = unknown2
+                b3d_obj['{}_enum'.format(Blk015.Trigger_Params.get_prop())] = '?'
+                b3d_obj[Blk015.Trigger_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -1091,15 +1105,16 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk016.Unk_XYZ1.get_prop()] = vector1
-                b3d_obj[Blk016.Unk_XYZ2.get_prop()] = vector2
-                b3d_obj[Blk016.Unk_Float1.get_prop()] = unk1
-                b3d_obj[Blk016.Unk_Float2.get_prop()] = unk2
-                b3d_obj[Blk016.Unk_Int1.get_prop()] = unknown1
-                b3d_obj[Blk016.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk016.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk016.Unk_List.get_prop()] = hex_string
+                b3d_obj[Blk016.Center.get_prop()] = vector1
+                b3d_obj[Blk016.Axis.get_prop()] = vector2
+                b3d_obj[Blk016.Half_Length.get_prop()] = unk1
+                b3d_obj[Blk016.Radius.get_prop()] = unk2
+                b3d_obj[Blk016.Trigger_Type.get_prop()] = unknown1
+                b3d_obj[Blk016.Trigger_ID.get_prop()] = unknown2
+                b3d_obj['{}_enum'.format(Blk016.Trigger_Params.get_prop())] = '?'
+                b3d_obj[Blk016.Trigger_Params.get_prop()] = hex_string
 
 
                 b3d_obj.parent = parent_obj
@@ -1127,15 +1142,16 @@ def import_b3d(file, context, self, filepath):
                     continue
 
                 b3d_obj = bpy.data.objects.new(obj_name, None)
+                b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj[Blk017.Unk_XYZ1.get_prop()] = vector1
-                b3d_obj[Blk017.Unk_XYZ2.get_prop()] = vector2
-                b3d_obj[Blk017.Unk_Float1.get_prop()] = unk1
-                b3d_obj[Blk017.Unk_Float2.get_prop()] = unk2
-                b3d_obj[Blk017.Unk_Int1.get_prop()] = unknown1
-                b3d_obj[Blk017.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk017.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk017.Unk_List.get_prop()] = hex_string
+                b3d_obj[Blk017.Center.get_prop()] = vector1
+                b3d_obj[Blk017.Axis.get_prop()] = vector2
+                b3d_obj[Blk017.Half_Length.get_prop()] = unk1
+                b3d_obj[Blk017.Radius.get_prop()] = unk2
+                b3d_obj[Blk017.Trigger_Type.get_prop()] = unknown1
+                b3d_obj[Blk017.Trigger_ID.get_prop()] = unknown2
+                b3d_obj['{}_enum'.format(Blk017.Trigger_Params.get_prop())] = '?'
+                b3d_obj[Blk017.Trigger_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -1233,8 +1249,8 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj.location = origin_point
                 b3d_obj[Blk020.Unk_Int1.get_prop()] = unknown1
                 b3d_obj[Blk020.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk020.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk020.Unk_List.get_prop()] = hex_string
+                b3d_obj['{}_enum'.format(Blk020.Colis_Plane.get_prop())] = '?'
+                b3d_obj[Blk020.Colis_Plane.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 
@@ -1309,8 +1325,8 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj.location = centroid
                 b3d_obj[Blk023.Unk_Int1.get_prop()] = var1
                 b3d_obj[Blk023.Surface.get_prop()] = ctype
-                b3d_obj['{}_enum'.format(Blk023.Unk_List.get_prop())] = '?'
-                b3d_obj[Blk023.Unk_List.get_prop()] = hex_string
+                b3d_obj['{}_enum'.format(Blk023.ColisWall_Params.get_prop())] = '?'
+                b3d_obj[Blk023.ColisWall_Params.get_prop()] = hex_string
 
                 b3d_obj.parent = parent_obj
                 get_context_collection_objects(context).link(b3d_obj)
@@ -2164,8 +2180,8 @@ def import_b3d(file, context, self, filepath):
                 b3d_obj[Blk040.Name2.get_prop()] = name2
                 b3d_obj[Blk040.Unk_Int1.get_prop()] = unknown1
                 b3d_obj[Blk040.Unk_Int2.get_prop()] = unknown2
-                b3d_obj['{}_enum'.format(Blk040.Unk_List.get_prop())] = 'tgs'
-                b3d_obj[Blk040.Unk_List.get_prop()] = hex_string
+                b3d_obj['{}_enum'.format(Blk040.Gen_Params.get_prop())] = 'tgs'
+                b3d_obj[Blk040.Gen_Params.get_prop()] = hex_string
 
                 b3d_obj.location = bounding_sphere[:3]
                 

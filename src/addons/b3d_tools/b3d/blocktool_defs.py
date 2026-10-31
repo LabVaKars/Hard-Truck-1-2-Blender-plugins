@@ -22,6 +22,9 @@ from ..consts import (
     vTypeList,
     vVertexTypeList,
     vFaceTypeList,
+    vContainerTypeList,
+    vCircleTriggerTypeList,
+    vCylinderTriggerTypeList,
     BLOCK_TYPE,
     LEVEL_GROUP
 )
@@ -59,11 +62,13 @@ class GroupType():
     VERTEX = 1
     FACE = 2
     CONTAINER = 3
+    CIRCLE_TRIGGER = 4
+    CYLINDER_TRIGGER = 5
 
 class FieldType():
     IGNORE = 0
     STRING = 1
-    COORD = 2
+    VECTOR = 2
     INT = 4
     FLOAT = 5
     ENUM = 6
@@ -92,7 +97,7 @@ class FieldType():
     # 'description': '',
     # 'default': ''
 
-# FieldType.COORD
+# FieldType.VECTOR
     # 'name': 'Name',
     # 'description': '',
     # 'default': (0.0, 0.0, 0.0)
@@ -325,8 +330,8 @@ class FloatParam(BlkParam):
     default_value: typing.Any = 0.0
 
 @dataclass
-class CoordParam(BlkParam):
-    attr_type: typing.Any = FieldType.COORD
+class VectorParam(BlkParam):
+    attr_type: typing.Any = FieldType.VECTOR
     default_value: typing.Any = (0.0, 0.0, 0.0)
 
 @dataclass
@@ -374,7 +379,7 @@ class Pvb008(BlkBase):
     # }
     # Custom_Normal = {
     #     'prop': 'custom_normal',
-    #     'type': FieldType.COORD,
+    #     'type': FieldType.VECTOR,
     #     'name': 'Custom normal',
     #     'description': '',
     #     'default': (0.0, 0.0, 0.0)
@@ -394,7 +399,7 @@ class Pvb035(BlkBase):
     # }
     # Custom_Normal = {
     #     'prop': 'custom_normal',
-    #     'type': FieldType.COORD,
+    #     'type': FieldType.VECTOR,
     #     'name': 'Custom normal',
     #     'description': '',
     #     'default': (0.0, 0.0, 0.0)
@@ -484,18 +489,11 @@ class Pfb035(BlkBase):
     #     'default': 0
     # }
 
-# class VertexBlockSwitch(BlkBase):
+### Fields declarations
 
-#     BlockSwitch = EnumParam(
-#         name = 'Block type',
-#         prop = BLOCK_TYPE,
-#         subtype = FieldType.BLOCK,
-#         items = vVertexTypeList,
-#         default_value = 37
-#     )
+class VertexFields:
+    bnum_list = [6,7,36,37]
 
-
-class VertexFields(BlkBase):
     SpaceName = StringParam(
         name = 'Space name',
         prop = 'string1'
@@ -514,7 +512,113 @@ class VertexFields(BlkBase):
         default_value = 3
     )
 
+class FaceFields:
+    bnum_list = [8, 35]
+    
+    FaceType = EnumParam(
+        name = 'Vertex type',
+        prop = 'int1',
+        subtype = FieldType.INT,
+        items = vTypeList,
+        default_value = 3
+    )
+    
+    TexNum = EnumDynParam(
+        name = 'Material',
+        prop = 'int2',
+        subtype = FieldType.INT,
+        callback = FieldType.MATERIAL_IND,
+        default_value = -1
+    )
 
+class ContainerFields:
+    bnum_list = [3, 4, 5]
+
+    SpaceName = EnumDynParam(
+        name = 'Space Name',
+        prop = 'string1',
+        subtype = FieldType.STRING,
+        callback = FieldType.SPACE_NAME,
+        default_value = '?'
+    )
+
+    CollisionName = StringParam(
+        name = 'Collision Name',
+        prop = 'string2'
+    )
+
+
+class CircleTriggerFields:
+    bnum_list = [14, 15]
+
+    Center = VectorParam(
+        name = 'Center',
+        prop = 'coord1'
+    )
+    
+    Radius = FloatParam(
+        name = 'Radius',
+        prop = 'float2'
+    )
+    
+    Trigger_Type = IntParam(
+        name = 'Type',
+        prop = 'int1'
+    )
+    
+    Trigger_ID = IntParam(
+        name = 'ID',
+        prop = 'int2'
+    )
+    
+    Trigger_Params = ListParam(
+        name = 'Trigger params',
+        prop = 'list1',
+        no_single_edit = True
+    )
+
+
+class CylinderTriggerFields:
+    bnum_list = [16, 17]
+    
+    Center = VectorParam(
+        name = 'Center',
+        prop = 'coord1'
+    )
+    
+    Axis = VectorParam(
+        name = 'Axis',
+        prop = 'coord2'
+    )
+    
+    Half_Length = IntParam(
+        name = 'Half Length',
+        prop = 'int1'
+    )
+    
+    Radius = IntParam(
+        name = 'Radius',
+        prop = 'int2'
+    )
+    
+    Trigger_Type = IntParam(
+        name = 'Type',
+        prop = 'int1'
+    )
+    
+    Trigger_ID = IntParam(
+        name = 'ID',
+        prop = 'int2'
+    )
+    
+    Trigger_Params = ListParam(
+        name = 'Trigger params',
+        prop = 'list1',
+        no_single_edit = True
+    )
+
+
+### Group declarations
 class GrpVertex(BlkGroupBase):
     bgnum = GroupType.VERTEX
     
@@ -524,21 +628,6 @@ class GrpVertex(BlkGroupBase):
         subtype = FieldType.INT,
         items = vVertexTypeList,
         default_value = 0
-    )
-
-class FaceFields(BlkBase):
-    
-    FaceType = IntParam(
-        name = 'Face type',
-        prop = 'int1'
-    )
-    
-    TexNum = EnumDynParam(
-        name = 'Material',
-        prop = 'int2',
-        subtype = FieldType.INT,
-        callback = FieldType.MATERIAL_IND,
-        default_value = -1
     )
 
 class GrpFace(BlkGroupBase):
@@ -552,8 +641,40 @@ class GrpFace(BlkGroupBase):
         default_value = 0
     )
 
+class GrpContainer(BlkGroupBase):
+    bgnum = GroupType.CONTAINER
     
+    Block_type = EnumParam(
+        name = 'Block type',
+        prop = 'block_type',
+        subtype = FieldType.INT,
+        items = vContainerTypeList,
+        default_value = 0
+    )
 
+class GrpCircleTrigger(BlkGroupBase):
+    bgnum = GroupType.CONTAINER
+    
+    Block_type = EnumParam(
+        name = 'Block type',
+        prop = 'block_type',
+        subtype = FieldType.INT,
+        items = vCircleTriggerTypeList,
+        default_value = 0
+    )
+
+class GrpCylinderTrigger(BlkGroupBase):
+    bgnum = GroupType.CONTAINER
+    
+    Block_type = EnumParam(
+        name = 'Block type',
+        prop = 'block_type',
+        subtype = FieldType.INT,
+        items = vCylinderTriggerTypeList,
+        default_value = 0
+    )
+
+### Block declarations
 class Blk001(BlkBase):
     bnum = 1
     btype = BlockClassType.PER_FACE_BLOCK
@@ -572,7 +693,7 @@ class Blk001(BlkBase):
 class Blk002(BlkBase):
     bnum = 2
 
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. name 2',
         prop = 'coord1'
     )
@@ -585,31 +706,22 @@ class Blk002(BlkBase):
 
 class Blk003(BlkBase):
     bnum = 3
+    bgnum = GroupType.CONTAINER
 
 
 class Blk004(BlkBase):
     bnum = 4
+    bgnum = GroupType.CONTAINER
 
-    Name1 = EnumDynParam(
-        name = 'Place',
-        prop = 'string1',
-        subtype = FieldType.STRING,
-        callback = FieldType.SPACE_NAME,
-        default_value = '?'
-    )
-
-    Name2 = StringParam(
-        name = 'Collision Name',
-        prop = 'string2'
-    )
+    SpaceName = ContainerFields.SpaceName
+    CollisionName = ContainerFields.CollisionName
 
 
 class Blk005(BlkBase):
     bnum = 5
-    Name1 = StringParam(
-        name = 'Collision Name',
-        prop = 'string2'
-    )
+    bgnum = GroupType.CONTAINER
+
+    CollisionName = ContainerFields.CollisionName
 
 
 class Blk006(BlkBase):
@@ -624,13 +736,15 @@ class Blk007(BlkBase):
     bgnum = GroupType.VERTEX
     CollisionName = VertexFields.CollisionName
 
+
 class Blk008(BlkBase):
     bnum = 8
     bgnum = GroupType.FACE
 
+
 class Blk009(BlkBase):
     bnum = 9
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1',
         ui_group = 'b9_group'
@@ -645,7 +759,7 @@ class Blk009(BlkBase):
 
 class Blk010(BlkBase):
     bnum = 10
-    LOD_XYZ = CoordParam(
+    LOD_XYZ = VectorParam(
         name = 'LOD coord',
         prop = 'coord1',
         description = 'LOD center',
@@ -668,12 +782,12 @@ class Blk010(BlkBase):
 
 class Blk011(BlkBase):
     bnum = 11
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
     
-    Unk_XYZ2 = CoordParam(
+    Unk_XYZ2 = VectorParam(
         name = 'Unk. coord',
         prop = 'coord2'
     )
@@ -691,7 +805,7 @@ class Blk011(BlkBase):
 
 class Blk012(BlkBase):
     bnum = 12
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
@@ -700,18 +814,18 @@ class Blk012(BlkBase):
         name = 'Unk. rad',
         prop = 'float1'
     )
-    
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
+
+    Trigger_Type = IntParam(
+        name = 'Type',
         prop = 'int1'
     )
     
-    Unk_Int2 = IntParam(
-        name = 'Unk. 2',
+    Trigger_ID = IntParam(
+        name = 'ID',
         prop = 'int2'
     )
     
-    Unk_List = ListParam(
+    Colis_Plane = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True
@@ -720,17 +834,17 @@ class Blk012(BlkBase):
 
 class Blk013(BlkBase):
     bnum = 13
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
+    Trigger_Type = IntParam(
+        name = 'Type',
         prop = 'int1'
     )
     
-    Unk_Int2 = IntParam(
-        name = 'Unk. 2',
+    Trigger_ID = IntParam(
+        name = 'ID',
         prop = 'int2'
     )
     
-    Unk_List = ListParam(
+    Trigger_Params = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True
@@ -739,128 +853,50 @@ class Blk013(BlkBase):
 
 class Blk014(BlkBase):
     bnum = 14
-    Unk_XYZ = CoordParam(
-        name = 'Unk. coord',
-        prop = 'coord1'
-    )
-    
-    Unk_R = FloatParam(
-        name = 'Unk. rad',
-        prop = 'float2'
-    )
-    
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
-    
-    Unk_Int2 = IntParam(
-        name = 'Unk. 2',
-        prop = 'int2'
-    )
-    
-    Unk_List = ListParam(
-        name = 'Unk. params',
-        prop = 'list1',
-        no_single_edit = True
-    )
-    
+    bgnum = GroupType.CIRCLE_TRIGGER
+
+    Center = CircleTriggerFields.Center
+    Radius = CircleTriggerFields.Radius
+    Trigger_Type = CircleTriggerFields.Trigger_Type
+    Trigger_ID = CircleTriggerFields.Trigger_ID
+    Trigger_Params = CircleTriggerFields.Trigger_Params
+
 
 class Blk015(BlkBase):
     bnum = 15
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
-    
-    Unk_Int2 = IntParam(
-        name = 'Unk. 2',
-        prop = 'int2'
-    )
-    
-    Unk_List = ListParam(
-        name = 'Unk. params',
-        prop = 'list1',
-        no_single_edit = True
-    )
+    bgnum = GroupType.CIRCLE_TRIGGER
+
+    Center = CircleTriggerFields.Center
+    Radius = CircleTriggerFields.Radius
+    Trigger_Type = CircleTriggerFields.Trigger_Type
+    Trigger_ID = CircleTriggerFields.Trigger_ID
+    Trigger_Params = CircleTriggerFields.Trigger_Params
     
 
 class Blk016(BlkBase):
     bnum = 16
-    Unk_XYZ1 = CoordParam(
-        name = 'Unk. coord 1',
-        prop = 'coord1'
-    )
-    
-    Unk_XYZ2 = CoordParam(
-        name = 'Unk. coord 2',
-        prop = 'coord2'
-    )
-    
-    Unk_Float1 = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
-    
-    Unk_Float2 = IntParam(
-        name = 'Unk. 2',
-        prop = 'int2'
-    )
-    
-    Unk_Int1 = IntParam(
-        name = 'Unk. 3',
-        prop = 'int3'
-    )
-    
-    Unk_Int2 = IntParam(
-        name = 'Unk. 4',
-        prop = 'int4'
-    )
-    
-    Unk_List = ListParam(
-        name = 'Unk. params',
-        prop = 'list1',
-        no_single_edit = True
-    )
+    bgnum = GroupType.CYLINDER_TRIGGER
+
+    Center = CylinderTriggerFields.Center
+    Axis = CylinderTriggerFields.Axis
+    Half_Length = CylinderTriggerFields.Half_Length
+    Radius = CylinderTriggerFields.Radius
+    Trigger_Type = CylinderTriggerFields.Trigger_Type
+    Trigger_ID = CylinderTriggerFields.Trigger_ID
+    Trigger_Params = CylinderTriggerFields.Trigger_Params
     
 
 class Blk017(BlkBase):
     bnum = 17
-    Unk_XYZ1 = CoordParam(
-        name = 'Unk. coord 1',
-        prop = 'coord1'
-    )
-    
-    Unk_XYZ2 = CoordParam(
-        name = 'Unk. coord 2',
-        prop = 'coord2'
-    )
-    
-    Unk_Float1 = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
-    
-    Unk_Float2 = IntParam(
-        name = 'Unk. 2',
-        prop = 'int2'
-    )
-    
-    Unk_Int1 = IntParam(
-        name = 'Unk. 3',
-        prop = 'int3'
-    )
-    
-    Unk_Int2 = IntParam(
-        name = 'Unk. 4',
-        prop = 'int4'
-    )
-    
-    Unk_List = ListParam(
-        name = 'Unk. params',
-        prop = 'list1',
-        no_single_edit = True
-    )
+    bgnum = GroupType.CYLINDER_TRIGGER
+
+    Center = CylinderTriggerFields.Center
+    Axis = CylinderTriggerFields.Axis
+    Half_Length = CylinderTriggerFields.Half_Length
+    Radius = CylinderTriggerFields.Radius
+    Trigger_Type = CylinderTriggerFields.Trigger_Type
+    Trigger_ID = CylinderTriggerFields.Trigger_ID
+    Trigger_Params = CylinderTriggerFields.Trigger_Params
     
 
 class Blk018(BlkBase):
@@ -890,17 +926,18 @@ class Blk019(BlkBase):
 
 class Blk020(BlkBase):
     bnum = 20
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
+
+    Trigger_Type = IntParam(
+        name = 'Type',
         prop = 'int1'
     )
     
-    Unk_Int2 = IntParam(
-        name = 'Unk. 2',
+    Trigger_ID = IntParam(
+        name = 'ID',
         prop = 'int2'
     )
     
-    Unk_List = ListParam(
+    ColisWall_Params = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True
@@ -922,7 +959,7 @@ class Blk021(BlkBase):
 
 class Blk022(BlkBase):
     bnum = 22
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
@@ -949,7 +986,7 @@ class Blk023(BlkBase):
         default_value = 0
     )
     
-    Unk_List = ListParam(
+    Colis_Params = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True
@@ -959,7 +996,7 @@ class Blk023(BlkBase):
 class Blk024(BlkBase):
     bnum = 24
     Flag = EnumParam(
-        name = 'Show flag',
+        name = 'Is relative',
         prop = 'int1',
         subtype = FieldType.INT,
         items = b24FlagList,
@@ -970,7 +1007,7 @@ class Blk024(BlkBase):
 
 class Blk025(BlkBase):
     bnum = 25
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
@@ -980,12 +1017,12 @@ class Blk025(BlkBase):
         prop = 'string1'
     )
     
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
         prop = 'coord2'
     )
     
-    Unk_XYZ2 = CoordParam(
+    Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
         prop = 'coord3'
     )
@@ -1018,17 +1055,17 @@ class Blk025(BlkBase):
 
 class Blk026(BlkBase):
     bnum = 26
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
         prop = 'coord1'
     )
     
-    Unk_XYZ2 = CoordParam(
+    Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
         prop = 'coord2'
     )
     
-    Unk_XYZ3 = CoordParam(
+    Unk_XYZ3 = VectorParam(
         name = 'Unk. coord 3',
         prop = 'coord3'
     )
@@ -1041,7 +1078,7 @@ class Blk027(BlkBase):
         prop = 'int1'
     )
     
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
@@ -1054,7 +1091,7 @@ class Blk027(BlkBase):
 
 class Blk028(BlkBase):
     bnum = 28
-    Sprite_Center = CoordParam(
+    Sprite_Center = VectorParam(
         name = 'Sprite center coord',
         prop = 'coord1',
         description = 'Sprite center coordinates'
@@ -1075,7 +1112,7 @@ class Blk029(BlkBase):
         prop = 'int2'
     )
     
-    Unk_XYZ = CoordParam(
+    Unk_XYZ = VectorParam(
         name = 'Unk. coord',
         prop = 'coord1'
     )
@@ -1132,12 +1169,12 @@ class Blk031(BlkBase):
         prop = 'int1'
     )
     
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
         prop = 'coord1'
     )
     
-    Unk_R = CoordParam(
+    Unk_R = VectorParam(
         name = 'Unk. rad',
         prop = 'coord2'
     )
@@ -1147,7 +1184,7 @@ class Blk031(BlkBase):
         prop = 'int2'
     )
     
-    Unk_XYZ2 = CoordParam(
+    Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
         prop = 'coord3'
     )
@@ -1175,12 +1212,12 @@ class Blk033(BlkBase):
         default_value = 1
     )
     
-    Unk_XYZ1 = CoordParam(
+    Unk_XYZ1 = VectorParam(
         name = 'Light location',
         prop = 'coord1'
     )
     
-    Unk_XYZ2 = CoordParam(
+    Unk_XYZ2 = VectorParam(
         name = 'Light direction',
         prop = 'coord2'
     )
@@ -1215,7 +1252,7 @@ class Blk033(BlkBase):
         prop = 'float6'
     )
     
-    RGB = CoordParam(
+    RGB = VectorParam(
         name = 'RGB',
         prop = 'coord3'
     )
@@ -1304,7 +1341,7 @@ class Blk040(BlkBase):
         prop = 'int2'
     )
         
-    Unk_List = ListParam(
+    Gen_Params = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True
@@ -1445,7 +1482,7 @@ class B40_TreeGenExtended(BlkBase):
         no_single_edit = True
     )
         
-    Unk_Coord21 = CoordParam(
+    Unk_Coord21 = VectorParam(
         name = 'Unk. C1',
         prop = 'coord1',
         no_single_edit = True
@@ -1457,7 +1494,7 @@ class B40_TreeGenExtended(BlkBase):
         no_single_edit = True
     )
         
-    Unk_Coord22 = CoordParam(
+    Unk_Coord22 = VectorParam(
         name = 'Unk. C1',
         prop = 'coord2',
         no_single_edit = True
