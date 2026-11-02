@@ -237,16 +237,27 @@ def remove_transforms():
         space.select_set(True)
     bpy.ops.object.delete()
 
-def show_obj_by_type(self, block_type):
+def report_show_hide_results(self, block_type, obj_count, to_show = True):
+    if obj_count > 0:
+        if to_show:
+            self.report({'INFO'}, "{} (block {}) objects are shown".format(obj_count, block_type))
+        else:
+            self.report({'INFO'}, "{} (block {}) objects are hidden".format(obj_count, block_type))
+    else:
+        self.report({'WARNING'}, "Not found any blocks if type {}".format(obj_count, block_type))
+
+def show_obj_by_type(block_type):
     objs = [cn for cn in bpy.data.objects if cn.get("block_type") is not None and cn["block_type"]==block_type]
     for obj in objs:
         set_object_hidden(obj, False)
+    return len(objs)
     self.report({'INFO'}, "{} (block {}) objects are shown".format(len(objs), block_type))
 
-def hide_obj_by_type(self, block_type):
+def hide_obj_by_type(block_type):
     objs = [cn for cn in bpy.data.objects if cn.get("block_type") is not None and cn["block_type"]==block_type]
     for obj in objs:
         set_object_hidden(obj, True)
+    return len(objs)
     self.report({'INFO'}, "{} (block {}) objects are hidden".format(len(objs), block_type))
 
 
@@ -431,37 +442,14 @@ def select_similar_faces_by_type(bnum, btype = BlockClassType.BLOCK):
                     else: #FieldType.STRING
                         param = str(getattr(blk, pname))
 
-                elif field.get_attr_type() == FieldType.V_FORMAT:
-
-                    value = 0
-                    show_int = blk['{}_show_int'.format(pname)]
-                    if show_int:
-                        param = blk['{}_format_raw'.format(pname)]
-                    else: 
-                        triang_offset = blk['{}_triang_offset'.format(pname)]
-                        use_uv = blk['{}_use_uvs'.format(pname)]
-                        use_normals = blk['{}_use_normals'.format(pname)]
-                        normal_flag = blk['{}_normal_flag'.format(pname)]
-
-                        if triang_offset:
-                            value = value ^ 0b10000000
-                        if use_uv:
-                            value = value ^ 0b10
-                        if use_normals:
-                            value = value ^ 0b110000
-                        if normal_flag:
-                            value = value ^ 0b1
-
-                        param = value ^ 1
-                
                 elif field.get_attr_type() == FieldType.FLAGS:
                     param = None
                     show_int = getattr(blk, '{}_show_int'.format(pname))
-                    flag_descriptions = field.get_flag_description()
                     
                     if show_int:
                         param = getattr(blk, '{}'.format(pname))
                     else:
+                        flag_descriptions = field.get_flag_description()
                         param = 0
                         for desc in flag_descriptions:
                             param = param ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])
@@ -473,6 +461,7 @@ def select_similar_faces_by_type(bnum, btype = BlockClassType.BLOCK):
     for face in b3d_faces:
         face.select = True
     bpy.ops.object.mode_set(mode = 'EDIT')
+    return len(b3d_faces)
 
 # ------------------------------------------------------------------------
 #   LOD scripts (10)
@@ -1154,23 +1143,32 @@ def get_from_attributes(field, bname, attr_object, only_result = False):
             if not only_result:
                 blk[pname] = value
 
-        elif field.get_attr_type() == FieldType.V_FORMAT:
-            format_raw = getattr(attr_object, "value")
-            v_format = format_raw ^ 1
-            triang_offset = v_format & 0b10000000
-            use_uv = v_format & 0b10
-            use_normals = v_format & 0b10000 and v_format & 0b100000
-            normal_flag = v_format & 1
+        # elif field.get_attr_type() == FieldType.V_FORMAT:
+        #     format_raw = getattr(attr_object, "value")
+        #     v_format = format_raw ^ 1
+        #     triang_offset = v_format & 0b10000000
+        #     use_uv = v_format & 0b10
+        #     use_normals = v_format & 0b10000 and v_format & 0b100000
+        #     normal_flag = v_format & 1
 
+        #     if not only_result:
+        #         blk['{}_format_raw'.format(pname)] = format_raw
+        #         blk['{}_triang_offset'.format(pname)] = triang_offset
+        #         blk['{}_use_uvs'.format(pname)] = use_uv
+        #         blk['{}_use_normals'.format(pname)] = use_normals
+        #         blk['{}_normal_flag'.format(pname)] = normal_flag
+
+        #     value = format_raw
+            
+        elif field.get_attr_type() == FieldType.FLAGS:
+            flags = getattr(attr_object, "value")
             if not only_result:
-                blk['{}_format_raw'.format(pname)] = format_raw
-                blk['{}_triang_offset'.format(pname)] = triang_offset
-                blk['{}_use_uvs'.format(pname)] = use_uv
-                blk['{}_use_normals'.format(pname)] = use_normals
-                blk['{}_normal_flag'.format(pname)] = normal_flag
-
-            value = format_raw
-        
+                flag_descriptions = field.get_flag_description()
+                setattr(blk, '{}'.format(pname), flags)
+                for desc in flag_descriptions:
+                    blk['{}_{}'.format(pname, desc["key"])] = (flags & (1 << desc["bit_index"])) >> desc["bit_index"]
+            value = flags
+            
     return value
 
 def set_from_attributes(field, bname, attr_object):
@@ -1189,28 +1187,44 @@ def set_from_attributes(field, bname, attr_object):
         elif field.get_attr_type() == FieldType.VECTOR:
             attr_object.vector = blk[pname]
 
-        elif field.get_attr_type() == FieldType.V_FORMAT:
+        # elif field.get_attr_type() == FieldType.V_FORMAT:
+        #     value = 0
+        #     show_int = blk['{}_show_int'.format(pname)]
+        #     if show_int:
+        #         value = blk['{}_format_raw'.format(pname)]
+        #     else: 
+        #         triang_offset = blk['{}_triang_offset'.format(pname)]
+        #         use_uv = blk['{}_use_uvs'.format(pname)]
+        #         use_normals = blk['{}_use_normals'.format(pname)]
+        #         normal_flag = blk['{}_normal_flag'.format(pname)]
+
+        #         if triang_offset:
+        #             value = value ^ 0b10000000
+        #         if use_uv:
+        #             value = value ^ 0b10
+        #         if use_normals:
+        #             value = value ^ 0b110000
+        #         if normal_flag:
+        #             value = value ^ 0b1
+
+        #         value = value ^ 1
+
+        #     attr_object.value = value
+
+        elif field.get_attr_type() == FieldType.FLAGS:
             value = 0
-            show_int = blk['{}_show_int'.format(pname)]
+            flags = None
+            show_int = getattr(blk, '{}_show_int'.format(pname))
+            flag_descriptions = field.get_flag_description()
+            
             if show_int:
-                value = blk['{}_format_raw'.format(pname)]
-            else: 
-                triang_offset = blk['{}_triang_offset'.format(pname)]
-                use_uv = blk['{}_use_uvs'.format(pname)]
-                use_normals = blk['{}_use_normals'.format(pname)]
-                normal_flag = blk['{}_normal_flag'.format(pname)]
-
-                if triang_offset:
-                    value = value ^ 0b10000000
-                if use_uv:
-                    value = value ^ 0b10
-                if use_normals:
-                    value = value ^ 0b110000
-                if normal_flag:
-                    value = value ^ 0b1
-
-                value = value ^ 1
-
+                flags = getattr(blk, '{}'.format(pname))
+            else:
+                flags = 0
+                for desc in flag_descriptions:
+                    flags = flags ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])        
+            
+            value = int(flags)
             attr_object.value = value
 
 # ------------------------------------------------------------------------
@@ -1230,23 +1244,32 @@ def get_from_vertex_colors(field, bname, vcolors, poly, only_result = False):
             if not only_result:
                 blk[pname] = value
 
-        elif field.get_attr_type() == FieldType.V_FORMAT:
-            format_raw = RGBPacker.unpack_3floats_to_int(vcolor)
-            v_format = format_raw ^ 1
-            triang_offset = v_format & 0b10000000
-            use_uv = v_format & 0b10
-            use_normals = v_format & 0b10000 and v_format & 0b100000
-            normal_flag = v_format & 1
+        # elif field.get_attr_type() == FieldType.V_FORMAT:
+        #     format_raw = RGBPacker.unpack_3floats_to_int(vcolor)
+        #     v_format = format_raw ^ 1
+        #     triang_offset = v_format & 0b10000000
+        #     use_uv = v_format & 0b10
+        #     use_normals = v_format & 0b10000 and v_format & 0b100000
+        #     normal_flag = v_format & 1
 
+        #     if not only_result:
+        #         blk['{}_format_raw'.format(pname)] = format_raw
+        #         blk['{}_triang_offset'.format(pname)] = triang_offset
+        #         blk['{}_use_uvs'.format(pname)] = use_uv
+        #         blk['{}_use_normals'.format(pname)] = use_normals
+        #         blk['{}_normal_flag'.format(pname)] = normal_flag
+
+        #     value = format_raw
+
+        elif field.get_attr_type() == FieldType.FLAGS:
+            flags = RGBPacker.unpack_3floats_to_int(vcolor)
             if not only_result:
-                blk['{}_format_raw'.format(pname)] = format_raw
-                blk['{}_triang_offset'.format(pname)] = triang_offset
-                blk['{}_use_uvs'.format(pname)] = use_uv
-                blk['{}_use_normals'.format(pname)] = use_normals
-                blk['{}_normal_flag'.format(pname)] = normal_flag
+                flag_descriptions = field.get_flag_description()
+                setattr(blk, '{}'.format(pname), flags)
+                for desc in flag_descriptions:
+                    blk['{}_{}'.format(pname, desc["key"])] = (flags & (1 << desc["bit_index"])) >> desc["bit_index"]
+            value = flags
 
-            value = format_raw
-    
     return value
 
 def set_from_vertex_colors(field, bname, vcolors, poly_object):
@@ -1259,40 +1282,62 @@ def set_from_vertex_colors(field, bname, vcolors, poly_object):
         
         if field.get_attr_type() == FieldType.INT:
             val_arr = RGBPacker.pack_int_to_3floats(blk[pname])
-            for loop in poly_object.loop_indices:
-                vcolors.data[loop].color[0] = val_arr[0]
-                vcolors.data[loop].color[1] = val_arr[1]
-                vcolors.data[loop].color[2] = val_arr[2]
+            # for loop in poly_object.loop_indices:
+            #     vcolors.data[loop].color[0] = val_arr[0]
+            #     vcolors.data[loop].color[1] = val_arr[1]
+            #     vcolors.data[loop].color[2] = val_arr[2]
 
-        elif field.get_attr_type() == FieldType.V_FORMAT:
+        # elif field.get_attr_type() == FieldType.V_FORMAT:
 
+        #     value = 0
+        #     show_int = blk['{}_show_int'.format(pname)]
+        #     if show_int:
+        #         value = blk['{}_format_raw'.format(pname)]
+        #     else: 
+        #         triang_offset = blk['{}_triang_offset'.format(pname)]
+        #         use_uv = blk['{}_use_uvs'.format(pname)]
+        #         use_normals = blk['{}_use_normals'.format(pname)]
+        #         normal_flag = blk['{}_normal_flag'.format(pname)]
+
+
+        #         if triang_offset:
+        #             value = value ^ 0b10000000
+        #         if use_uv:
+        #             value = value ^ 0b10
+        #         if use_normals:
+        #             value = value ^ 0b110000
+        #         if normal_flag:
+        #             value = value ^ 0b1
+
+        #         value = value ^ 1
+
+        #     val_arr = RGBPacker.pack_int_to_3floats(value)
+        #     # for loop in poly_object.loop_indices:
+        #     #     vcolors.data[loop].color[0] = val_arr[0]
+        #     #     vcolors.data[loop].color[1] = val_arr[1]
+        #     #     vcolors.data[loop].color[2] = val_arr[2]
+
+        elif field.get_attr_type() == FieldType.FLAGS:
             value = 0
-            show_int = blk['{}_show_int'.format(pname)]
+            flags = None
+            show_int = getattr(blk, '{}_show_int'.format(pname))
+            flag_descriptions = field.get_flag_description()
+            
             if show_int:
-                value = blk['{}_format_raw'.format(pname)]
-            else: 
-                triang_offset = blk['{}_triang_offset'.format(pname)]
-                use_uv = blk['{}_use_uvs'.format(pname)]
-                use_normals = blk['{}_use_normals'.format(pname)]
-                normal_flag = blk['{}_normal_flag'.format(pname)]
-
-
-                if triang_offset:
-                    value = value ^ 0b10000000
-                if use_uv:
-                    value = value ^ 0b10
-                if use_normals:
-                    value = value ^ 0b110000
-                if normal_flag:
-                    value = value ^ 0b1
-
-                value = value ^ 1
-
+                flags = getattr(blk, '{}'.format(pname))
+            else:
+                flags = 0
+                for desc in flag_descriptions:
+                    flags = flags ^ (getattr(blk, '{}_{}'.format(pname, desc["key"])) << desc["bit_index"])        
+            
+            value = int(flags)
             val_arr = RGBPacker.pack_int_to_3floats(value)
-            for loop in poly_object.loop_indices:
-                vcolors.data[loop].color[0] = val_arr[0]
-                vcolors.data[loop].color[1] = val_arr[1]
-                vcolors.data[loop].color[2] = val_arr[2]
+
+        
+        for loop in poly_object.loop_indices:
+            vcolors.data[loop].color[0] = val_arr[0]
+            vcolors.data[loop].color[1] = val_arr[1]
+            vcolors.data[loop].color[2] = val_arr[2]
 
 # ------------------------------------------------------------------------
 # Other
@@ -1300,7 +1345,7 @@ def set_from_vertex_colors(field, bname, vcolors, poly_object):
 
 def create_per_face_vc(mesh, values, pobj):
     
-    if pobj.get_attr_type() in [FieldType.INT, FieldType.V_FORMAT]:
+    if pobj.get_attr_type() in [FieldType.INT, FieldType.V_FORMAT, FieldType.FLAGS]:
         vcolors = mesh.vertex_colors.new(name=pobj.get_prop())
         for poly_idx, poly in enumerate(mesh.polygons):
             val_arr = RGBPacker.pack_int_to_3floats(values[poly_idx]) 
@@ -1345,8 +1390,11 @@ def create_custom_attribute(mesh, values, bnum, btype, pname):
     elif obj.get_attr_type() == FieldType.INT:
         ztype = 'INT'
 
-    elif obj.get_attr_type() == FieldType.V_FORMAT:
+    elif obj.get_attr_type() == FieldType.FLAGS:
         ztype = 'INT'
+
+    # elif obj.get_attr_type() == FieldType.V_FORMAT:
+    #     ztype = 'INT'
 
     mesh.attributes.new(name=obj.get_prop(), type=ztype, domain=domain)
     attr = mesh.attributes[obj.get_prop()].data

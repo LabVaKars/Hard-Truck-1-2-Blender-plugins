@@ -20,6 +20,7 @@ from ..consts import (
     b24FlagList,
     b33LightTypes,
     vTypeList,
+    pTypeList,
     vVertexTypeList,
     vFaceTypeList,
     vContainerTypeList,
@@ -405,16 +406,76 @@ class Pvb035(BlkBase):
     #     'default': (0.0, 0.0, 0.0)
     # }
 
+class PerFaceFields: 
+    
+    Format_Flags = FlagsParam(
+        name = 'Segment flags',
+        prop = 'format_flags',
+        description = 'Vertex format flags as integer',
+        default_value = 144,
+        flag_description = [{
+            "name": "Is baked",
+            "key": "is_baked",
+            "description": "If true - face is not illuminated(baked color), otherwise is illuminated",
+            "default_value": True,
+            "bit_index": 0
+        },{
+            "name": "Store UV",
+            "key": "store_uv",
+            "description": "Face stores UV alongside its indexes",
+            "default_value": False,
+            "bit_index": 1
+        },{
+            "name": "Is backface",
+            "key": "is_backface",
+            "description": "Changes vertex processing order(culling)",
+            "default_value": False,
+            "bit_index": 2
+        },{
+            "name": "Unknown",
+            "key": "unknown3",
+            "description": "",
+            "default_value": False,
+            "bit_index": 3
+        },{
+            "name": "Use per-conrner shading",
+            "key": "use_percorner",
+            "description": "Uses per-corner shading attributes",
+            "default_value": False,
+            "bit_index": 4
+        },{
+            "name": "Store per-corner",
+            "key": "store_percorner",
+            "description": "Stores per-corner shading attributes alongside face indexes",
+            "default_value": False,
+            "bit_index": 5
+        },{
+            "name": "Unknown",
+            "key": "unknown_6",
+            "description": "",
+            "default_value": False,
+            "bit_index": 6
+        },{
+            "name": "Use triangle strip",
+            "key": "use_strip",
+            "description": "If true uses triangle strip, otherwise triangle fan",
+            "default_value": False,
+            "bit_index": 7
+        }]
+    )
+
 
 class Pfb008(BlkBase):
     bnum = 8
     btype = BlockClassType.PER_FACE_BLOCK
     
-    Format_Flags = VFormatParam(
-        name = '',
-        prop = 'format_flags',
-        default_value = 144
-    )
+    # Format_Flags = VFormatParam(
+    #     name = '',
+    #     prop = 'format_flags',
+    #     default_value = 144
+    # )
+    
+    Format_Flags = PerFaceFields.Format_Flags
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -438,11 +499,13 @@ class Pfb028(BlkBase):
     bnum = 28
     btype = BlockClassType.PER_FACE_BLOCK
 
-    Format_Flags = VFormatParam(
-        name = '',
-        prop = 'format_flags',
-        default_value = 144
-    )
+    # Format_Flags = VFormatParam(
+    #     name = '',
+    #     prop = 'format_flags',
+    #     default_value = 144
+    # )
+
+    Format_Flags = PerFaceFields.Format_Flags
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -466,11 +529,13 @@ class Pfb035(BlkBase):
     bnum = 35
     btype = BlockClassType.PER_FACE_BLOCK
     
-    Format_Flags = VFormatParam(
-        name = '',
-        prop = 'format_flags',
-        default_value = 144
-    )
+    # Format_Flags = VFormatParam(
+    #     name = '',
+    #     prop = 'format_flags',
+    #     default_value = 144
+    # )
+
+    Format_Flags = PerFaceFields.Format_Flags
 
     # disabled for now. Reason: 1) hard to edit 2) more or less static values
     # todo: analyze more
@@ -519,7 +584,7 @@ class FaceFields:
         name = 'Vertex type',
         prop = 'int1',
         subtype = FieldType.INT,
-        items = vTypeList,
+        items = pTypeList,
         default_value = 3
     )
     
@@ -825,7 +890,7 @@ class Blk012(BlkBase):
         prop = 'int2'
     )
     
-    Colis_Plane = ListParam(
+    ColisPlane_Params = ListParam(
         name = 'Unk. params',
         prop = 'list1',
         no_single_edit = True

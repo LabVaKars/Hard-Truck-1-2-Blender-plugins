@@ -106,10 +106,17 @@ vCylinderTriggerTypeList = [
 
 
 vTypeList = [
-    ('0', '0(No normals)', "No normals"),
-    ('1', '1(With normals)', "With normals"),
-    ('2', '2(With normals)', "With normals"),
-    ('3', '3(Normal switch)', "Normal switch")
+    ('0', '0(Nothing)', "No additional info stored in vertex block"),
+    ('1', '1(Tecture color)', "Texture is glowing with set color(vector)"),
+    ('2', '2(With normals)', "Texture is illuminated according to normals(vector)"),
+    ('3', '3(Shining)', "Texture is shining with set intensity(float)")
+]
+
+pTypeList = [
+    ('0', '0(Inherited p.)', "Polygon array. Texture processing is inherited from parent vertex block"),
+    ('1', '1(With normals)', "Triangle array. Object is illuminated"),
+    ('2', '2(Baked lighting)', "Triangle array. Lights are baked"),
+    ('3', '3(Inherited tr.)', "Triangle array. Texture processing is inherited from parent vertex block.")
 ]
 
 

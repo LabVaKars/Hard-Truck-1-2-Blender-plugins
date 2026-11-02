@@ -328,50 +328,6 @@ class BlockClassHandler():
                 if multiple_edit:
                     attributes['__annotations__']['{}'.format(pname)] = prop
 
-            elif field.get_attr_type() == FieldType.V_FORMAT: # currently only available in vertex edit
-
-                prop0 = BoolProperty(
-                    name = 'Raw edit',
-                    description = 'Show raw integer',
-                    default = False
-                )
-                attributes['__annotations__']['{}_show_int'.format(pname)] = prop0
-                
-                prop0 = IntProperty(
-                    name = 'Format Raw',
-                    description = 'Raw format integer',
-                    default = 1
-                )
-                attributes['__annotations__']['{}_format_raw'.format(pname)] = prop0
-
-                prop1 = BoolProperty(
-                    name = 'Triangulation offset',
-                    description = 'Order in which vertexes are read depends on that',
-                    default = True
-                )
-                attributes['__annotations__']['{}_triang_offset'.format(pname)] = prop1
-
-                prop2 = BoolProperty(
-                    name = 'Use UV',
-                    description = 'If active, writes UV during export.',
-                    default = True
-                )
-                attributes['__annotations__']['{}_use_uvs'.format(pname)] = prop2
-
-                prop3 = BoolProperty(
-                    name = 'Use normals',
-                    description = 'If active, writes normal during export.',
-                    default = True
-                )
-                attributes['__annotations__']['{}_use_normals'.format(pname)] = prop3
-
-                prop4 = BoolProperty(
-                    name = 'Normal switch',
-                    description = 'If active, use <float> for en(dis)abling normals. If not active use <float vector> for common normals. Is ignored if "Use normals" is inactive',
-                    default = True
-                )
-                attributes['__annotations__']['{}_normal_flag'.format(pname)] = prop4
-
             elif field.get_attr_type() == FieldType.FLAGS:
                 
                 prop0 = BoolProperty(

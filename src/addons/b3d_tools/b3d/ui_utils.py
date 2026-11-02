@@ -199,40 +199,6 @@ def draw_fields_by_type(layout, bnum, btype = BlockClassType.BLOCK, multiple_edi
                     else:
                         col.enabled = False
 
-        elif ftype == FieldType.V_FORMAT:
-            if multiple_edit:
-                blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
-                if blk is not None:
-                    box = cur_layout.box()
-
-                    if hasattr(blk, "show_{}".format(pname)):
-                        box.prop(blk, "show_{}".format(pname))
-                    
-                    if hasattr(blk, "{}_show_int".format(pname)):
-                        box.prop(blk, "{}_show_int".format(pname))
-                        
-                    col1 = box.column()
-                    if getattr(blk, "{}_show_int".format(pname)) == True:
-                        
-                        if hasattr(blk, "{}_format_raw".format(pname)):
-                            col1.prop(blk, "{}_format_raw".format(pname))
-                    else:
-
-                        if hasattr(blk, "{}_triang_offset".format(pname)):
-                            col1.prop(blk, "{}_triang_offset".format(pname))
-
-                        if hasattr(blk, "{}_use_uvs".format(pname)):
-                            col1.prop(blk, "{}_use_uvs".format(pname))
-
-                        if hasattr(blk, "{}_use_normals".format(pname)):
-                            col1.prop(blk, "{}_use_normals".format(pname))
-
-                        if hasattr(blk, "{}_normal_flag".format(pname)):
-                            col1.prop(blk, "{}_normal_flag".format(pname))
-
-                    if hasattr(blk, "show_{}".format(pname)):
-                        col1.enabled = getattr(blk, "show_{}".format(pname))
-
         elif ftype == FieldType.FLAGS:
             blk = getattr(blocktool, bname) if hasattr(blocktool, bname) else None
             if blk is not None:

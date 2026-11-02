@@ -51,7 +51,8 @@ from .scripts import (
     select_similar_objects_by_type,
     select_similar_faces_by_type,
     create_render_branch_materials,
-    create_way_path_materials
+    create_way_path_materials,
+    report_show_hide_results
 )
 
 from .data_api_utils import (
@@ -287,7 +288,7 @@ class HierarchyAddOperator(bpy.types.Operator):
                     new_b3d[consts.BLOCK_TYPE] = 9
                     if parent_obj is not None:
                         new_b3d.parent = parent_obj
-                    set_objs_by_type(new_b3d, Blk009)
+                    set_objs_by_type(new_b3d, 9)
                     get_context_collection_objects(context).link(new_b3d)
 
                     # and its subgroups
@@ -315,7 +316,7 @@ class HierarchyAddOperator(bpy.types.Operator):
                     new_b3d[consts.BLOCK_TYPE] = 10
                     if parent_obj is not None:
                         new_b3d.parent = parent_obj
-                    set_objs_by_type(new_b3d, Blk010)
+                    set_objs_by_type(new_b3d, 10)
                     get_context_collection_objects(context).link(new_b3d)
 
                     # and its subgroups
@@ -408,13 +409,13 @@ class CastAddOperator(bpy.types.Operator):
                         new_obj.data = poly_obj.data.copy()
                         new_obj[consts.BLOCK_TYPE] = 23
                         new_obj.parent = parent_obj
-                        set_objs_by_type(new_obj, Blk023)
+                        set_objs_by_type(new_obj, 23)
                         get_context_collection_objects(context).link(new_obj)
                         log.info("Created new B3D 3d collision: {}.".format(new_obj.name))
                     else:
                         poly_obj[consts.BLOCK_TYPE] = 23
                         poly_obj.parent = parent_obj
-                        set_objs_by_type(poly_obj, Blk023)
+                        set_objs_by_type(poly_obj, 23)
                         log.info("Cast existing object to B3D 3d collision: {}.".format(poly_obj.name))
                 else:
                     log.info("Selected object {} is not 'Mesh'. Changes not applied.".format(poly_obj.name))
@@ -432,7 +433,7 @@ class CastAddOperator(bpy.types.Operator):
 
                     new_obj[consts.BLOCK_TYPE] = 20
                     new_obj.parent = parent_obj
-                    set_objs_by_type(new_obj, Blk020)
+                    set_objs_by_type(new_obj, 20)
 
                     new_obj.modifiers.new('Portal_node', type='NODES')
                     gnode_modifier = new_obj.modifiers.get('Portal_node')
@@ -525,11 +526,10 @@ class GetVertexValuesOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        if block_type == 8:
-            get_per_vertex_by_type(b3d_obj.data, Pvb008)
-        elif block_type == 35:
-            get_per_vertex_by_type(b3d_obj.data, Pvb035)
+        if block_type in [8, 35]:
+            get_per_vertex_by_type(b3d_obj.data, block_type, BlockClassType.PER_VERTEX_BLOCK)
 
+        self.report({'INFO'}, "Extracted current vertex parameters")
         return {'FINISHED'}
 
 class GetFaceValuesOperator(bpy.types.Operator):
@@ -540,13 +540,10 @@ class GetFaceValuesOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        if block_type == 8:
-            get_per_face_by_type(b3d_obj.data, Pfb008)
-        elif block_type == 28:
-            get_per_face_by_type(b3d_obj.data, Pfb028)
-        elif block_type == 35:
-            get_per_face_by_type(b3d_obj.data, Pfb035)
+        if block_type in [8, 28, 35]:
+            get_per_face_by_type(b3d_obj.data, block_type, BlockClassType.PER_FACE_BLOCK)
 
+        self.report({'INFO'}, "Extracted current face parameters")
         return {'FINISHED'}
 
 class GetValuesOperator(bpy.types.Operator):
@@ -561,6 +558,7 @@ class GetValuesOperator(bpy.types.Operator):
 
         get_objs_by_type(b3d_obj, block_type)
 
+        self.report({'INFO'}, "Extracted current object parameters")
         return {'FINISHED'}
 
 class SetFaceValuesOperator(bpy.types.Operator):
@@ -577,12 +575,13 @@ class SetFaceValuesOperator(bpy.types.Operator):
             block_type = b3d_obj[consts.BLOCK_TYPE]
 
             if block_type == 8:
-                set_per_face_by_type(b3d_obj.data, Pfb008)
+                set_per_face_by_type(b3d_obj.data, 8, BlockClassType.PER_FACE_BLOCK)
             elif block_type == 28:
-                set_per_face_by_type(b3d_obj.data, Pfb028)
+                set_per_face_by_type(b3d_obj.data, 28, BlockClassType.PER_FACE_BLOCK)
             elif block_type == 35:
-                set_per_face_by_type(b3d_obj.data, Pfb035)
+                set_per_face_by_type(b3d_obj.data, 35, BlockClassType.PER_FACE_BLOCK)
 
+        self.report({'INFO'}, "Saved new face parameters")
         return {'FINISHED'}
 
 class SetVertexValuesOperator(bpy.types.Operator):
@@ -599,10 +598,11 @@ class SetVertexValuesOperator(bpy.types.Operator):
             block_type = b3d_obj[consts.BLOCK_TYPE]
 
             if block_type == 8:
-                set_per_vertex_by_type(b3d_obj.data, Pvb008)
+                set_per_vertex_by_type(b3d_obj.data, 8, BlockClassType.PER_VERTEX_BLOCK)
             elif block_type == 35:
-                set_per_vertex_by_type(b3d_obj.data, Pvb035)
+                set_per_vertex_by_type(b3d_obj.data, 35, BlockClassType.PER_VERTEX_BLOCK)
 
+        self.report({'INFO'}, "Saved new vertex parameters")
         return {'FINISHED'}
 
 class SetRoomAndModuleOperator(bpy.types.Operator):
@@ -655,7 +655,8 @@ class SetValuesOperator(bpy.types.Operator):
             b3d_obj[consts.BLOCK_TYPE] = block_type
 
             set_objs_by_type(b3d_obj, block_type)
-
+            
+        self.report({'INFO'}, "Saved new object parameters")
         return {'FINISHED'}
 
 class ApplyTransformsOperator(bpy.types.Operator):
@@ -693,7 +694,8 @@ class Show2DCollisionsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_obj_by_type(self, 20)
+        obj_count = show_obj_by_type(self, 20)
+        report_show_hide_results(self, 20, obj_count, True)
 
         return {'FINISHED'}
 
@@ -705,7 +707,8 @@ class Hide2DCollisionsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        hide_obj_by_type(self, 20)
+        obj_count = hide_obj_by_type(self, 20)
+        report_show_hide_results(self, 20, obj_count, False)
 
         return {'FINISHED'}
 
@@ -717,7 +720,8 @@ class ShowCollisionsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_obj_by_type(self, 23)
+        obj_count = show_obj_by_type(self, 23)
+        report_show_hide_results(self, 23, obj_count, True)
 
         return {'FINISHED'}
 
@@ -729,7 +733,8 @@ class HideCollisionsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        hide_obj_by_type(self, 23)
+        obj_count = hide_obj_by_type(self, 23)
+        report_show_hide_results(self, 23, obj_count, False)
 
         return {'FINISHED'}
 
@@ -741,7 +746,8 @@ class ShowRoomBordersOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_obj_by_type(self, 30)
+        obj_count = show_obj_by_type(self, 30)
+        report_show_hide_results(self, 30, obj_count, True)
 
         return {'FINISHED'}
 
@@ -753,7 +759,8 @@ class HideRoomBordersOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        hide_obj_by_type(self, 30)
+        obj_count = hide_obj_by_type(self, 30)
+        report_show_hide_results(self, 30, obj_count, False)
 
         return {'FINISHED'}
 
@@ -765,7 +772,8 @@ class ShowGeneratorsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        show_obj_by_type(self, 40)
+        obj_count = show_obj_by_type(self, 40)
+        report_show_hide_results(self, 40, obj_count, True)
 
         return {'FINISHED'}
 
@@ -777,7 +785,8 @@ class HideGeneratorsOperator(bpy.types.Operator):
     def execute(self, context):
         mytool = get_panel_tool(context)
 
-        hide_obj_by_type(self, 40)
+        obj_count = hide_obj_by_type(self, 40)
+        report_show_hide_results(self, 40, obj_count, False)
 
         return {'FINISHED'}
     
@@ -838,7 +847,6 @@ class ShowConditionalsOperator(bpy.types.Operator):
         for obj in objs:
             show_conditionals(obj, self.group)
         self.report({'INFO'}, "{} Conditional objects(block 21) are shown".format(len(objs)))
-
 
         return {'FINISHED'}
 
@@ -917,9 +925,9 @@ class SelectSimilarFacesOperator(bpy.types.Operator):
         b3d_obj = get_active_object()
         block_type = b3d_obj[consts.BLOCK_TYPE]
 
-        select_similar_faces_by_type(block_type, BlockClassType.PER_FACE_BLOCK)
+        face_count = select_similar_faces_by_type(block_type, BlockClassType.PER_FACE_BLOCK)
 
-        self.report({'INFO'}, "Similar faces selected")
+        self.report({'INFO'}, "{} similar faces selected".format(face_count))
 
         return {'FINISHED'}
 
