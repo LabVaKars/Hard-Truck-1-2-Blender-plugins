@@ -8,6 +8,7 @@ if "bpy" in locals():
 
     importlib.reload(common)
     importlib.reload(common_classes)
+    importlib.reload(ksy)
     importlib.reload(geom_nodes)
     importlib.reload(data_api_utils)
     importlib.reload(custom_ui_list)
@@ -17,7 +18,9 @@ if "bpy" in locals():
     importlib.reload(blocktool)
     importlib.reload(ui_utils)
     importlib.reload(imghelp)
+    importlib.reload(ksy_import_b3d)
     importlib.reload(import_b3d)
+    importlib.reload(import_raw)
     importlib.reload(import_way)
     importlib.reload(import_res)
     importlib.reload(export_b3d)
@@ -33,6 +36,7 @@ else:
     from . import (
         common,
         common_classes,
+        ksy,
         geom_nodes,
         data_api_utils,
         custom_ui_list,
@@ -42,7 +46,9 @@ else:
         blocktool,
         ui_utils,
         imghelp,
+        ksy_import_b3d,
         import_b3d,
+        import_raw,
         import_way,
         import_res,
         export_b3d,

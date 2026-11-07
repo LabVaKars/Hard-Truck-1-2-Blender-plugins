@@ -27,7 +27,8 @@ from .common_classes import (
     BoolBlock
 )
 from . import (
-    import_b3d, export_b3d, import_res, export_res
+    import_b3d, export_b3d, import_res, export_res, import_raw,
+    ksy_import_b3d
 )
 from .callbacks import (
     b3d_modules_callback,
@@ -373,8 +374,10 @@ class ImportB3D(Operator, ImportHelper):
         odds = [cn for i,cn in enumerate(self.files) if i%2==1]
 
 
-        t1 = Thread(target=import_b3d.thread_import_b3d, args=(self, evens, context))
-        t2 = Thread(target=import_b3d.thread_import_b3d, args=(self, odds, context))
+        # t1 = Thread(target=import_b3d.thread_import_b3d, args=(self, evens, context))
+        # t2 = Thread(target=import_b3d.thread_import_b3d, args=(self, odds, context))
+        t1 = Thread(target=ksy_import_b3d.thread_import_b3d, args=(self, evens, context))
+        t2 = Thread(target=ksy_import_b3d.thread_import_b3d, args=(self, odds, context))
 
         tt = time.mktime(datetime.datetime.now().timetuple())
 
@@ -577,7 +580,7 @@ class ImportRAW(Operator, ImportHelper):
             log.info('Importing file {}'.format(filepath))
             t = time.mktime(datetime.datetime.now().timetuple())
             with open(filepath, 'rb') as file:
-                import_b3d.import_raw(file, context, self, filepath)
+                import_raw.import_raw(file, context, self, filepath)
             t = time.mktime(datetime.datetime.now().timetuple()) - t
             log.info('Finished importing in {} seconds'.format(t))
 

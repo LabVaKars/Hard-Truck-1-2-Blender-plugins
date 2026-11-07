@@ -77,7 +77,6 @@ from .restool import (
     get_material_index_in_res
 )
 
-# from .parsing import read_b3d as b3dr
 
 #Setup module logger
 log = importb3d_logger
@@ -700,9 +699,10 @@ def import_b3d(file, context, self, filepath):
                 real_name = b3d_obj.name
                 obj_string[-1] = b3d_obj.name
 
-            elif (block_type == 8):    #тоже фейсы        face
+            elif (block_type in [8, 35]):    #тоже фейсы        face
                 faces = []
                 faces_all = []
+                poly_block_uvs = []
                 overriden_uvs = []
                 texnums = {}
                 uv_indexes = []
@@ -714,6 +714,10 @@ def import_b3d(file, context, self, filepath):
 
 
                 bounding_sphere = struct.unpack("<4f",file.read(16)) # skip bounding sphere
+                if block_type == 35:
+                    m_type = struct.unpack("<i",file.read(4))[0]
+                    texnum = struct.unpack("<i",file.read(4))[0]
+
                 polygon_count = struct.unpack("<i",file.read(4))[0]
 
                 for i in range(polygon_count):
@@ -750,55 +754,58 @@ def import_b3d(file, context, self, filepath):
                                 poly_block_uvs[k][face_idx] = struct.unpack("<2f",file.read(8))
                         else:
                             poly_block_uvs[0][face_idx] = vertex_block_uvs[0][face_idx]
-                        # if used with no-normals vertex blocks(6,7) use this normals
                         if poly_format & 0b100000 and poly_format & 0b10000:
                             if poly_format & 0b1:
                                 l_normals[face_idx] = struct.unpack("<3f",file.read(12))
                             else:
                                 l_normals_off[face_idx] = struct.unpack("<f",file.read(4))
 
-                    #Save materials for faces
-                    if texnum in texnums:
-                        texnums[texnum].append(faces)
-                    else:
-                        texnums[texnum] = []
-                        texnums[texnum].append(faces)
-
-
-                    #Without triangulation
-                    # uv_new = ()
-                    # for t in range(len(faces)):
-                    #     uv_new = uv_new + (uv[faces[t]],)
-                    # uvs.append(uv_new)
-                    # faces_all.append(faces)
-
                     if len(poly_block_uvs) > len(overriden_uvs):
                         for i in range(len(poly_block_uvs)-len(overriden_uvs)):
                             overriden_uvs.append([])
 
-                    #Triangulating faces
-                    for t in range(len(faces)-2):
-                        if not triangulate_offset:
-                            if t%2 == 0:
-                                faces_new.append([faces[t-1],faces[t],faces[t+1]])
-                            else:
-                                faces_new.append([faces[t],faces[t+1],faces[t+2]])
+                    if block_type == 8:        
+                    #Save materials for faces
+                        if texnum in texnums:
+                            texnums[texnum].append(faces)
                         else:
-                            if t%2 == 0:
-                                faces_new.append([faces[t],faces[t+1],faces[t+2]])
-                            else:
-                                faces_new.append([faces[t],faces[t+2],faces[t+1]])
+                            texnums[texnum] = []
+                            texnums[texnum].append(faces)
 
+                        #Triangulating faces
+                        for t in range(len(faces)-2):
+                            if not triangulate_offset:
+                                if t%2 == 0:
+                                    faces_new.append([faces[t-1],faces[t],faces[t+1]])
+                                else:
+                                    faces_new.append([faces[t],faces[t+1],faces[t+2]])
+                            else:
+                                if t%2 == 0:
+                                    faces_new.append([faces[t],faces[t+1],faces[t+2]])
+                                else:
+                                    faces_new.append([faces[t],faces[t+2],faces[t+1]])
+
+                            for u, over_uv in enumerate(poly_block_uvs):
+                                if over_uv:
+                                    overriden_uvs[u].append((over_uv[faces_new[t][0]], over_uv[faces_new[t][1]], over_uv[faces_new[t][2]]))
+
+                            uv_indexes.append(faces_new[t])
+                            formats.append(format_raw)
+                            unk_floats.append(unk_float)
+                            unk_ints.append(unk_int)
+
+                        faces_all.extend(faces_new)
+                    
+                    elif block_type == 35:
                         for u, over_uv in enumerate(poly_block_uvs):
                             if over_uv:
-                                overriden_uvs[u].append((over_uv[faces_new[t][0]], over_uv[faces_new[t][1]], over_uv[faces_new[t][2]]))
+                                overriden_uvs[u].append((over_uv[faces[0]], over_uv[faces[1]], over_uv[faces[2]]))
 
-                        uv_indexes.append(faces_new[t])
+                        uv_indexes.append((faces[0], faces[1], faces[2]))
                         formats.append(format_raw)
                         unk_floats.append(unk_float)
                         unk_ints.append(unk_int)
-
-                    faces_all.extend(faces_new)
+                        faces_all.append(faces)
 
                 if not used_blocks[str(block_type)]:
                     continue
@@ -817,13 +824,6 @@ def import_b3d(file, context, self, filepath):
 
                 b3d_mesh.from_pydata(cur_vertexes,[],cur_faces)
 
-                # Ev = threading.Event()
-                # Tr = threading.Thread(target=b3d_mesh.from_pydata, args = (cur_vertexes,[],cur_faces))
-                # Tr.start()
-                # Ev.set()
-                # Tr.join()
-
-                # newIndices = get_user_vertices(cur_faces)
 
                 if len(normals) > 0:
                     b3d_mesh.use_auto_smooth = True
@@ -833,26 +833,6 @@ def import_b3d(file, context, self, filepath):
                         # b3d_mesh.vertices[idx].normal = normals[idx]
                     b3d_mesh.normals_split_custom_set_from_vertices(normal_list)
 
-                #Setup UV
-                # custom_uv = b3d_mesh.uv_layers.new()
-                # custom_uv.name = "UVmap"
-
-                # for k, texpoly in enumerate(b3d_mesh.polygons):
-                #     for j,loop in enumerate(texpoly.loop_indices):
-                #         uvs_mesh = (uvs[k][j][0], 1-uvs[k][j][1])
-                #         custom_uv.data[loop].uv = uvs_mesh
-
-                # for simplicity
-                # for u, uvMap in enumerate(vertex_block_uvs):
-
-                #     custom_uv = get_uv_layers(b3d_mesh).new()
-                #     custom_uv.name = "UVmapVert{}".format(u)
-                #     uvs_mesh = []
-
-                #     for i, texpoly in enumerate(b3d_mesh.polygons):
-                #         for j,loop in enumerate(texpoly.loop_indices):
-                #             uvs_mesh = (uvMap[uv_indexes[i][j]][0],1 - uvMap[uv_indexes[i][j]][1])
-                #             custom_uv.data[loop].uv = uvs_mesh
 
                 for u, uv_over in enumerate(overriden_uvs):
 
@@ -871,41 +851,45 @@ def import_b3d(file, context, self, filepath):
                 # create_custom_attribute_c(b3d_mesh, cur_normals_off, Pvb008.Normal_Switch)
                 # create_custom_attribute_c(b3d_mesh, cur_normals, Pvb008.Custom_Normal)
 
-                #Create Object
 
                 b3d_obj = bpy.data.objects.new(obj_name, b3d_mesh)
                 b3d_init(b3d_obj)
                 b3d_obj[BLOCK_TYPE] = block_type
                 b3d_obj.location = bounding_sphere[0:3]
                 b3d_obj.parent = parent_obj
+                if block_type == 35:
+                    b3d_obj[Blk035.FaceType.get_prop()] = m_type
+                    b3d_obj[Blk035.TexNum.get_prop()] = texnum
                 get_context_collection_objects(context).link(b3d_obj)
                 real_name = b3d_obj.name
                 obj_string[-1] = b3d_obj.name
 
                 if self.to_import_textures:
-                    #For assign_material_by_vertices just-in-case
-                    # bpy.ops.object.mode_set(mode = 'OBJECT')
-                    #Set appropriate meaterials
-                    if len(texnums.keys()) > 1:
-                        for texnum in texnums:
-                            mat_name = imp_material_list[int(texnum)]
-                            id_in_res = get_material_index_in_res(mat_name, res_basename)
-                            mat = res_module.materials[id_in_res].id_mat
-                            b3d_mesh.materials.append(mat)
-                            last_index = len(b3d_mesh.materials)-1
+                    if block_type == 8:
+                        if len(texnums.keys()) > 1:
+                            for texnum in texnums:
+                                mat_name = imp_material_list[int(texnum)]
+                                id_in_res = get_material_index_in_res(mat_name, res_basename)
+                                mat = res_module.materials[id_in_res].id_mat
+                                b3d_mesh.materials.append(mat)
+                                last_index = len(b3d_mesh.materials)-1
 
-                            for vert_arr in texnums[texnum]:
-                                new_vert_arr = get_used_face(vert_arr, old_new_transf)
-                                # self.lock.acquire()
-                                assign_material_by_vertices(b3d_obj, new_vert_arr, last_index)
-                                # self.lock.release()
-                    else:
-                        for texnum in texnums:
-                            mat_name = imp_material_list[int(texnum)]
-                            id_in_res = get_material_index_in_res(mat_name, res_basename)
-                            mat = res_module.materials[id_in_res].id_mat
-                            b3d_mesh.materials.append(mat)
-
+                                for vert_arr in texnums[texnum]:
+                                    new_vert_arr = get_used_face(vert_arr, old_new_transf)
+                                    # self.lock.acquire()
+                                    assign_material_by_vertices(b3d_obj, new_vert_arr, last_index)
+                                    # self.lock.release()
+                        else:
+                            for texnum in texnums:
+                                mat_name = imp_material_list[int(texnum)]
+                                id_in_res = get_material_index_in_res(mat_name, res_basename)
+                                mat = res_module.materials[id_in_res].id_mat
+                                b3d_mesh.materials.append(mat)
+                    elif block_type == 35:
+                        mat_name = imp_material_list[int(texnum)]
+                        id_in_res = get_material_index_in_res(mat_name, res_basename)
+                        mat = res_module.materials[id_in_res].id_mat
+                        b3d_mesh.materials.append(mat)
 
 
             elif (block_type == 9 or block_type == 22):
@@ -1830,191 +1814,137 @@ def import_b3d(file, context, self, filepath):
                 real_name = b3d_obj.name
                 obj_string[-1] = b3d_obj.name
 
-            elif (block_type == 35): #mesh
+            # elif (block_type == 35): #mesh
+            #     faces = []
+            #     faces_all = []
+            #     poly_block_uvs = []
 
-                bounding_sphere = struct.unpack("<4f",file.read(16))
-                faces_all = []
-                faces = []
-                poly_block_uvs = []
+            #     overriden_uvs = []
+            #     uv_indexes = []
 
-                m_type = struct.unpack("<i",file.read(4))[0]
-                texnum = struct.unpack("<i",file.read(4))[0]
-                polygon_count = struct.unpack("<i",file.read(4))[0]
-                overriden_uvs = []
-                uv_indexes = []
-                l_normals = normals
-                l_normals_off = normals_off
+            #     formats = []
+            #     unk_floats = []
+            #     unk_ints = []
+            #     l_normals = normals
+            #     l_normals_off = normals_off
 
-                formats = []
-                unk_floats = []
-                unk_ints = []
+            #     bounding_sphere = struct.unpack("<4f",file.read(16))
+            #     m_type = struct.unpack("<i",file.read(4))[0]
+            #     texnum = struct.unpack("<i",file.read(4))[0]
+            #     polygon_count = struct.unpack("<i",file.read(4))[0]
+            #     for i in range(polygon_count):
+            #         faces = []
+            #         format_raw = struct.unpack("<i",file.read(4))[0]
+            #         poly_format = format_raw ^ 1
+            #         uv_count = ((poly_format & 0xFF00) >> 8) #ah
+            #         triangulate_offset = poly_format & 0b10000000
 
-                for i in range(polygon_count):
-                    faces = []
-                    format_raw = struct.unpack("<i",file.read(4))[0]
-                    poly_format = format_raw ^ 1
-                    uv_count = ((poly_format & 0xFF00) >> 8) #ah
-                    triangulate_offset = poly_format & 0b10000000
+            #         if poly_format & 0b10:
+            #             uv_count += 1
 
-                    if poly_format & 0b10:
-                        uv_count += 1
+            #         poly_block_uvs = [{}]
 
-                    poly_block_uvs = [{}]
+            #         poly_block_len = len(poly_block_uvs)
 
-                    poly_block_len = len(poly_block_uvs)
+            #         for i in range(uv_count - poly_block_len):
+            #             poly_block_uvs.append({})
 
-                    for i in range(uv_count - poly_block_len):
-                        poly_block_uvs.append({})
+            #         unk_float = struct.unpack("<f",file.read(4))[0]
+            #         unk_int = struct.unpack("<i",file.read(4))[0]
+            #         texnum = struct.unpack("<i",file.read(4))[0]
 
-                    unk_float = struct.unpack("<f",file.read(4))[0]
-                    unk_int = struct.unpack("<i",file.read(4))[0]
-                    texnum = struct.unpack("<i",file.read(4))[0]
+            #         vertex_count = struct.unpack("<i",file.read(4))[0]
 
-                    vertex_count = struct.unpack("<i",file.read(4))[0]
-
-                    for j in range(vertex_count):
-                        face_idx = struct.unpack("<i",file.read(4))[0]
-                        faces.append(face_idx)
-                        if poly_format & 0b10:
-                            # uv override
-                            for k in range(uv_count):
-                                poly_block_uvs[k][face_idx] = struct.unpack("<2f",file.read(8))
-                        else:
-                            poly_block_uvs[0][face_idx] = vertex_block_uvs[0][face_idx]
-                        if poly_format & 0b100000 and poly_format & 0b10000:
-                            if poly_format & 0b1:
-                                l_normals[face_idx] = struct.unpack("<3f",file.read(12))
-                            else:
-                                l_normals_off[face_idx] = struct.unpack("<f",file.read(4))
-
-
-                    faces_all.append(faces)
-
-                    formats.append(format_raw)
-                    unk_floats.append(unk_float)
-                    unk_ints.append(unk_int)
-
-                    # store uv coords for each face
-                    if len(poly_block_uvs) > len(overriden_uvs):
-                        for i in range(len(poly_block_uvs)-len(overriden_uvs)):
-                            overriden_uvs.append([])
-
-                    for u, over_uv in enumerate(poly_block_uvs):
-                        if over_uv:
-                            overriden_uvs[u].append((over_uv[faces[0]], over_uv[faces[1]], over_uv[faces[2]]))
-
-                    # store face indexes for setting uv coords later
-                    uv_indexes.append((faces[0], faces[1], faces[2]))
-
-                    #https://docs.blender.org/api/current/bpy.types.bpy_prop_collection.html#bpy.types.bpy_prop_collection
-                    #seq must be uni-dimensional
-                    # normals_set.extend([normals[faces[0]], normals[faces[1]], normals[faces[2]]])
-                    # normals_set.extend(list(normals[faces[0]]))
-                    # normals_set.extend(list(normals[faces[1]]))
-                    # normals_set.extend(list(normals[faces[2]]))
-                    # intens_set.extend(list(intencities[faces[0]]))
-                    # intens_set.extend(list(intencities[faces[1]]))
-                    # intens_set.extend(list(intencities[faces[2]]))
-                    # intens_set.extend([intencities[faces[0]], intencities[faces[1]], intencities[faces[2]]])
-
-                if not used_blocks[str(block_type)]:
-                    continue
-
-                # log.debug(vertex_block_uvs)
-                # log.debug(overriden_uvs)
-
-                b3d_mesh = (bpy.data.meshes.new(obj_name))
-                cur_vertexes, cur_faces, indices, old_new_transf, new_old_transf = get_used_vertices_and_transform(vertexes, faces_all)
-
-                cur_normals = []
-                cur_normals_off = []
-                for i in range(len(cur_vertexes)):
-                    cur_normals.append(l_normals[new_old_transf[i]])
-                    cur_normals_off.append(l_normals_off[new_old_transf[i]])
-
-                cur_vertexes = recalc_to_local_coord(bounding_sphere[:3], cur_vertexes)
-
-                b3d_mesh.from_pydata(cur_vertexes,[],cur_faces)
-
-                # Ev = threading.Event()
-                # Tr = threading.Thread(target=b3d_mesh.from_pydata, args = (cur_vertexes,[],cur_faces))
-                # Tr.start()
-                # Ev.set()
-                # Tr.join()
-
-                # newIndices = get_user_vertices(cur_faces)
-
-                # blender generates his own normals, so imported vertex normals doesn't affect
-                # them too much.
-                if len(normals) > 0:
-                    b3d_mesh.use_auto_smooth = True
-                    normal_list = []
-                    for i,vert in enumerate(b3d_mesh.vertices):
-                        normal_list.append(normals[new_old_transf[i]])
-                        # b3d_mesh.vertices[idx].normal = normals[idx]
-                    # log.debug(normal_list)
-                    b3d_mesh.normals_split_custom_set_from_vertices(normal_list)
-
-                # if len(normals) > 0:
-                #     for i,idx in enumerate(newIndices):
-                #         b3d_mesh.vertices[idx].normal = normals[idx]
+            #         for j in range(vertex_count):
+            #             face_idx = struct.unpack("<i",file.read(4))[0]
+            #             faces.append(face_idx)
+            #             if poly_format & 0b10:
+            #                 # uv override
+            #                 for k in range(uv_count):
+            #                     poly_block_uvs[k][face_idx] = struct.unpack("<2f",file.read(8))
+            #             else:
+            #                 poly_block_uvs[0][face_idx] = vertex_block_uvs[0][face_idx]
+            #             if poly_format & 0b100000 and poly_format & 0b10000:
+            #                 if poly_format & 0b1:
+            #                     l_normals[face_idx] = struct.unpack("<3f",file.read(12))
+            #                 else:
+            #                     l_normals_off[face_idx] = struct.unpack("<f",file.read(4))
 
 
-                # for simplicity
-                # for u, uvMap in enumerate(vertex_block_uvs):
 
-                #     custom_uv = get_uv_layers(b3d_mesh).new()
-                #     custom_uv.name = "UVmapVert{}".format(u)
-                #     uvs_mesh = []
+            #         # store uv coords for each face
+            #         if len(poly_block_uvs) > len(overriden_uvs):
+            #             for i in range(len(poly_block_uvs)-len(overriden_uvs)):
+            #                 overriden_uvs.append([])
 
-                #     for i, texpoly in enumerate(b3d_mesh.polygons):
-                #         for j,loop in enumerate(texpoly.loop_indices):
-                #             uvs_mesh = (uvMap[uv_indexes[i][j]][0],1 - uvMap[uv_indexes[i][j]][1])
-                #             custom_uv.data[loop].uv = uvs_mesh
+            #         for u, over_uv in enumerate(poly_block_uvs):
+            #             if over_uv:
+            #                 overriden_uvs[u].append((over_uv[faces[0]], over_uv[faces[1]], over_uv[faces[2]]))
 
-                for u, uv_over in enumerate(overriden_uvs):
+            #         uv_indexes.append((faces[0], faces[1], faces[2]))
+            #         formats.append(format_raw)
+            #         unk_floats.append(unk_float)
+            #         unk_ints.append(unk_int)
+            #         faces_all.append(faces)
+            #     if not used_blocks[str(block_type)]:
+            #         continue
 
-                    custom_uv = get_uv_layers(b3d_mesh).new()
-                    custom_uv.name = "UVMap"
+            #     b3d_mesh = (bpy.data.meshes.new(obj_name))
+
+            #     cur_vertexes, cur_faces, indices, old_new_transf, new_old_transf = get_used_vertices_and_transform(vertexes, faces_all)
+
+            #     cur_normals = []
+            #     cur_normals_off = []
+            #     for i in range(len(cur_vertexes)):
+            #         cur_normals.append(l_normals[new_old_transf[i]])
+            #         cur_normals_off.append(l_normals_off[new_old_transf[i]])
+
+            #     cur_vertexes = recalc_to_local_coord(bounding_sphere[:3], cur_vertexes)
+
+            #     b3d_mesh.from_pydata(cur_vertexes,[],cur_faces)
+
+
+            #     if len(normals) > 0:
+            #         b3d_mesh.use_auto_smooth = True
+            #         normal_list = []
+            #         for i,vert in enumerate(b3d_mesh.vertices):
+            #             normal_list.append(normals[new_old_transf[i]])
+            #             # b3d_mesh.vertices[idx].normal = normals[idx]
+            #         b3d_mesh.normals_split_custom_set_from_vertices(normal_list)
+
+
+            #     for u, uv_over in enumerate(overriden_uvs):
+
+            #         custom_uv = get_uv_layers(b3d_mesh).new()
+            #         custom_uv.name = "UVMap"
                     
-                    set_uv_values(custom_uv, b3d_mesh, uv_over)
+            #         set_uv_values(custom_uv, b3d_mesh, uv_over)
                     
-                # b3d_mesh.attributes["my_normal"].data.foreach_set("vector", normals_set)
+            #     create_custom_attribute_c(b3d_mesh, formats, Pfb035.Format_Flags)
+            #     # those are usually consts in all objects
+            #     # create_custom_attribute_c(b3d_mesh, unk_floats, Pfb035.Unk_Float1)
+            #     # create_custom_attribute_c(b3d_mesh, unk_ints, Pfb035.Unk_Int2)
 
-                create_custom_attribute_c(b3d_mesh, formats, Pfb035.Format_Flags)
-                # those are usually consts in all objects
-                # create_custom_attribute_c(b3d_mesh, unk_floats, Pfb035.Unk_Float1)
-                # create_custom_attribute_c(b3d_mesh, unk_ints, Pfb035.Unk_Int2)
-
-                # cancel for now, maybe find workaround later
-                # create_custom_attribute_c(b3d_mesh, cur_normals_off, Pvb035.Normal_Switch)
-                # create_custom_attribute_c(b3d_mesh, cur_normals, Pvb035.Custom_Normal)
-
-                if self.to_import_textures:
-                    mat_name = imp_material_list[int(texnum)]
-                    id_in_res = get_material_index_in_res(mat_name, res_basename)
-                    mat = res_module.materials[id_in_res].id_mat
-                    b3d_mesh.materials.append(mat)
+            #     # cancel for now, maybe find workaround later
+            #     # create_custom_attribute_c(b3d_mesh, cur_normals_off, Pvb035.Normal_Switch)
+            #     # create_custom_attribute_c(b3d_mesh, cur_normals, Pvb035.Custom_Normal)
 
 
-                b3d_obj = bpy.data.objects.new(obj_name, b3d_mesh)
-                b3d_init(b3d_obj)
-                b3d_obj.parent = parent_obj
-                b3d_obj[BLOCK_TYPE] = block_type
-                b3d_obj.location = bounding_sphere[0:3]
-                b3d_obj[Blk035.FaceType.get_prop()] = m_type
-                b3d_obj[Blk035.TexNum.get_prop()] = texnum
-                # b3d_obj['FType'] = 0
-                # try:
-                #     b3d_obj['SType'] = b3d_obj.parent['SType']
-                # except:
-                #     b3d_obj['SType'] = 2
-                # b3d_obj['BType'] = 35
-                real_name = b3d_obj.name
-                # for face in b3d_mesh.polygons:
-                #     face.use_smooth = True
-                get_context_collection_objects(context).link(b3d_obj) #добавляем в сцену обьект
-                obj_string[-1] = b3d_obj.name
+            #     b3d_obj = bpy.data.objects.new(obj_name, b3d_mesh)
+            #     b3d_init(b3d_obj)
+            #     b3d_obj[BLOCK_TYPE] = block_type
+            #     b3d_obj.location = bounding_sphere[0:3]
+            #     b3d_obj.parent = parent_obj
+            #     b3d_obj[Blk035.FaceType.get_prop()] = m_type
+            #     b3d_obj[Blk035.TexNum.get_prop()] = texnum
+            #     get_context_collection_objects(context).link(b3d_obj)
+            #     real_name = b3d_obj.name
+            #     obj_string[-1] = b3d_obj.name
+            #     if self.to_import_textures:
+            #         mat_name = imp_material_list[int(texnum)]
+            #         id_in_res = get_material_index_in_res(mat_name, res_basename)
+            #         mat = res_module.materials[id_in_res].id_mat
+            #         b3d_mesh.materials.append(mat)
 
             elif (block_type == 36):
 

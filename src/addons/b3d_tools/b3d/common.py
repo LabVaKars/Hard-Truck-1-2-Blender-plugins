@@ -525,7 +525,8 @@ def get_parent(obj):
 # class MyToolBlockHandler():
 
 def get_pythagor_length(p1, p2):
-    return (sum(map(lambda xx,yy : (xx-yy)**2,p1,p2)))**0.5
+    return (Vector(p1) - Vector(p2)).length
+    # return (sum(map(lambda xx,yy : (xx-yy)**2,p1,p2)))**0.5
 
 # https://b3d.interplanety.org/en/how-to-calculate-the-bounding-sphere-for-selected-objects/
 def get_mult_obj_bounding_sphere(objn_transfs, mode='BBOX'):

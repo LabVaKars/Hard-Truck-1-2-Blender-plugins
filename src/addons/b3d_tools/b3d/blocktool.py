@@ -26,6 +26,7 @@ from .blocktool_defs import (
     FieldType,
     BlockClassType,
     # block params
+    Blk000,
     Blk001,Blk002,Blk003,Blk004,Blk005,Blk006,Blk007,Blk008,Blk009,Blk010,
     Blk011,Blk012,Blk013,Blk014,Blk015,Blk016,Blk017,Blk018,Blk019,Blk020,
     Blk021,Blk022,Blk023,Blk024,Blk025,Blk026,Blk027,Blk028,Blk029,Blk030,
@@ -95,7 +96,7 @@ class BlockClassHandler():
     ]
 
     block_classes = [
-        None, Blk001, Blk002, Blk003, Blk004, Blk005, Blk006, Blk007, Blk008, Blk009,
+        Blk000, Blk001, Blk002, Blk003, Blk004, Blk005, Blk006, Blk007, Blk008, Blk009,
         Blk010, Blk011, Blk012, Blk013, Blk014, Blk015, Blk016, Blk017, Blk018, Blk019,
         Blk020, Blk021, Blk022, Blk023, Blk024, Blk025, Blk026, Blk027, Blk028, Blk029,
         Blk030, Blk031, None, Blk033, Blk034, Blk035, Blk036, Blk037, None, Blk039,
@@ -479,9 +480,60 @@ class BlockClassHandler():
 
     @staticmethod
     def get_object_initializer_by_class(bclass):
-        def initializer(b3d_obj):
-            for field_name, field in ({attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}).items():
-                b3d_obj[field_name] = field.get_default()
+        def initializer(b3d_obj, obj=None):
+            if bclass is None:
+                return
+        
+            # for field_name, field in ({attr.prop:attr for attr_name, attr in vars(bclass).items() if isinstance(attr, BlkParam)}).items():
+            #     b3d_obj[field_name] = field.get_default()
+            #     if obj is not None:
+            #         attr = getattr(obj, field_name, None)
+            #         if attr is not None: 
+            #             b3d_obj[field_name] = attr
+            
+            for field in vars(bclass).values():
+                if isinstance(field, BlkParam):
+                    default = field.get_default()
+                    if obj is not None:
+                        # value = getattr(obj, field.prop, value)
+                        # if value is None:
+                        #     value = field.get_default()
+                    # b3d_obj[field.prop] = value                
+
+                        if field.get_attr_type() == FieldType.FLOAT:
+                            b3d_obj[field.prop] = float(getattr(obj, field.prop, default))
+
+                        elif field.get_attr_type() == FieldType.INT:
+                            b3d_obj[field.prop] = int(getattr(obj, field.prop, default))
+
+                        elif field.get_attr_type() == FieldType.STRING:
+                            b3d_obj[field.prop] = str(getattr(obj, field.prop, default))
+
+                        elif field.get_attr_type() in [FieldType.ENUM, FieldType.ENUM_DYN]:
+
+                            if field.get_subtype() == FieldType.INT:
+                                b3d_obj[field.prop] = int(getattr(obj, field.prop, default))
+
+                            elif field.get_subtype() == FieldType.STRING:
+                                b3d_obj[field.prop] = str(getattr(obj, field.prop, default))
+
+                            elif field.get_subtype() == FieldType.FLOAT:
+                                b3d_obj[field.prop] = float(getattr(obj, field.prop, default))
+
+                        elif field.get_attr_type() == FieldType.VECTOR:
+                            xyz = getattr(obj, field.prop, default)
+                            xyz = getattr(xyz, "value", xyz)
+                            b3d_obj[field.prop] = (xyz[0],xyz[1],xyz[2])
+
+                        elif field.get_attr_type() == FieldType.LIST:
+                            b3d_obj[field.prop] = getattr(obj, field.prop, default)
+                            b3d_obj['{}_enum'.format(field.prop)] = '?'
+
+                        elif field.get_attr_type() == FieldType.FLAGS:
+                            b3d_obj[field.prop] = int(getattr(obj, field.prop, default))
+
+                        else:
+                            b3d_obj[field.prop] = getattr(obj, field.prop, default)
         
         return initializer 
         bname, fields = BlockClassHandler.get_block_fields(bclass.c_get_bnum(), bclass.c_get_btype())

@@ -618,12 +618,12 @@ class CircleTriggerFields:
 
     Center = VectorParam(
         name = 'Center',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Radius = FloatParam(
         name = 'Radius',
-        prop = 'float2'
+        prop = 'float1'
     )
     
     Trigger_Type = IntParam(
@@ -648,12 +648,12 @@ class CylinderTriggerFields:
     
     Center = VectorParam(
         name = 'Center',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Axis = VectorParam(
         name = 'Axis',
-        prop = 'coord2'
+        prop = 'vector2'
     )
     
     Half_Length = IntParam(
@@ -668,12 +668,12 @@ class CylinderTriggerFields:
     
     Trigger_Type = IntParam(
         name = 'Type',
-        prop = 'int1'
+        prop = 'int3'
     )
     
     Trigger_ID = IntParam(
         name = 'ID',
-        prop = 'int2'
+        prop = 'int4'
     )
     
     Trigger_Params = ListParam(
@@ -740,9 +740,12 @@ class GrpCylinderTrigger(BlkGroupBase):
     )
 
 ### Block declarations
+
+class Blk000(BlkBase):
+    bnum = 0
+
 class Blk001(BlkBase):
     bnum = 1
-    btype = BlockClassType.PER_FACE_BLOCK
     
     Name1 = StringParam(
         name = 'Unk. name 1',
@@ -760,12 +763,12 @@ class Blk002(BlkBase):
 
     Unk_XYZ = VectorParam(
         name = 'Unk. name 2',
-        prop = 'coord1'
+        prop = 'vector1'
     )
 
     Unk_R = FloatParam(
         name = 'Unk. rad',
-        prop = 'coord2'
+        prop = 'float1'
     )
 
 
@@ -811,7 +814,7 @@ class Blk009(BlkBase):
     bnum = 9
     Unk_XYZ = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1',
+        prop = 'vector1',
         ui_group = 'b9_group'
     )
 
@@ -826,7 +829,7 @@ class Blk010(BlkBase):
     bnum = 10
     LOD_XYZ = VectorParam(
         name = 'LOD coord',
-        prop = 'coord1',
+        prop = 'vector1',
         description = 'LOD center',
         ui_group = 'LOD_group'
     )
@@ -838,23 +841,23 @@ class Blk010(BlkBase):
         ui_group = 'LOD_group'
     )
 
-    Set_LOD = SphereEditParam(
-        name = '',
-        description = '',
-        ui_group = 'LOD_group'
-    )
+    # Set_LOD = SphereEditParam(
+    #     name = '',
+    #     description = '',
+    #     ui_group = 'LOD_group'
+    # )
     
 
 class Blk011(BlkBase):
     bnum = 11
     Unk_XYZ1 = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_XYZ2 = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord2'
+        prop = 'vector2'
     )
     
     Unk_R1 = FloatParam(
@@ -872,7 +875,7 @@ class Blk012(BlkBase):
     bnum = 12
     Unk_XYZ1 = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_R = FloatParam(
@@ -1026,7 +1029,7 @@ class Blk022(BlkBase):
     bnum = 22
     Unk_XYZ = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_R = FloatParam(
@@ -1072,9 +1075,19 @@ class Blk024(BlkBase):
 
 class Blk025(BlkBase):
     bnum = 25
-    Unk_XYZ = VectorParam(
-        name = 'Unk. coord',
-        prop = 'coord1'
+    Unk_Int1 = FloatParam(
+        name = 'Unk. 1',
+        prop = 'int1'
+    )
+
+    Unk_Int2 = FloatParam(
+        name = 'Unk. 2',
+        prop = 'int2'
+    )
+
+    Unk_Int3 = FloatParam(
+        name = 'Unk. 3',
+        prop = 'int3'
     )
     
     Name = StringParam(
@@ -1084,12 +1097,12 @@ class Blk025(BlkBase):
     
     Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
-        prop = 'coord2'
+        prop = 'vector1'
     )
     
     Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
-        prop = 'coord3'
+        prop = 'vector2'
     )
     
     Unk_Float1 = FloatParam(
@@ -1122,17 +1135,17 @@ class Blk026(BlkBase):
     bnum = 26
     Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
-        prop = 'coord2'
+        prop = 'vector2'
     )
     
     Unk_XYZ3 = VectorParam(
         name = 'Unk. coord 3',
-        prop = 'coord3'
+        prop = 'vector3'
     )
     
 
@@ -1145,7 +1158,7 @@ class Blk027(BlkBase):
     
     Unk_XYZ = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Material = IntParam(
@@ -1158,7 +1171,7 @@ class Blk028(BlkBase):
     bnum = 28
     Sprite_Center = VectorParam(
         name = 'Sprite center coord',
-        prop = 'coord1',
+        prop = 'vector1',
         description = 'Sprite center coordinates'
      #todo: check
     )
@@ -1179,7 +1192,7 @@ class Blk029(BlkBase):
     
     Unk_XYZ = VectorParam(
         name = 'Unk. coord',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_R = FloatParam(
@@ -1229,19 +1242,19 @@ class Blk030(BlkBase):
 
 class Blk031(BlkBase):
     bnum = 31
-    Unk_Int1 = IntParam(
-        name = 'Unk. 1',
-        prop = 'int1'
-    )
+    # Unk_Int1 = IntParam(
+    #     name = 'Unk. 1',
+    #     prop = 'int1'
+    # )
     
     Unk_XYZ1 = VectorParam(
         name = 'Unk. coord 1',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
-    Unk_R = VectorParam(
+    Unk_R = FloatParam(
         name = 'Unk. rad',
-        prop = 'coord2'
+        prop = 'vector2'
     )
     
     Unk_Int2 = IntParam(
@@ -1251,7 +1264,7 @@ class Blk031(BlkBase):
     
     Unk_XYZ2 = VectorParam(
         name = 'Unk. coord 2',
-        prop = 'coord3'
+        prop = 'vector3'
     )
     
     #todo: check
@@ -1279,12 +1292,12 @@ class Blk033(BlkBase):
     
     Unk_XYZ1 = VectorParam(
         name = 'Light location',
-        prop = 'coord1'
+        prop = 'vector1'
     )
     
     Unk_XYZ2 = VectorParam(
         name = 'Light direction',
-        prop = 'coord2'
+        prop = 'vector2'
     )
     
     Unk_Float1 = FloatParam(
@@ -1319,7 +1332,7 @@ class Blk033(BlkBase):
     
     RGB = VectorParam(
         name = 'RGB',
-        prop = 'coord3'
+        prop = 'vector3'
     )
     
 
@@ -1549,7 +1562,7 @@ class B40_TreeGenExtended(BlkBase):
         
     Unk_Coord21 = VectorParam(
         name = 'Unk. C1',
-        prop = 'coord1',
+        prop = 'vector1',
         no_single_edit = True
     )
     
@@ -1561,7 +1574,7 @@ class B40_TreeGenExtended(BlkBase):
         
     Unk_Coord22 = VectorParam(
         name = 'Unk. C1',
-        prop = 'coord2',
+        prop = 'vector2',
         no_single_edit = True
     )
         

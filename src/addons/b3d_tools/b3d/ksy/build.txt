@@ -1,0 +1,1 @@
+kaitai-struct-compiler -t python -w -d . b3d.ksy

@@ -34,6 +34,7 @@ from ..common import (
 from .common import (
     get_col_property_by_name,
     get_non_copy_name,
+    get_pythagor_length,
     is_root_obj,
     get_root_obj,
     is_empty_name,
@@ -458,7 +459,7 @@ def common_sort(cur_center, arr, created_bounders, empty_to_mesh_keys):
         if center is None or rad is None:
             return 0
         else:
-            return (sum(map(lambda xx,yy : (xx-yy)**2,cur_center,center)))**0.5
+            return get_pythagor_length(cur_center, center)
 
     new_list = [(obj, dist(cur_center, obj)) for obj in arr]
     new_list.sort(key= lambda x: x[1])
