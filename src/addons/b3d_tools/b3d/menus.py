@@ -27,8 +27,7 @@ from .common_classes import (
     BoolBlock
 )
 from . import (
-    import_b3d, export_b3d, import_res, export_res, import_raw,
-    ksy_import_b3d
+    export_b3d, import_b3d, import_res, export_res, import_raw
 )
 from .callbacks import (
     b3d_modules_callback,
@@ -318,23 +317,23 @@ class ImportB3D(Operator, ImportHelper):
         default='1'
     )
 
-    blocks_to_import = CollectionProperty(type=BoolBlock)
+    # blocks_to_import = CollectionProperty(type=BoolBlock)
 
     def invoke(self, context, event):
         wm = context.window_manager
 
-        self.blocks_to_import.clear()
+        # self.blocks_to_import.clear()
 
-        blocks = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
-        # 32,
-        33,34,35,36,37,
-        # 38,
-        39,40]
+        # blocks = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
+        # # 32,
+        # 33,34,35,36,37,
+        # # 38,
+        # 39,40]
 
-        for i, block in enumerate(blocks):
-            item = self.blocks_to_import.add()
-            item.name = str(block)
-            item.state = False
+        # for i, block in enumerate(blocks):
+        #     item = self.blocks_to_import.add()
+        #     item.name = str(block)
+        #     item.state = False
 
         wm.fileselect_add(self)
         return {"RUNNING_MODAL"}
@@ -376,8 +375,8 @@ class ImportB3D(Operator, ImportHelper):
 
         # t1 = Thread(target=import_b3d.thread_import_b3d, args=(self, evens, context))
         # t2 = Thread(target=import_b3d.thread_import_b3d, args=(self, odds, context))
-        t1 = Thread(target=ksy_import_b3d.thread_import_b3d, args=(self, evens, context))
-        t2 = Thread(target=ksy_import_b3d.thread_import_b3d, args=(self, odds, context))
+        t1 = Thread(target=import_b3d.thread_import_b3d, args=(self, evens, context))
+        t2 = Thread(target=import_b3d.thread_import_b3d, args=(self, odds, context))
 
         tt = time.mktime(datetime.datetime.now().timetuple())
 
@@ -417,30 +416,30 @@ class ImportB3D(Operator, ImportHelper):
         row = box1.row()
         row.prop(self, 'res_location')
 
-        layout.label(text="Blocks to import:")
-        box1 = layout.box()
-        row = box1.row()
-        row.prop(self, 'show_all_blocks')
+        # layout.label(text="Blocks to import:")
+        # box1 = layout.box()
+        # row = box1.row()
+        # row.prop(self, 'show_all_blocks')
         # props = row.operator(SelectAllBlocksBtn.bl_idname)
         # props.blocks_to_import = self.blocks_to_import
         # props.test = PointerProperty(type=self.blocks_to_import)
-        row = box1.row()
+        # row = box1.row()
 
-        if self.show_all_blocks == '1':
-            for block in self.blocks_to_import:
-                block.state = True
-        elif self.show_all_blocks == '2':
-            for block in self.blocks_to_import:
-                block.state = False
-        elif self.show_all_blocks == '3':
-            exclude_blocks = [0, 1, 8, 13, 14, 15, 16, 17, 18, 20, 23, 25, 26, 27, 28, 30, 34, 35, 40]
-            for block in self.blocks_to_import:
-                if int(block.name) in exclude_blocks:
-                    block.state = False
-                else:
-                    block.state = True
+        # if self.show_all_blocks == '1':
+        #     for block in self.blocks_to_import:
+        #         block.state = True
+        # elif self.show_all_blocks == '2':
+        #     for block in self.blocks_to_import:
+        #         block.state = False
+        # elif self.show_all_blocks == '3':
+        #     exclude_blocks = [0, 1, 8, 13, 14, 15, 16, 17, 18, 20, 23, 25, 26, 27, 28, 30, 34, 35, 40]
+        #     for block in self.blocks_to_import:
+        #         if int(block.name) in exclude_blocks:
+        #             block.state = False
+        #         else:
+        #             block.state = True
 
-        draw_multi_select_list(self, box1, 'blocks_to_import', 8)
+        # draw_multi_select_list(self, box1, 'blocks_to_import', 8)
 
 @make_annotations
 class ExportB3D(Operator, ExportHelper):
@@ -516,6 +515,7 @@ class ExportB3D(Operator, ExportHelper):
             log.info('Finished exporting RES in {} seconds'.format(t))
 
         t = time.mktime(datetime.datetime.now().timetuple())
+        # export_b3d.export_b3d(context, self, self.filepath)
         export_b3d.export_b3d(context, self, self.filepath)
         t = time.mktime(datetime.datetime.now().timetuple()) - t
         log.info('Finished exporting B3D in {} seconds'.format(t))

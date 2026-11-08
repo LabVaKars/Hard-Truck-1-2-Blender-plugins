@@ -18,7 +18,6 @@ if "bpy" in locals():
     importlib.reload(blocktool)
     importlib.reload(ui_utils)
     importlib.reload(imghelp)
-    importlib.reload(ksy_import_b3d)
     importlib.reload(import_b3d)
     importlib.reload(import_raw)
     importlib.reload(import_way)
@@ -46,7 +45,6 @@ else:
         blocktool,
         ui_utils,
         imghelp,
-        ksy_import_b3d,
         import_b3d,
         import_raw,
         import_way,

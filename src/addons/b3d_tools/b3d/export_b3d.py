@@ -61,6 +61,140 @@ from ..compatibility import (
 #Setup module logger
 log = exportb3d_logger
 
+
+_POLYGON_HEADER = struct.Struct('<ifiii')
+_UV = struct.Struct('<2f')
+_VERTEX = struct.Struct('<5f')
+_SPRITE_VERTEX = struct.Struct('<4f')
+_VERTEX_CHUNK_BYTES = 64 * 1024
+
+
+def _write_vertex_buffer(file, verts, uvs, normals, format_raw=None):
+    """Pack complete vertex records into bounded chunks, keeping wire order."""
+    if not verts:
+        return
+    extra_uvs = max(0, format_raw >> 8) if format_raw is not None else 0
+    use_normals = format_raw is not None and (format_raw & 0xff) in (1, 2)
+    if format_raw is None:
+        record = _VERTEX
+    else:
+        record = struct.Struct('<{}f'.format(5 + extra_uvs * 2 + (3 if use_normals else 1)))
+    chunk_records = max(1, _VERTEX_CHUNK_BYTES // record.size)
+    buffer = bytearray(min(len(verts), chunk_records) * record.size)
+    view = memoryview(buffer)
+    pack_into = record.pack_into
+    for start in range(0, len(verts), chunk_records):
+        stop = min(start + chunk_records, len(verts))
+        offset = 0
+        for index in range(start, stop):
+            u, v = uvs[index]
+            v = 1 - v
+            if format_raw is None:
+                pack_into(buffer, offset, *verts[index], u, v)
+            else:
+                tail = tuple(normals[index]) if use_normals else (1.0,)
+                pack_into(buffer, offset, *verts[index], u, v,
+                          *((u, v) * extra_uvs), *tail)
+            offset += record.size
+        file.write(view[:offset])
+
+
+class _ExportCache:
+    """Blender data snapshots, discarded when an export invocation returns."""
+
+    def __init__(self):
+        self.objects = list(bpy.data.objects)
+        self.by_name = {obj.name: obj for obj in self.objects}
+        self.by_type = {}
+        for obj in self.objects:
+            self.by_type.setdefault(obj.get(BLOCK_TYPE), []).append(obj)
+        self._raw_children = {}
+        self._children = {}
+        self._meshes = {}
+        self._mesh_props = {}
+        self._single_spheres = {}
+        self._bbox_points = {}
+
+    def raw_children(self, obj):
+        if obj.name not in self._raw_children:
+            self._raw_children[obj.name] = tuple(obj.children)
+        return self._raw_children[obj.name]
+
+    def children(self, obj):
+        if obj.name not in self._children:
+            self._children[obj.name] = [child for child in self.raw_children(obj)
+                                        if is_valid_block(child)]
+        return self._children[obj.name]
+
+    def meshes(self, obj):
+        if obj.name not in self._meshes:
+            stack = list(self.raw_children(obj))
+            meshes = []
+            while stack:
+                child = stack.pop()
+                if child.get(BLOCK_TYPE) in (8, 28, 35):
+                    meshes.append(child)
+                # Descendant traversal intentionally includes children below
+                # excluded blocks, matching get_all_children in the original.
+                stack.extend(self.raw_children(child))
+            self._meshes[obj.name] = sorted(meshes, key=lambda child: child.name)
+        return self._meshes[obj.name]
+
+    def mesh_props(self, obj):
+        if obj.name not in self._mesh_props:
+            self._mesh_props[obj.name] = get_mesh_props(obj)
+        return self._mesh_props[obj.name]
+
+    def single_sphere(self, obj):
+        if obj.name not in self._single_spheres:
+            self._single_spheres[obj.name] = get_single_bounding_sphere(obj)
+        return self._single_spheres[obj.name]
+
+    def mult_sphere(self, references):
+        points = []
+        for reference in references:
+            key = (reference['obj'], reference['transf'])
+            try:
+                if key not in self._bbox_points:
+                    obj = self.by_name[key[0]]
+                    transform = self.by_name[key[1]].matrix_world
+                    self._bbox_points[key] = tuple(
+                        matrix_multiply(transform, Vector(corner))
+                        for corner in obj.bound_box)
+                points.extend(self._bbox_points[key])
+            except KeyError:
+                # Preserve the original fallback for external spaces such as
+                # $$world, which do not have a Blender object.
+                return [Vector((0.0, 0.0, 0.0)), 0.0]
+        axes = [[point[index] for point in points] for index in range(3)]
+        center = Vector([(max(axis) + min(axis)) / 2 for axis in axes])
+        # Keep the original helper's radius calculation and float operations.
+        radius = max(point - center for point in points)
+        return [center, radius.length]
+
+
+class _LazyBounds(dict):
+    """Calculate only bounds requested by the exported hierarchy and sorting."""
+
+    def __init__(self, references, cache):
+        super().__init__()
+        self.references = references
+        self.cache = cache
+
+    def get(self, key, default=None):
+        if key not in self:
+            if key not in self.references:
+                return default
+            self[key] = self.cache.mult_sphere(self.references[key])
+        return super().get(key, default)
+
+    def __missing__(self, key):
+        if key not in self.references:
+            raise KeyError(key)
+        value = self[key] = self.cache.mult_sphere(self.references[key])
+        return value
+
+
 def export_pro(file, textures_path):
     # file = open(myFile_pro+'.pro','w')
 
@@ -187,19 +321,18 @@ def extend_with_references(ref_objs, meshes_in_empty):
                 meshes_in_empty[cur_obj.name].extend(local_transf_mesh_list)
     return meshes_in_empty
 
-def fill_bounding_sphere_lists():
+def fill_bounding_sphere_lists(cache=None):
+    cache = cache if cache is not None else _ExportCache()
 
     empty_to_mesh_keys = {}
     unique_arrays = {}
-    created_bounders = {}
-
     # Getting 'mesh' objects
-    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) in [8, 28, 35]]
+    objs = [obj for obj in cache.objects if obj.get(BLOCK_TYPE) in (8, 28, 35)]
 
     meshes_in_empty = map_meshes_to_parents(objs)
     
     #extend with 18 blocks
-    objs = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 18]
+    objs = cache.by_type.get(18, ())
 
     meshes_in_empty = extend_with_references(objs, meshes_in_empty)
 
@@ -211,22 +344,20 @@ def fill_bounding_sphere_lists():
         if not key in unique_arrays:
             unique_arrays[key] = meshes_in_empty[empty_name]
 
-    for key in unique_arrays.keys():
-        # objArr = [bpy.data.objects[cn] for cn in unique_arrays[key]]
-        # created_bounders[key] = get_mult_obj_bounding_sphere(objArr)
-        created_bounders[key] = get_mult_obj_bounding_sphere(unique_arrays[key])
-    
+    created_bounders = _LazyBounds(unique_arrays, cache)
+
     return {
         "created_bounders": created_bounders,
         "empty_to_mesh_keys": empty_to_mesh_keys
     }
 
 
-def create_border_list(current_module_name):
+def create_border_list(current_module_name, cache=None):
 
     borders = {}
 
-    border_blocks = [cn for cn in bpy.data.objects if cn.get(BLOCK_TYPE) == 30 \
+    candidates = cache.by_type.get(30, ()) if cache is not None else bpy.data.objects
+    border_blocks = [cn for cn in candidates if cn.get(BLOCK_TYPE) == 30
         and (cn.get(Blk030.ResModule1.get_prop()) == current_module_name or cn.get(Blk030.ResModule2.get_prop()) == current_module_name)]
 
     for bb in border_blocks:
@@ -254,7 +385,7 @@ def create_border_list(current_module_name):
     return borders
 
 
-def write_mesh_sphere(file, obj):
+def write_mesh_sphere(file, obj, cache=None):
 
     block_type = obj.get(BLOCK_TYPE)
 
@@ -262,7 +393,8 @@ def write_mesh_sphere(file, obj):
         8,35,
         28,30
     ]:
-        result = get_single_bounding_sphere(obj)
+        result = (cache.single_sphere(obj) if cache is not None
+                  else get_single_bounding_sphere(obj))
         center = result[0]
         rad = result[1]
 
@@ -310,7 +442,8 @@ def export_b3d(context, op, export_dir):
 
     current_materials = {}
 
-    res = fill_bounding_sphere_lists()
+    cache = _ExportCache()
+    res = fill_bounding_sphere_lists(cache)
 
     created_bounders = res['created_bounders']
     empty_to_mesh_keys = res['empty_to_mesh_keys']
@@ -320,24 +453,26 @@ def export_b3d(context, op, export_dir):
         export_dir = os.path.dirname(export_dir)
 
     if op.partial_export:
-        selected_obj = bpy.context.object
+        selected_obj = context.object
         if selected_obj is None:
             log.error('No selected object in outliner')
             return False
 
-        exported_objects = [selected_obj.name]
+        exported_objects = [selected_obj]
     else:
-        exported_objects = [sn.name for sn in op.res_modules if sn.state is True]
+        exported_objects = [bpy.data.objects["{}.b3d".format(sn.name)]
+                            for sn in op.res_modules if sn.state is True]
 
-    for obj_name in exported_objects:
-
-        obj = bpy.data.objects["{}.b3d".format(obj_name)]
+    for obj in exported_objects:
+        # Mesh arrays are the largest cache entries; release the previous
+        # module while retaining shared hierarchy and bounding-box snapshots.
+        cache._mesh_props.clear()
         cur_root = get_root_obj(obj)
 
         all_objs = []
 
         if is_root_obj(obj):
-            all_objs = get_children(cur_root)
+            all_objs = cache.children(cur_root)
         else:
             all_objs = [obj]
 
@@ -355,16 +490,8 @@ def export_b3d(context, op, export_dir):
             cp_data_blocks = 0
             cp_eof = 0
 
-            #Header
-
-            file.write(b'b3d\x00')#struct.pack("4c",b'b',b'3',b'D',b'\x00'))
-
-            #reserve places for sizes
-            file.write(struct.pack('<i',0)) #File Size
-            file.write(struct.pack('<i',0)) #Mat list offset
-            file.write(struct.pack('<i',0)) #Mat list Data Size
-            file.write(struct.pack('<i',0)) #Data Chunks Offset
-            file.write(struct.pack('<i',0)) #Data Chunks Size
+            # Reserve the complete header in one write.
+            file.write(struct.pack('<4s5i', b'b3d\x00', 0, 0, 0, 0, 0))
 
             cp_materials = int(file.tell()/4)
 
@@ -384,7 +511,7 @@ def export_b3d(context, op, export_dir):
             # current_materials = {cn:ind for ind, cn in enumerate(sorted(used_materials))}
             current_materials = {cn.mat_name:ind for ind, cn in enumerate(current_module.materials)}
 
-            borders = create_border_list(cur_res_name)
+            borders = create_border_list(cur_res_name, cache)
 
             file.write(struct.pack('<i', len(current_materials))) #Materials Count
             for mat in current_materials.keys():
@@ -397,7 +524,7 @@ def export_b3d(context, op, export_dir):
 
             file.write(struct.pack("<i",111)) # Begin_Chunks
 
-            extra = {}
+            extra = {'_cache': cache}
             extra['current_module'] = current_module
             extra['current_materials'] = current_materials
             extra['borders'] = borders
@@ -432,16 +559,11 @@ def export_b3d(context, op, export_dir):
 
             cp_eof = int(file.tell()/4)
 
-            file.seek(4,0)
-            file.write(struct.pack("<i", cp_eof))
-            file.seek(8,0)
-            file.write(struct.pack("<i", cp_materials))
-            file.seek(12,0)
-            file.write(struct.pack("<i", cp_data_blocks - cp_materials))
-            file.seek(16,0)
-            file.write(struct.pack("<i", cp_data_blocks))
-            file.seek(20,0)
-            file.write(struct.pack("<i", cp_eof - cp_data_blocks))
+            file.seek(4)
+            file.write(struct.pack('<5i', cp_eof, cp_materials,
+                                   cp_data_blocks - cp_materials,
+                                   cp_data_blocks, cp_eof - cp_data_blocks))
+
 
 def common_sort(cur_center, arr, created_bounders, empty_to_mesh_keys):
     
@@ -461,11 +583,13 @@ def common_sort(cur_center, arr, created_bounders, empty_to_mesh_keys):
         else:
             return get_pythagor_length(cur_center, center)
 
-    new_list = [(obj, dist(cur_center, obj)) for obj in arr]
-    new_list.sort(key= lambda x: x[1])
-    return list(map(lambda x: x[0], new_list))
+    return sorted(arr, key=lambda obj: dist(cur_center, obj))
 
 def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
+
+    cache = extra.get('_cache')
+    if cache is None:
+        cache = extra['_cache'] = _ExportCache()
 
     current_module = extra['current_module']
     current_module_name = current_module['value']
@@ -488,9 +612,9 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
     obj_name = get_non_copy_name(block.name)
     pass_to_mesh = {}
 
-    log.debug("{}_{}_{}_{}".format(block.get(BLOCK_TYPE), cur_level, 0, block.name))
+    log.debug("%s_%s_%s_%s", obj_type, cur_level, 0, block.name)
 
-    bl_children = list(get_children(block))
+    bl_children = list(cache.children(block))
 
     cur_center = None
     cur_center = list(block.location)
@@ -539,8 +663,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk002.Unk_R.get_prop()]))
 
             child_cnt = 0
-            for ch in get_children(block):
-                child_cnt += len(get_children(ch))
+            for ch in cache.children(block):
+                child_cnt += len(cache.children(ch))
 
             file.write(struct.pack("<i", child_cnt))
 
@@ -551,7 +675,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -561,7 +685,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_name(block[Blk004.SpaceName.get_prop()], file)
             write_name(block[Blk004.CollisionName.get_prop()], file)
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -570,7 +694,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk004.CollisionName.get_prop()], file)
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -581,11 +705,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_name(block[Blk006.CollisionName.get_prop()], file)
 
             offset = 0
-            all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
-            all_children.sort(key = lambda block:block.name)
+            all_children = cache.meshes(block)
             for ch in all_children:
                 obj = bpy.data.objects[ch.name]
-                some_props = get_mesh_props(obj)
+                some_props = cache.mesh_props(obj)
                 pass_to_mesh[obj.name] = {
                     "offset": offset,
                     "props": some_props
@@ -594,14 +717,11 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             file.write(struct.pack("<i", offset)) #Vertex count
 
-            for key in sorted(pass_to_mesh.keys()):
+            for key in pass_to_mesh:
                 verts, uvs, normals, faces, local_verts = pass_to_mesh[key]['props']
-                for i, v in enumerate(verts):
-                    file.write(struct.pack("<3f", *v))
-                    file.write(struct.pack("<f", uvs[i][0]))
-                    file.write(struct.pack("<f", 1 - uvs[i][1]))
+                _write_vertex_buffer(file, verts, uvs, normals)
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -611,11 +731,10 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             write_name(block[Blk007.CollisionName.get_prop()], file)
 
             offset = 0
-            all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
-            all_children.sort(key = lambda block:block.name)
+            all_children = cache.meshes(block)
             for ch in all_children:
                 # obj = bpy.data.objects[ch.name]
-                some_props = get_mesh_props(ch)
+                some_props = cache.mesh_props(ch)
                 pass_to_mesh[ch.name] = {
                     "offset": offset,
                     "props": some_props
@@ -624,14 +743,11 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             file.write(struct.pack("<i", offset)) #Vertex count
 
-            for key in sorted(pass_to_mesh.keys()):
+            for key in pass_to_mesh:
                 verts, uvs, normals, faces, local_verts = pass_to_mesh[key]['props']
-                for i, v in enumerate(verts):
-                    file.write(struct.pack("<3f", *v))
-                    file.write(struct.pack("<f", uvs[i][0]))
-                    file.write(struct.pack("<f", 1 - uvs[i][1]))
+                _write_vertex_buffer(file, verts, uvs, normals)
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -642,11 +758,17 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             l_offset = l_pass_to_mesh['offset']
             verts, uvs, normals, polygons, local_verts = l_pass_to_mesh['props']
 
-            write_mesh_sphere(file, block)
+            write_mesh_sphere(file, block, cache)
             # file.write(struct.pack("<i", 0)) # PolygonCount
             file.write(struct.pack("<i", len(polygons))) #Polygon count
             
             mesh = block.data
+            loops = mesh.loops
+            uv_data = mesh.uv_layers[0].data if mesh.polygons else ()
+            material_indices = {
+                slot: current_materials[mesh.materials[slot].name]
+                for slot in {poly.material_index for poly in polygons}
+            }
             
             if is_before_2_93():
                 format_flags_attrs = []
@@ -667,8 +789,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                 use_normals = False
                 normal_switch = False
                 # l_material_ind = get_material_index_in_res(obj.data.materials[poly.material_index].name, current_res)
-                material_name = obj.data.materials[poly.material_index].name
-                l_material_ind = current_materials[material_name]
+                l_material_ind = material_indices[poly.material_index]
                 if format_flags_attrs is None:
                     format_raw = 2 # default
                 else:
@@ -677,11 +798,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                     else:
                         format_raw = format_flags_attrs[poly.index].value
                 # format_raw = 0 #temporary
-                file.write(struct.pack("<i", format_raw))
-                file.write(struct.pack("<f", 1.0)) # TODO: not consts
-                file.write(struct.pack("<i", 32767)) # TODO: not consts
-                file.write(struct.pack("<i", l_material_ind))
-                file.write(struct.pack("<i", len(poly.vertices)))
+                file.write(_POLYGON_HEADER.pack(format_raw, 1.0, 32767,
+                                                l_material_ind, len(poly.vertices)))
 
                 poly_format = format_raw ^ 1
                 uv_count = ((poly_format & 0xFF00) >> 8)
@@ -698,14 +816,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
                 l_uvs = {}
                 for li in poly.loop_indices:
-                    vi = mesh.loops[li].vertex_index
-                    l_uvs[vi] = mesh.uv_layers[0].data[li].uv
+                    vi = loops[li].vertex_index
+                    l_uvs[vi] = uv_data[li].uv
 
                 for i, vert in enumerate(poly.vertices):
                     file.write(struct.pack("<i", l_offset + vert))
                     for k in range(uv_count):
-                        file.write(struct.pack("<f", l_uvs[vert][0]))
-                        file.write(struct.pack("<f", 1 - l_uvs[vert][1]))
+                        file.write(_UV.pack(l_uvs[vert][0], 1 - l_uvs[vert][1]))
                     if use_normals:
                         if normal_switch:
                             file.write(struct.pack("<3f", *normals[vert]))
@@ -719,8 +836,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk009.Unk_R.get_prop()]))
 
             child_cnt = 0
-            for ch in get_children(block):
-                child_cnt += len(get_children(ch))
+            for ch in cache.children(block):
+                child_cnt += len(cache.children(ch))
 
             file.write(struct.pack("<i", child_cnt))
 
@@ -735,8 +852,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk010.LOD_R.get_prop()]))
 
             child_cnt = 0
-            for ch in get_children(block):
-                child_cnt += len(get_children(ch))
+            for ch in cache.children(block):
+                child_cnt += len(cache.children(ch))
 
             file.write(struct.pack("<i", child_cnt))
 
@@ -751,7 +868,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk011.Unk_R1.get_prop()]))
             file.write(struct.pack("<f", block[Blk011.Unk_R2.get_prop()]))
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -869,8 +986,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", block[Blk021.Unk_Int2.get_prop()]))
 
             child_cnt = 0
-            for ch in get_children(block):
-                child_cnt += len(get_children(ch))
+            for ch in cache.children(block):
+                child_cnt += len(cache.children(ch))
 
             file.write(struct.pack("<i", child_cnt))
 
@@ -927,7 +1044,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             file.write(struct.pack("<i", block[Blk024.Flag.get_prop()]))
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -950,7 +1067,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ2.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk026.Unk_XYZ3.get_prop()]))
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -967,10 +1084,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             sprite_center = 0.125 * sum((Vector(b) for b in block.bound_box), Vector())
             sprite_center = matrix_multiply(block.matrix_world, sprite_center)
 
-            write_mesh_sphere(file, block)
+            write_mesh_sphere(file, block, cache)
             file.write(struct.pack("<3f", *block.location)) #sprite center
 
             mesh = block.data
+            loops = mesh.loops
+            uv_data = mesh.uv_layers[0].data if mesh.polygons else ()
 
             if is_before_2_93():
                 format_flags_attrs = []
@@ -982,7 +1101,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                 format_flags_attrs = obj.data.attributes.get(Pfb008.Format_Flags.get_prop())
                 format_flags_attrs = format_flags_attrs.data
             # format_flags_attrs = None #temporary
-            some_props = get_mesh_props(obj)
+            some_props = cache.mesh_props(obj)
 
             l_verts = some_props[4]
             # l_uvs = some_props[1]
@@ -996,8 +1115,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
                 l_uvs = {}
                 for li in poly.loop_indices:
-                    vi = mesh.loops[li].vertex_index
-                    l_uvs[vi] = mesh.uv_layers[0].data[li].uv
+                    vi = loops[li].vertex_index
+                    l_uvs[vi] = uv_data[li].uv
 
                 verts = poly.vertices
 
@@ -1009,21 +1128,15 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                     else:
                         format_raw = format_flags_attrs[poly.index].value
 
-                file.write(struct.pack("<i", format_raw)) # format with UVs TODO: not consts
-                file.write(struct.pack("<f", 1.0)) # TODO: not consts
-                file.write(struct.pack("<i", 32767)) # TODO: not consts
-                file.write(struct.pack("<i", current_materials[l_material]))
-                file.write(struct.pack("<i", len(verts)))
+                file.write(_POLYGON_HEADER.pack(format_raw, 1.0, 32767,
+                                                current_materials[l_material], len(verts)))
                 for i, vert in enumerate(verts):
                     # scale_u = sprite_center[1] - l_verts[vert][1]
                     # scale_v = l_verts[vert][2] - sprite_center[2]
                     scale_u = -l_verts[vert][1]
                     scale_v = l_verts[vert][2]
-                    file.write(struct.pack("<f", scale_u))
-                    file.write(struct.pack("<f", scale_v))
-                    #UVs
-                    file.write(struct.pack("<f", l_uvs[vert][0]))
-                    file.write(struct.pack("<f", 1-l_uvs[vert][1]))
+                    file.write(_SPRITE_VERTEX.pack(scale_u, scale_v,
+                                                   l_uvs[vert][0], 1 - l_uvs[vert][1]))
 
         elif obj_type == 29:
 
@@ -1033,13 +1146,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<3f", *block[Blk029.Unk_XYZ.get_prop()]))
             file.write(struct.pack("<f", block[Blk029.Unk_R.get_prop()]))
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
         elif obj_type == 30:
 
-            write_mesh_sphere(file, block)
+            write_mesh_sphere(file, block, cache)
 
             module1_name = block[Blk030.ResModule1.get_prop()]
             module2_name = block[Blk030.ResModule2.get_prop()]
@@ -1096,7 +1209,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<f", block[Blk033.Unk_Float4.get_prop()]))
             file.write(struct.pack("<3f", *block[Blk033.RGB.get_prop()]))
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -1123,7 +1236,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             l_offset = l_pass_to_mesh['offset']
             verts, uvs, normals, polygons, local_verts = l_pass_to_mesh['props']
 
-            write_mesh_sphere(file, block)
+            write_mesh_sphere(file, block, cache)
             file.write(struct.pack("<i", block[Blk035.FaceType.get_prop()]))
             # file.write(struct.pack("<i", 3))
             # file.write(struct.pack("<i", block[Blk035.TexNum.get_prop()]))
@@ -1134,6 +1247,12 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", len(polygons))) #Polygon count
 
             mesh = block.data
+            loops = mesh.loops
+            uv_data = mesh.uv_layers[0].data if mesh.polygons else ()
+            material_indices = {
+                slot: current_materials[mesh.materials[slot].name]
+                for slot in {poly.material_index for poly in polygons}
+            }
 
             if is_before_2_93():
                 format_flags_attrs = []
@@ -1152,8 +1271,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                 use_normals = False
                 normal_switch = False
                 # l_material_ind = get_material_index_in_res(obj.data.materials[poly.material_index].name, current_res)
-                material_name = obj.data.materials[poly.material_index].name
-                l_material_ind = current_materials[material_name]
+                l_material_ind = material_indices[poly.material_index]
                 if format_flags_attrs is None:
                     format_raw = 2 # default
                 else:
@@ -1162,11 +1280,8 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
                     else:
                         format_raw = format_flags_attrs[poly.index].value
                 # format_raw = 0
-                file.write(struct.pack("<i", format_raw))
-                file.write(struct.pack("<f", 1.0)) # TODO: not consts
-                file.write(struct.pack("<i", 32767)) # TODO: not consts
-                file.write(struct.pack("<i", l_material_ind))
-                file.write(struct.pack("<i", len(poly.vertices))) #Verts count
+                file.write(_POLYGON_HEADER.pack(format_raw, 1.0, 32767,
+                                                l_material_ind, len(poly.vertices))) #Verts count
 
                 poly_format = format_raw ^ 1
                 uv_count = ((poly_format & 0xFF00) >> 8)
@@ -1183,14 +1298,13 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
                 l_uvs = {}
                 for li in poly.loop_indices:
-                    vi = mesh.loops[li].vertex_index
-                    l_uvs[vi] = mesh.uv_layers[0].data[li].uv
+                    vi = loops[li].vertex_index
+                    l_uvs[vi] = uv_data[li].uv
 
                 for i, vert in enumerate(poly.vertices):
                     file.write(struct.pack("<i", l_offset + vert))
                     for k in range(uv_count):
-                        file.write(struct.pack("<f", l_uvs[vert][0]))
-                        file.write(struct.pack("<f", 1 - l_uvs[vert][1]))
+                        file.write(_UV.pack(l_uvs[vert][0], 1 - l_uvs[vert][1]))
                     if use_normals:
                         if normal_switch:
                             file.write(struct.pack("<3f", *normals[vert]))
@@ -1201,17 +1315,15 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             # isSecondUvs = False
             format_raw = int(block[Blk036.VertexType.get_prop()])
-            normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk036.GroupName.get_prop()], file)
             write_name(block[Blk036.CollisionName.get_prop()], file)
 
             offset = 0
-            all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
-            all_children.sort(key = lambda block:block.name)
+            all_children = cache.meshes(block)
             for ch in all_children:
                 # obj = bpy.data.objects[ch.name]
-                some_props = get_mesh_props(ch)
+                some_props = cache.mesh_props(ch)
                 pass_to_mesh[ch.name] = {
                     "offset": offset,
                     "props": some_props
@@ -1229,35 +1341,14 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             # else:
             #     format_raw = 2
 
-            extra_uv_count = format_raw >> 8
-            vert_format = format_raw & 0xFF
-
-            if vert_format == 1 or vert_format == 2:
-                normal_switch = True
-            elif vert_format == 3:
-                normal_switch = False
-
-
             file.write(struct.pack("<i", format_raw))
             file.write(struct.pack("<i", offset)) #Vertex count
 
-            for key in sorted(pass_to_mesh.keys()):
+            for key in pass_to_mesh:
                 verts, uvs, normals, faces, local_verts = pass_to_mesh[key]['props']
-                for i, v in enumerate(verts):
-                    file.write(struct.pack("<3f", *v))
-                    file.write(struct.pack("<f", uvs[i][0]))
-                    file.write(struct.pack("<f", 1 - uvs[i][1]))
+                _write_vertex_buffer(file, verts, uvs, normals, format_raw)
 
-                    for k in range(extra_uv_count):
-                        file.write(struct.pack("<f", uvs[i][0]))
-                        file.write(struct.pack("<f", 1 - uvs[i][1]))
-
-                    if normal_switch:
-                        file.write(struct.pack("<3f", *normals[i]))
-                    else:
-                        file.write(struct.pack("<f", 1.0))
-
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -1265,16 +1356,14 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
             # isSecondUvs = False
             format_raw = int(block[Blk037.VertexType.get_prop()])
-            normal_switch = False
             write_calculated_sphere(file, block, created_bounders, empty_to_mesh_keys)
             write_name(block[Blk037.CollisionName.get_prop()], file)
 
             offset = 0
-            all_children = [cn for cn in get_all_children(block) if cn.get(BLOCK_TYPE) and cn.get(BLOCK_TYPE) in [35, 8, 28]]
-            all_children.sort(key = lambda block:block.name)
+            all_children = cache.meshes(block)
             for ch in all_children:
                 # obj = bpy.data.objects[ch.name]
-                some_props = get_mesh_props(ch)
+                some_props = cache.mesh_props(ch)
                 pass_to_mesh[ch.name] = {
                     "offset": offset,
                     "props": some_props
@@ -1289,36 +1378,16 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             # else:
             #     format_raw = 2
 
-            extra_uv_count = format_raw >> 8
-            vert_format = format_raw & 0xFF
-
-            if vert_format == 1 or vert_format == 2:
-                normal_switch = True
-            elif vert_format == 3:
-                normal_switch = False
-
             file.write(struct.pack("<i", format_raw))
 
             file.write(struct.pack("<i", offset)) #Vertex count
 
 
-            for key in sorted(pass_to_mesh.keys()):
+            for key in pass_to_mesh:
                 verts, uvs, normals, faces, local_verts = pass_to_mesh[key]['props']
-                for i, v in enumerate(verts):
-                    file.write(struct.pack("<3f", *v))
-                    file.write(struct.pack("<f", uvs[i][0]))
-                    file.write(struct.pack("<f", 1 - uvs[i][1]))
+                _write_vertex_buffer(file, verts, uvs, normals, format_raw)
 
-                    for k in range(extra_uv_count):
-                        file.write(struct.pack("<f", uvs[i][0]))
-                        file.write(struct.pack("<f", 1 - uvs[i][1]))
-
-                    if normal_switch:
-                        file.write(struct.pack("<3f", *normals[i]))
-                    else:
-                        file.write(struct.pack("<f", 1.0))
-
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -1332,7 +1401,7 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
             file.write(struct.pack("<i", block[Blk039.Color_Id.get_prop()]))
             file.write(struct.pack("<i", 0)) #Unknown count
 
-            file.write(struct.pack("<i", len(get_children(block))))
+            file.write(struct.pack("<i", len(cache.children(block))))
 
             to_process_child = True
 
@@ -1371,59 +1440,36 @@ def export_block(obj, is_last, cur_level, max_groups, cur_groups, extra, file):
 
 
 def get_mesh_props(obj):
-
+    """Extract each vertex once and retain the original UV overwrite order."""
     mesh = obj.data
-    
     polygons = mesh.polygons
-
     poly_sorted = list(polygons)
-
-    mat = obj.matrix_world
-
-    prop = None
-    if obj.get('block_type') == 35:
-        prop = Pfb035.Format_Flags.get_prop()
-    elif obj.get('block_type') == 8:
-        prop = Pfb008.Format_Flags.get_prop()
-
-    if obj.get('block_type') in [35, 8]:
-
-        format_flags_attrs = []
+    block_type = obj.get(BLOCK_TYPE)
+    if block_type in (8, 35):
+        field = Pfb035.Format_Flags if block_type == 35 else Pfb008.Format_Flags
         if is_before_2_93():
-            colors = mesh.vertex_colors.get(prop).data
-            for poly in polygons:
-                val = RGBPacker.unpack_4floats_to_int([0.0, *(colors[poly.loop_indices[0]].color)])
-                to_append = {
-                    "value": val
-                }
-                format_flags_attrs.append(to_append)
+            colors = mesh.vertex_colors.get(field.get_prop()).data
+            flags = [RGBPacker.unpack_4floats_to_int(
+                [0.0, *colors[poly.loop_indices[0]].color]) for poly in polygons]
         else:
-            format_flags_attrs = obj.data.attributes.get(prop)
-            format_flags_attrs = format_flags_attrs.data
-        
-        # Fill UVs with priority for objects, that don't overwrite UV in PolyBlock
-        if len(format_flags_attrs) > 0:
-            poly_sorted.sort(key = lambda poly: format_flags_attrs[poly.index].value & 0b10, reverse=True)
-    
-    # if is_before_2_93():
-    #     format_raw = format_flags_attrs[poly.index]
-    # else:
-    #     format_raw = format_flags_attrs[poly.index].value
+            attributes = mesh.attributes.get(field.get_prop()).data
+            flags = [attribute.value for attribute in attributes]
+        if flags:
+            poly_sorted.sort(key=lambda poly: flags[poly.index] & 0b10, reverse=True)
 
-    # poly_sorted = [poly:format_flags_attrs[poly.index].value & 0b10 for poly in polygons]
-
-
-    vertexes = [(matrix_multiply(mat, cn.co)) for cn in mesh.vertices]
-
-    local_verts = [cn.co for cn in mesh.vertices]
+    transform = obj.matrix_world
+    vertexes, local_verts, normals = [], [], []
+    for vertex in mesh.vertices:
+        coordinate = vertex.co
+        vertexes.append(matrix_multiply(transform, coordinate))
+        local_verts.append(coordinate)
+        normals.append(vertex.normal)
 
     uvs = [None] * len(vertexes)
-    for poly in poly_sorted:
-        for li in poly.loop_indices:
-            vi = mesh.loops[li].vertex_index
-            uvs[vi] = mesh.uv_layers[0].data[li].uv
-
-    normals = [cn.normal for cn in mesh.vertices]
-
+    if poly_sorted:
+        loops = mesh.loops
+        uv_data = mesh.uv_layers[0].data
+        for poly in poly_sorted:
+            for loop_index in poly.loop_indices:
+                uvs[loops[loop_index].vertex_index] = uv_data[loop_index].uv
     return [vertexes, uvs, normals, polygons, local_verts]
-
