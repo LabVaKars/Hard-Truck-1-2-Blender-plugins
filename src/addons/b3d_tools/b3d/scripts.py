@@ -76,12 +76,20 @@ class Graph:
         self.graph = graph
 
     def dfs_util(self, val, visited):
-
-        visited[val]["in"] += 1
-        for v in self.graph[val]:
-            if self.graph.get(v) is not None:
-                visited[val]["out"] += 1
-                self.dfs_util(v, visited)
+        # Expand each node once, but count every incoming edge. Connector
+        # graphs can share targets and can contain cycles.
+        stack = [val]
+        expanded = set()
+        while stack:
+            node = stack.pop()
+            if node in expanded:
+                continue
+            expanded.add(node)
+            for target in self.graph[node]:
+                if target in self.graph:
+                    visited[node]["out"] += 1
+                    visited[target]["in"] += 1
+                    stack.append(target)
 
     def dfs(self, start=None):
         visited = {}
@@ -97,11 +105,15 @@ class Graph:
         else:
             search_in = self.graph.keys()
 
-        for val in search_in:
-            for v in self.graph[val]:
-                if self.graph.get(v) is not None:
-                    visited[val]["out"] += 1
-                    self.dfs_util(v, visited)
+        if start is None:
+            # All edges are needed for root detection, with no recursive walk.
+            for val in search_in:
+                for target in self.graph[val]:
+                    if target in self.graph:
+                        visited[val]["out"] += 1
+                        visited[target]["in"] += 1
+        elif start.name in self.graph:
+            self.dfs_util(start.name, visited)
 
         return visited
 
@@ -137,52 +149,53 @@ def apply_transform(root):
         b3d_obj.location = (0.0, 0.0, 0.0)
         transf_collection.objects.link(b3d_obj)
 
-    stack = [[root, 'b3dCenterSpace', 'b3dCenterSpace' + '_b3dSpaceCopy']]
+    stack = [(root, 'b3dCenterSpace', 'b3dCenterSpace_b3dSpaceCopy', frozenset())]
 
     while stack:
-        block, prev_space, prev_space_copy = stack.pop()
+        block, prev_space, prev_space_copy, ancestors = stack.pop()
+        if block.name in ancestors:
+            log.warning("Cyclic connector reference at " + block.name)
+            continue
+        ancestors = ancestors | {block.name}
 
-        prev_space_obj = bpy.data.objects.get(prev_space)
         prev_space_copy_obj = bpy.data.objects.get(prev_space_copy)
 
         # log.debug("{} {}".format(block[BLOCK_TYPE], block.name))
         # log.debug(prev_space)
         # log.debug(prev_space_copy)
 
-        if block[BLOCK_TYPE] == 18:
-            obj_name = block[Blk018.Add_Name.get_prop()]
-            space_name = block[Blk018.Space_Name.get_prop()]
+        if block.get(BLOCK_TYPE) == 18:
+            obj_name = block.get(Blk018.Add_Name.get_prop(), EMPTY_NAME)
+            space_name = block.get(Blk018.Space_Name.get_prop(), EMPTY_NAME)
 
             dest_obj = bpy.data.objects.get(obj_name)
 
             if not get_object_hidden(block):
 
+                if dest_obj is None:
+                    log.warning("Destination object not found in " + block.name)
+                    continue
+
+                # An empty place means keep this instance's current transform.
                 if space_name == EMPTY_NAME:
-                    space_name = prev_space
+                    stack.append((dest_obj, prev_space, prev_space_copy, ancestors))
+                    continue
 
                 space_obj = bpy.data.objects.get(space_name)
 
-                if(space_obj == None):
-                    log.warn("Transformation object not found in " + block.name)
-                    return
+                if space_obj is None:
+                    log.warning("Transformation object not found in " + block.name)
+                    continue
 
-                if(dest_obj == None):
-                    log.warn("Destination object not found in " + block.name)
-                    return
-
-                space_copy = None
-                if bpy.data.objects.get(space_obj.name + "_b3dSpaceCopy"):
-                    space_copy = bpy.data.objects[space_obj.name + "_b3dSpaceCopy"]
-                else:
-                    space_copy = space_obj.copy()
-                    space_copy.parent = prev_space_copy_obj
-                    space_copy.rotation_euler[0] = space_obj.rotation_euler[0]
-                    space_copy.rotation_euler[1] = space_obj.rotation_euler[1]
-                    space_copy.rotation_euler[2] = space_obj.rotation_euler[2]
-                    space_copy.location = space_obj.location
-                    space_copy.name = space_obj.name + "_b3dSpaceCopy"
-                    transf_collection.objects.link(space_copy)
-                stack.append([dest_obj, space_obj.name, space_copy.name])
+                # A place can be used under several different connector instances.
+                # Each occurrence needs its own parent and placement copy.
+                space_copy = space_obj.copy()
+                space_copy.parent = prev_space_copy_obj
+                space_copy.rotation_euler = space_obj.rotation_euler
+                space_copy.location = space_obj.location
+                space_copy.name = space_obj.name + "_b3dSpaceCopy"
+                transf_collection.objects.link(space_copy)
+                stack.append((dest_obj, space_obj.name, space_copy.name, ancestors))
             # else:
             #     stack.append([dest_obj, prev_space, prev_space_copy])
 
@@ -201,7 +214,7 @@ def apply_transform(root):
             # newmesh.hide_set(False)
 
         for direct_child in block.children:
-            stack.append([direct_child, prev_space, prev_space_copy])
+            stack.append((direct_child, prev_space, prev_space_copy, ancestors))
 
 
 def apply_remove_transforms(self):
@@ -312,7 +325,7 @@ def get_hierarchy_roots(root):
     referenceables.sort()
 
     # get roots not referenced in blocks18
-    other = [cn.name for cn in global_root.children if cn[BLOCK_TYPE] is not None \
+    other = [cn.name for cn in global_root.children if cn.get(BLOCK_TYPE) is not None \
         and (cn.get(BLOCK_TYPE) in [4, 5, 19]) \
         and cn.name not in referenceables ]
 
@@ -322,7 +335,9 @@ def get_hierarchy_roots(root):
         no_dub_graph[r] = set()
 
     for r in referenceables:
-        references = [cn for cn in get_all_children(bpy.data.objects.get(r)) if cn[BLOCK_TYPE] is not None and cn[BLOCK_TYPE] == 18]
+        obj = bpy.data.objects[r]
+        references = [cn for cn in [obj] + list(get_all_children(obj))
+                      if cn.get(BLOCK_TYPE) == 18]
         for ref_obj in references:
             no_dub_graph[r].add(ref_obj[Blk018.Add_Name.get_prop()])
 
@@ -342,7 +357,7 @@ def get_hierarchy_roots(root):
 
     visited = zgraph.dfs(closest_root)
 
-    roots = [cn for cn in visited.keys() if (visited[cn]["in"] == 0) and (visited[cn]["out"] > 0)]
+    roots = [cn for cn in visited.keys() if visited[cn]["in"] == 0]
 
     res = other
     res.extend(roots)
