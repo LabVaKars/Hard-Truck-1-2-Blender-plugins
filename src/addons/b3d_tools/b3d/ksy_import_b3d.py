@@ -311,8 +311,11 @@ def import_b3d(file, context, self, filepath):
                 indices, uv_layers, corner_normals, _ = b3d_dec.extract_polygon_8(polygon)
 
                 if not polygon.use_uv:
-                    uv_layers = [[vertex_block_uvs[0][index] for index in indices]]
-
+                    # uv_layers = [[vertex_block_uvs[0][index] for index in indices]]
+                    uv_layers = [
+                        [layer[index] for index in indices]
+                        for layer in vertex_block_uvs
+                    ]
                 if polygon.normal_switch == 0:
                     for index, normal in zip(indices, corner_normals):
                         mesh_normals[index] = normal
@@ -621,6 +624,7 @@ def import_b3d(file, context, self, filepath):
 
             b3d_obj = bpy.data.objects.new(obj_name, curve_data)
             b3d_obj[BLOCK_TYPE] = block_type
+            b3d_init(b3d_obj, payload)
             b3d_obj.parent = parent_obj
             
             get_context_collection_objects(context).link(b3d_obj)
@@ -630,7 +634,6 @@ def import_b3d(file, context, self, filepath):
         elif block_type == 40:
             b3d_obj = bpy.data.objects.new(obj_name, None)
             b3d_obj[BLOCK_TYPE] = block_type
-
             b3d_init(b3d_obj, payload)
             b3d_obj.location = payload.bound1.value[:3]
             b3d_obj.parent = parent_obj
@@ -679,7 +682,7 @@ def import_b3d(file, context, self, filepath):
                         f"but block {block_type} declares {declared_count}"
                     )
                 group_count = declared_count
-            elif block_type in (29) or marker_count:
+            elif block_type in [29] or marker_count:
                 group_count = max(1, observed_count)
             else:
                 group_count = 0

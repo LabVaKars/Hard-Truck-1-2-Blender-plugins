@@ -526,7 +526,14 @@ class BlockClassHandler():
                             b3d_obj[field.prop] = (xyz[0],xyz[1],xyz[2])
 
                         elif field.get_attr_type() == FieldType.LIST:
-                            b3d_obj[field.prop] = getattr(obj, field.prop, default)
+                            raw = getattr(obj, "unk_floats_raw", None)
+                            if raw is not None:
+                                value = raw.hex().upper()
+                            else:
+                                value = getattr(obj, field.prop, default)
+
+                            b3d_obj[field.prop] = value
+                            # b3d_obj[field.prop] = getattr(obj, field.prop, default)
                             b3d_obj['{}_enum'.format(field.prop)] = '?'
 
                         elif field.get_attr_type() == FieldType.FLAGS:
